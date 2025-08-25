@@ -20,6 +20,9 @@ import Community from "./pages/Community";
 import Modules from "./pages/Modules";
 import ModuleDetail from "./pages/ModuleDetail";
 import Resources from "./pages/Resources";
+import EducationalMaterials from "./pages/EducationalMaterials";
+import SelfHelpTools from "./pages/SelfHelpTools";
+import FindHelp from "./pages/FindHelp";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -82,6 +85,21 @@ const App = () => (
             <Route path="/resources" element={
               <ProtectedRoute>
                 <Resources />
+              </ProtectedRoute>
+            } />
+            <Route path="/resources/education" element={
+              <ProtectedRoute>
+                <EducationalMaterials />
+              </ProtectedRoute>
+            } />
+            <Route path="/resources/self-help" element={
+              <ProtectedRoute>
+                <SelfHelpTools />
+              </ProtectedRoute>
+            } />
+            <Route path="/resources/find-help" element={
+              <ProtectedRoute>
+                <FindHelp />
               </ProtectedRoute>
             } />
             <Route path="/settings" element={
