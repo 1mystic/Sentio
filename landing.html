@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Veramind — Find Your Calm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --plum: #352b38;
+  --slate: #7e808c;
+  --lavender: #dad8f9;
+  --ghost: #f4f3f8;
+  --lavender-mid: #b8b4f0;
+  --lavender-deep: #9b94e8;
+  --lavender-soft: #eceaf9;
+  --bg: #edeaf4;
+  --white: #ffffff;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Urbanist', sans-serif;
+  background: var(--bg);
+  color: var(--plum);
+  overflow-x: hidden;
+}
+/* ── Navbar ── */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; padding: 0 48px;
+  height: 68px;
+  background: rgba(244,243,248,0.75);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(218,216,249,0.4);
+  transition: background 0.3s;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo-mark {
+  width: 38px; height: 38px; border-radius: 11px;
+  background: linear-gradient(135deg, #dad8f9 0%, #9b94e8 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; font-weight: 900; color: var(--plum); letter-spacing: -1px;
+}
+.nav-logo-text { font-size: 20px; font-weight: 800; color: var(--plum); letter-spacing: -0.5px; }
+.nav-links { display: flex; align-items: center; gap: 6px; margin-left: 40px; }
+.nav-link {
+  padding: 7px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  color: var(--slate); text-decoration: none; transition: all 0.15s;
+}
+.nav-link:hover { color: var(--plum); background: var(--lavender-soft); }
+.nav-spacer { flex: 1; }
+.nav-ctas { display: flex; align-items: center; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; font-family: 'Urbanist', sans-serif; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+.btn-ghost-nav { padding: 8px 18px; border-radius: 10px; font-size: 14px; background: transparent; color: var(--plum); border: 1.5px solid var(--lavender); }
+.btn-ghost-nav:hover { background: var(--lavender-soft); }
+.btn-primary { padding: 9px 22px; border-radius: 10px; font-size: 14px; background: var(--plum); color: white; }
+.btn-primary:hover { background: #4a3550; box-shadow: 0 4px 16px rgba(53,43,56,0.22); transform: translateY(-1px); }
+.btn-hero { padding: 15px 36px; border-radius: 14px; font-size: 17px; font-weight: 700; background: var(--plum); color: white; }
+.btn-hero:hover { background: #4a3550; box-shadow: 0 8px 32px rgba(53,43,56,0.28); transform: translateY(-2px); }
+.btn-hero-outline { padding: 15px 36px; border-radius: 14px; font-size: 17px; font-weight: 700; background: transparent; color: var(--plum); border: 2px solid var(--lavender-mid); }
+.btn-hero-outline:hover { background: var(--lavender-soft); border-color: var(--lavender-deep); }
+.btn-pill { border-radius: 99px !important; }
+
+/* ── Hero ── */
+.hero {
+  min-height: 100vh;
+  padding-top: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(160deg, #f4f3f8 0%, #edeaf4 35%, #e4e1f5 65%, #dbd6f5 100%);
+}
+/* Floating orbs */
+.orb {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, rgba(155,148,232,0.22), rgba(218,216,249,0.08));
+  pointer-events: none;
+}
+.orb-1 { width: 600px; height: 600px; top: -150px; right: -100px; }
+.orb-2 { width: 400px; height: 400px; bottom: -80px; left: -80px; background: radial-gradient(circle, rgba(218,216,249,0.3), transparent); }
+.orb-3 { width: 200px; height: 200px; top: 40%; left: 20%; }
+/* Decorative mandala SVG */
+.mandala-bg {
+  position: absolute; opacity: 0.06; z-index: 0;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 700px; height: 700px;
+}
+.hero-inner {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding: 0 24px;
+  max-width: 860px;
+}
+.hero-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: white; border: 1.5px solid var(--lavender);
+  border-radius: 99px; padding: 7px 16px; font-size: 13px;
+  font-weight: 600; color: var(--lavender-deep);
+  margin-bottom: 28px; box-shadow: 0 2px 12px rgba(155,148,232,0.12);
+}
+.hero-pill-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lavender-deep); }
+.hero-title {
+  font-size: clamp(44px, 7vw, 80px);
+  font-weight: 900; line-height: 1.05;
+  letter-spacing: -2.5px; color: var(--plum);
+  margin-bottom: 20px;
+  text-wrap: balance;
+}
+.hero-title .accent {
+  background: linear-gradient(135deg, #9b94e8 0%, #b8b4f0 50%, #352b38 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 18px; font-weight: 400; color: var(--slate);
+  line-height: 1.65; max-width: 580px; margin-bottom: 36px;
+  text-wrap: pretty;
+}
+.hero-ctas { display: flex; gap: 12px; align-items: center; margin-bottom: 48px; flex-wrap: wrap; justify-content: center; }
+.hero-social-proof { display: flex; align-items: center; gap: 14px; }
+.avatar-stack { display: flex; }
+.avatar-stack-item {
+  width: 32px; height: 32px; border-radius: 50%; border: 2px solid white;
+  background: linear-gradient(135deg, var(--lavender), var(--lavender-deep));
+  margin-left: -8px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--plum);
+}
+.avatar-stack-item:first-child { margin-left: 0; }
+.social-proof-text { font-size: 13px; color: var(--slate); }
+.social-proof-text strong { color: var(--plum); }
+
+/* ── Dashboard Preview ── */
+.dashboard-preview {
+  position: relative; z-index: 2; width: 100%;
+  max-width: 1080px; margin: 0 auto;
+  padding: 0 24px 80px;
+}
+.preview-frame {
+  background: white; border-radius: 24px;
+  box-shadow: 0 32px 80px rgba(53,43,56,0.16), 0 2px 8px rgba(53,43,56,0.06);
+  overflow: hidden;
+  border: 1px solid rgba(218,216,249,0.5);
+}
+.preview-topbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 14px 20px;
+  background: var(--ghost);
+  border-bottom: 1px solid var(--lavender-soft);
+}
+.preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+.preview-url {
+  flex: 1; height: 26px; background: white; border-radius: 6px;
+  margin: 0 12px; display: flex; align-items: center; padding: 0 10px;
+  font-size: 11px; color: var(--slate); border: 1px solid var(--lavender-soft);
+}
+.preview-body { display: flex; height: 500px; }
+.preview-sidebar {
+  width: 56px; background: var(--ghost); border-right: 1px solid var(--lavender-soft);
+  display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 10px;
+}
+.preview-nav-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; cursor: pointer; transition: background 0.15s;
+}
+.preview-nav-icon.active { background: var(--lavender); }
+.preview-main { flex: 1; padding: 20px; overflow: hidden; background: var(--ghost); }
+.preview-header-bar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.preview-greeting { font-size: 17px; font-weight: 800; }
+.preview-sub { font-size: 11px; color: var(--slate); }
+.preview-search {
+  display: flex; align-items: center; gap: 6px;
+  background: white; border: 1px solid var(--lavender); border-radius: 8px;
+  padding: 6px 10px; font-size: 11px; color: var(--slate); width: 160px;
+}
+.preview-cards { display: grid; grid-template-columns: repeat(3, 1fr) 200px; gap: 10px; margin-bottom: 10px; height: 165px; }
+.preview-stat {
+  background: white; border-radius: 12px; padding: 12px;
+  box-shadow: 0 2px 10px rgba(53,43,56,0.06);
+}
+.preview-stat.lavender { background: linear-gradient(135deg, #dad8f9, #eceaf9); }
+.preview-stat.pink { background: linear-gradient(135deg, #f9d8f0, #fde8f9); }
+.preview-stat.blue { background: linear-gradient(135deg, #d8edf9, #e8f4fd); }
+.preview-stat-label { font-size: 9px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.4px; }
+.preview-stat-val { font-size: 24px; font-weight: 800; margin: 4px 0 2px; }
+.preview-stat-change { font-size: 9px; font-weight: 700; color: #059669; }
+.mini-bars { display: flex; align-items: flex-end; gap: 2px; height: 40px; margin-top: 6px; }
+.mini-bar { flex: 1; border-radius: 2px 2px 0 0; }
+.preview-side { display: flex; flex-direction: column; gap: 10px; }
+.preview-insight { background: white; border-radius: 12px; padding: 12px; box-shadow: 0 2px 10px rgba(53,43,56,0.06); flex: 1; }
+.preview-insight-title { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.preview-pl-item { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.preview-pl-icon { width: 18px; height: 18px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; }
+.preview-pl-name { font-size: 10px; flex: 1; }
+.preview-pl-pct { font-size: 10px; font-weight: 700; color: var(--slate); }
+.preview-pl-bar { height: 3px; background: var(--lavender-soft); border-radius: 99px; margin-top: 2px; overflow: hidden; }
+.preview-pl-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--lavender-deep), var(--lavender-mid)); }
+.preview-pipeline { background: white; border-radius: 12px; padding: 12px; box-shadow: 0 2px 10px rgba(53,43,56,0.06); margin-top: 10px; }
+.preview-pipeline-title { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.p-row { display: grid; grid-template-columns: 90px repeat(5, 1fr); gap: 4px; margin-bottom: 4px; }
+.p-label { font-size: 9px; color: var(--slate); display: flex; align-items: center; }
+.p-cell { border-radius: 5px; padding: 4px; font-size: 10px; font-weight: 700; text-align: center; }
+.preview-users { background: white; border-radius: 12px; padding: 12px; box-shadow: 0 2px 10px rgba(53,43,56,0.06); }
+.preview-users-title { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.prev-user { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.prev-avatar { width: 24px; height: 24px; border-radius: 8px; background: linear-gradient(135deg, var(--lavender), var(--lavender-deep)); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+.prev-info { flex: 1; }
+.prev-name { font-size: 10px; font-weight: 600; }
+.prev-email { font-size: 9px; color: var(--slate); }
+
+/* ── Sections ── */
+.section { padding: 96px 48px; max-width: 1200px; margin: 0 auto; }
+.section-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--lavender-deep); background: var(--lavender-soft);
+  border: 1px solid var(--lavender); border-radius: 99px; padding: 5px 14px;
+  margin-bottom: 18px;
+}
+.section-title { font-size: clamp(30px, 4vw, 48px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; color: var(--plum); margin-bottom: 16px; text-wrap: balance; }
+.section-sub { font-size: 17px; color: var(--slate); line-height: 1.65; max-width: 540px; text-wrap: pretty; }
+
+/* Features grid */
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 52px; }
+.feature-card {
+  background: white; border-radius: 20px; padding: 28px;
+  box-shadow: 0 4px 24px rgba(53,43,56,0.06);
+  border: 1px solid rgba(218,216,249,0.4);
+  transition: all 0.2s;
+}
+.feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(53,43,56,0.12); }
+.feature-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin-bottom: 16px;
+}
+.feature-name { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.feature-desc { font-size: 14px; color: var(--slate); line-height: 1.6; }
+
+/* Stats row */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+  background: var(--lavender-soft); border-radius: 20px; overflow: hidden;
+  margin-top: 52px;
+}
+.stat-block { background: white; padding: 36px 28px; text-align: center; }
+.stat-num { font-size: 48px; font-weight: 900; letter-spacing: -2px; background: linear-gradient(135deg, var(--plum), var(--lavender-deep)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat-lbl { font-size: 14px; color: var(--slate); margin-top: 4px; }
+
+/* Testimonials */
+.testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 52px; }
+.testimonial-card {
+  background: white; border-radius: 20px; padding: 28px;
+  box-shadow: 0 4px 24px rgba(53,43,56,0.06);
+  border: 1px solid rgba(218,216,249,0.4);
+}
+.testimonial-stars { display: flex; gap: 3px; margin-bottom: 14px; }
+.testimonial-star { color: #fbbf24; font-size: 16px; }
+.testimonial-text { font-size: 14px; color: var(--slate); line-height: 1.7; margin-bottom: 18px; font-style: italic; }
+.testimonial-author { display: flex; align-items: center; gap: 10px; }
+.testimonial-avatar {
+  width: 38px; height: 38px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--lavender), var(--lavender-deep));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+}
+.testimonial-name { font-size: 14px; font-weight: 700; }
+.testimonial-role { font-size: 12px; color: var(--slate); }
+
+/* Pricing */
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 52px; }
+.pricing-card {
+  background: white; border-radius: 24px; padding: 32px;
+  box-shadow: 0 4px 24px rgba(53,43,56,0.06);
+  border: 2px solid transparent;
+  position: relative; transition: all 0.2s;
+}
+.pricing-card.featured {
+  background: var(--plum); border-color: var(--plum);
+}
+.pricing-card.featured * { color: white !important; }
+.pricing-card.featured .pricing-feature-icon { background: rgba(255,255,255,0.1) !important; }
+.pricing-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate); margin-bottom: 12px; }
+.pricing-label.featured-lbl { color: var(--lavender-mid) !important; }
+.pricing-price { font-size: 52px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+.pricing-price sub { font-size: 18px; font-weight: 600; vertical-align: baseline; letter-spacing: 0; }
+.pricing-price sup { font-size: 22px; font-weight: 700; vertical-align: top; margin-top: 8px; display: inline-block; letter-spacing: 0; }
+.pricing-period { font-size: 13px; color: var(--slate); margin-top: 4px; margin-bottom: 24px; }
+.pricing-features { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+.pricing-feature { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.pricing-feature-icon { width: 20px; height: 20px; border-radius: 6px; background: var(--lavender-soft); display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+.pricing-badge {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(90deg, var(--lavender-deep), var(--lavender-mid));
+  color: white; font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 99px;
+  white-space: nowrap;
+}
+.btn-pricing-dark { width: 100%; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 700; background: var(--plum); color: white; border: none; cursor: pointer; transition: all 0.2s; font-family: 'Urbanist', sans-serif; }
+.btn-pricing-dark:hover { background: #4a3550; transform: translateY(-1px); }
+.btn-pricing-outline { width: 100%; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 700; background: transparent; color: white; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.2s; font-family: 'Urbanist', sans-serif; }
+.btn-pricing-outline:hover { background: rgba(255,255,255,0.1); }
+.btn-pricing-ghost { width: 100%; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 700; background: transparent; color: var(--plum); border: 2px solid var(--lavender-mid); cursor: pointer; transition: all 0.2s; font-family: 'Urbanist', sans-serif; }
+.btn-pricing-ghost:hover { background: var(--lavender-soft); }
+
+/* CTA section */
+.cta-section {
+  margin: 0 48px 80px;
+  background: linear-gradient(135deg, var(--plum) 0%, #4a3550 100%);
+  border-radius: 28px; padding: 72px 48px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.cta-orb {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(218,216,249,0.12), transparent);
+}
+.cta-orb-1 { width: 400px; height: 400px; top: -150px; right: -80px; }
+.cta-orb-2 { width: 300px; height: 300px; bottom: -120px; left: -60px; }
+.cta-title { font-size: clamp(32px, 4vw, 52px); font-weight: 900; color: white; letter-spacing: -2px; margin-bottom: 16px; text-wrap: balance; }
+.cta-sub { font-size: 17px; color: rgba(218,216,249,0.7); margin-bottom: 36px; line-height: 1.6; }
+.cta-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-cta-white { padding: 15px 36px; border-radius: 14px; font-size: 16px; font-weight: 700; background: white; color: var(--plum); border: none; cursor: pointer; transition: all 0.2s; font-family: 'Urbanist', sans-serif; }
+.btn-cta-white:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.2); }
+.btn-cta-outline { padding: 15px 36px; border-radius: 14px; font-size: 16px; font-weight: 700; background: transparent; color: white; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.2s; font-family: 'Urbanist', sans-serif; }
+.btn-cta-outline:hover { background: rgba(255,255,255,0.08); }
+
+/* Footer */
+.footer { background: var(--plum); padding: 60px 48px 36px; }
+.footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 52px; }
+.footer-brand {}
+.footer-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.footer-logo-mark { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, rgba(218,216,249,0.2), rgba(155,148,232,0.3)); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: white; }
+.footer-logo-text { font-size: 20px; font-weight: 800; color: white; }
+.footer-tagline { font-size: 14px; color: rgba(218,216,249,0.5); line-height: 1.6; max-width: 240px; }
+.footer-col-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(218,216,249,0.5); margin-bottom: 16px; }
+.footer-link { display: block; font-size: 14px; color: rgba(218,216,249,0.7); text-decoration: none; margin-bottom: 10px; transition: color 0.15s; }
+.footer-link:hover { color: white; }
+.footer-bottom { display: flex; align-items: center; justify-content: space-between; padding-top: 28px; border-top: 1px solid rgba(218,216,249,0.1); }
+.footer-copy { font-size: 13px; color: rgba(218,216,249,0.4); }
+.footer-socials { display: flex; gap: 10px; }
+.footer-social { width: 34px; height: 34px; border-radius: 9px; background: rgba(218,216,249,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px; color: rgba(218,216,249,0.6); cursor: pointer; transition: all 0.15s; text-decoration: none; }
+.footer-social:hover { background: rgba(218,216,249,0.18); color: white; }
+
+/* How it works */
+.how-bg { background: white; }
+.how-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 52px; position: relative; }
+.how-steps::before { content: ''; position: absolute; top: 28px; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, var(--lavender-soft), var(--lavender), var(--lavender-soft)); z-index: 0; }
+.how-step { position: relative; z-index: 1; text-align: center; padding: 0 12px; }
+.how-step-num { width: 56px; height: 56px; border-radius: 16px; background: var(--lavender); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: var(--plum); margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(155,148,232,0.2); }
+.how-step-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.how-step-desc { font-size: 13px; color: var(--slate); line-height: 1.6; }
+
+/* Mobile preview section */
+.mobile-section { padding: 96px 48px; background: linear-gradient(160deg, #edeaf4, #e4e0f5); }
+.mobile-section-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 60px; }
+.mobile-text { flex: 1; }
+.mobile-phones { flex: 1; display: flex; gap: -20px; justify-content: center; align-items: flex-start; }
+.phone-frame {
+  width: 200px; background: white;
+  border-radius: 32px; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(53,43,56,0.16);
+  border: 1px solid rgba(218,216,249,0.5);
+  flex-shrink: 0;
+}
+.phone-frame:first-child { margin-top: 40px; }
+.phone-frame:last-child { margin-top: 80px; margin-left: -24px; }
+.phone-notch { height: 22px; background: var(--plum); border-radius: 0 0 14px 14px; width: 80px; margin: 0 auto; }
+.phone-topbar { background: white; padding: 10px 14px 0; display: flex; justify-content: space-between; align-items: center; }
+.phone-time { font-size: 11px; font-weight: 700; }
+.phone-status { font-size: 9px; color: var(--slate); }
+.phone-screen {
+  padding: 12px; min-height: 300px;
+  background: linear-gradient(160deg, #fdeef8, #ede9fd, #e8d9fb);
+}
+.phone-screen-white { padding: 12px; min-height: 300px; background: white; }
+.phone-screen-title { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+.phone-card {
+  background: rgba(218,216,249,0.4); border-radius: 12px; padding: 10px;
+  margin-bottom: 8px;
+}
+.phone-card-title { font-size: 11px; font-weight: 700; }
+.phone-card-sub { font-size: 9px; color: var(--slate); margin-top: 2px; }
+.phone-timer { font-size: 9px; color: var(--lavender-deep); margin-top: 4px; display: flex; align-items: center; gap: 3px; }
+.phone-block-row { display: flex; gap: 8px; margin: 8px 0; }
+.phone-block-btn { flex: 1; background: white; border-radius: 10px; padding: 8px; text-align: center; box-shadow: 0 2px 8px rgba(53,43,56,0.06); }
+.phone-block-icon { font-size: 14px; margin-bottom: 3px; }
+.phone-block-lbl { font-size: 8px; color: var(--slate); }
+.phone-bottom-nav { display: flex; background: var(--plum); border-radius: 14px; margin: 8px; overflow: hidden; }
+.phone-nav-item { flex: 1; padding: 8px; text-align: center; font-size: 8px; color: rgba(255,255,255,0.5); }
+.phone-nav-item.active { color: white; }
+.phone-nav-active-bg { background: rgba(155,148,232,0.3); border-radius: 10px; padding: 4px; }
+
+/* Mobile bullets */
+.mobile-bullets { display: flex; flex-direction: column; gap: 20px; margin-top: 32px; }
+.mobile-bullet { display: flex; gap: 14px; align-items: flex-start; }
+.mobile-bullet-icon { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.mobile-bullet-text {}
+.mobile-bullet-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.mobile-bullet-desc { font-size: 13px; color: var(--slate); line-height: 1.5; }
+
+/* Keyframes */
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.float { animation: float 6s ease-in-out infinite; }
+.float-2 { animation: float 8s ease-in-out infinite; animation-delay: -2s; }
+.fade-up { animation: fadeUp 0.6s ease both; }
+.fade-up-d1 { animation: fadeUp 0.6s 0.1s ease both; }
+.fade-up-d2 { animation: fadeUp 0.6s 0.2s ease both; }
+.fade-up-d3 { animation: fadeUp 0.6s 0.3s ease both; }
+.fade-up-d4 { animation: fadeUp 0.6s 0.4s ease both; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .features-grid, .testimonials-grid, .pricing-grid { grid-template-columns: 1fr; }
+  .how-steps { grid-template-columns: repeat(2, 1fr); }
+  .how-steps::before { display: none; }
+  .footer-top { grid-template-columns: 1fr 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .mobile-section-inner { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ── Nav ── */
+function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', h);
+    return () => window.removeEventListener('scroll', h);
+  }, []);
+  return (
+    <nav className="navbar" style={{ background: scrolled ? 'rgba(244,243,248,0.92)' : 'rgba(244,243,248,0.6)' }}>
+      <a className="nav-logo" href="#">
+        <div className="nav-logo-mark">V</div>
+        <span className="nav-logo-text">Veramind</span>
+      </a>
+      <div className="nav-links">
+        {['Features','How it works','Mobile','Pricing','Stories'].map(l => (
+          <a key={l} className="nav-link" href={`#${l.toLowerCase().replace(/ /g,'-')}`}>{l}</a>
+        ))}
+      </div>
+      <div className="nav-spacer" />
+      <div className="nav-ctas">
+        <a className="btn btn-ghost-nav" href="#">Log in</a>
+        <a className="btn btn-primary btn-pill" href="#">Start free →</a>
+      </div>
+    </nav>
+  );
+}
+
+/* ── Dashboard Preview (inside hero) ── */
+function DashboardPreview() {
+  const pipelines = [
+    { label: 'Anxiety Relief', vals: [30,24,20,12,8], colors: ['#dbeafe','#eff6ff','#dbeafe','#bfdbfe','#e0f2fe'] },
+    { label: 'Sleep Better', vals: [27,20,17,'',''], colors: ['#d8f9e8','#d1fae5','#d8f9e8'] },
+    { label: 'Focus & Clarity', vals: [46,30,26,15,''], colors: ['#f9d8f0','#fce7f3','#f9d8f0','#fbcfe8'] },
+    { label: 'Stress Relief', vals: [23,12,8,6,8], colors: ['#d8edf9','#dbeafe','#bfdbfe','#d8edf9','#bfdbfe'] },
+  ];
+  return (
+    <div className="preview-frame">
+      <div className="preview-topbar">
+        <div className="preview-dot" style={{ background: '#fca5a5' }} />
+        <div className="preview-dot" style={{ background: '#fcd34d' }} />
+        <div className="preview-dot" style={{ background: '#6ee7b7' }} />
+        <div className="preview-url">🔒 app.veramind.com/dashboard</div>
+      </div>
+      <div className="preview-body">
+        {/* Mini sidebar */}
+        <div className="preview-sidebar">
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #dad8f9, #9b94e8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 14, color: '#352b38', marginBottom: 8 }}>V</div>
+          {['⌂','▦','◎','▤','▭'].map((icon, i) => (
+            <div key={i} className={`preview-nav-icon ${i === 0 ? 'active' : ''}`}>{icon}</div>
+          ))}
+        </div>
+        {/* Main */}
+        <div className="preview-main">
+          <div className="preview-header-bar">
+            <div>
+              <div className="preview-greeting">Good morning, Alexandra</div>
+              <div className="preview-sub">You have 3 sessions today</div>
+            </div>
+            <div className="preview-search">⌕ Search…</div>
+          </div>
+          {/* Stats + side panel */}
+          <div className="preview-cards">
+            {[
+              { label: 'Sessions Today', val: '+42', change: '↑ 24%', color: 'lavender', bars: [30,50,35,60,45,70,55,80,60,75] },
+              { label: 'Mood Score', val: '8.4', change: '↑ 14%', color: 'pink', bars: [45,55,50,65,60,55,70,75,65,80] },
+              { label: 'Mindful Min', val: '2.4h', change: '↑ 30%', color: 'blue', bars: [25,40,50,35,55,65,50,75,60,85] },
+            ].map((s, i) => (
+              <div key={i} className={`preview-stat ${s.color}`}>
+                <div className="preview-stat-label">{s.label}</div>
+                <div className="preview-stat-val">{s.val}</div>
+                <div className="preview-stat-change">{s.change} vs last week</div>
+                <div className="mini-bars">
+                  {s.bars.map((h, bi) => (
+                    <div key={bi} className="mini-bar" style={{ height: `${h}%`, background: i === 2 ? 'linear-gradient(180deg, #9b94e8, #dad8f9)' : 'rgba(155,148,232,0.4)', borderRadius: '2px 2px 0 0' }} />
+                  ))}
+                </div>
+              </div>
+            ))}
+            {/* Side panels */}
+            <div className="preview-side">
+              <div className="preview-insight">
+                <div className="preview-insight-title">Platform Insight</div>
+                {[
+                  { name: 'Calm', pct: 60, bg: '#ede9fe', c: '#9b94e8', a: 'C' },
+                  { name: 'Headspace', pct: 20, bg: '#d1fae5', c: '#6ee7b7', a: 'H' },
+                  { name: 'Insight Timer', pct: 10, bg: '#fee2e2', c: '#fca5a5', a: 'I' },
+                  { name: 'Waking Up', pct: 7, bg: '#fef9c3', c: '#fcd34d', a: 'W' },
+                ].map((p, i) => (
+                  <div key={i} className="preview-pl-item">
+                    <div className="preview-pl-icon" style={{ background: p.bg, color: p.c }}>{p.a}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span className="preview-pl-name">{p.name}</span>
+                        <span className="preview-pl-pct">{p.pct}%</span>
+                      </div>
+                      <div className="preview-pl-bar">
+                        <div className="preview-pl-fill" style={{ width: `${p.pct}%`, background: `linear-gradient(90deg, ${p.c}, ${p.c}88)` }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="preview-users">
+                <div className="preview-users-title">Recent Users</div>
+                {[['AM','Alexandra M.','alex@vmd.com','Analyst'],['JW','John W.','john@vmd.com','Beginner']].map(([init,name,email,role],i) => (
+                  <div key={i} className="prev-user">
+                    <div className="prev-avatar">{init}</div>
+                    <div className="prev-info">
+                      <div className="prev-name">{name}</div>
+                      <div className="prev-email">{email}</div>
+                    </div>
+                    <span style={{ fontSize: 8, background: '#dad8f9', borderRadius: 99, padding: '2px 6px', fontWeight: 700 }}>{role}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Pipeline */}
+          <div className="preview-pipeline">
+            <div className="preview-pipeline-title">Wellness Pipeline</div>
+            <div style={{ overflowX: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '90px repeat(5,1fr)', gap: 4, minWidth: 400 }}>
+                {['','Sessions','Completed','Score','Streak','Goal'].map((h, i) => (
+                  <div key={i} style={{ fontSize: 8, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', padding: '2px 4px' }}>{h}</div>
+                ))}
+                {pipelines.map((row, ri) => (
+                  <React.Fragment key={ri}>
+                    <div style={{ fontSize: 9, color: 'var(--slate)', display: 'flex', alignItems: 'center', paddingLeft: 4 }}>{row.label}</div>
+                    {row.vals.map((v, vi) => (
+                      <div key={vi} className="p-cell" style={{ background: v !== '' ? row.colors[vi % row.colors.length] : 'transparent' }}>
+                        {v !== '' ? v : ''}
+                      </div>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Hero ── */
+function Hero() {
+  return (
+    <section className="hero">
+      <div className="hero-bg" />
+      <div className="orb orb-1 float" />
+      <div className="orb orb-2 float-2" />
+      <div className="orb orb-3" />
+      {/* Mandala decoration */}
+      <svg className="mandala-bg" viewBox="0 0 200 200" fill="none">
+        {[20,35,50,65,80,95].map((r,i) => (
+          <circle key={i} cx="100" cy="100" r={r} stroke="#352b38" strokeWidth="0.5" fill="none" />
+        ))}
+        {Array.from({length:12}).map((_,i) => {
+          const angle = (i/12)*Math.PI*2;
+          return <line key={i} x1="100" y1="100" x2={100+95*Math.cos(angle)} y2={100+95*Math.sin(angle)} stroke="#352b38" strokeWidth="0.5" />;
+        })}
+        {[30,55,75].map((r,i) => (
+          Array.from({length:8}).map((_,j) => {
+            const a = (j/8)*Math.PI*2;
+            return <circle key={`${i}-${j}`} cx={100+r*Math.cos(a)} cy={100+r*Math.sin(a)} r="1.5" fill="#9b94e8" opacity="0.8" />;
+          })
+        ))}
+      </svg>
+      <div className="hero-inner">
+        <div className="hero-pill fade-up">
+          <div className="hero-pill-dot" />
+          Trusted by 50,000+ practitioners worldwide
+        </div>
+        <h1 className="hero-title fade-up-d1">
+          Your mind deserves<br/><span className="accent">genuine care</span>
+        </h1>
+        <p className="hero-sub fade-up-d2">
+          Veramind is a science-backed mindfulness platform that guides you toward lasting calm, sharper focus, and deeper sleep — through personalized AI sessions and real-time wellbeing insights.
+        </p>
+        <div className="hero-ctas fade-up-d3">
+          <a className="btn btn-hero btn-pill" href="#">Begin your journey →</a>
+          <a className="btn btn-hero-outline btn-pill" href="#">Watch overview</a>
+        </div>
+        <div className="hero-social-proof fade-up-d4">
+          <div className="avatar-stack">
+            {['AM','JW','EL','MT','SK'].map((init, i) => (
+              <div key={i} className="avatar-stack-item" style={{ background: `linear-gradient(135deg, ${['#dad8f9','#d8f9e8','#f9d8f0','#d8edf9','#fef9c3'][i]}, #9b94e8)` }}>{init}</div>
+            ))}
+          </div>
+          <div className="social-proof-text">
+            <strong>4.9★</strong> from 12,400+ reviews
+          </div>
+        </div>
+      </div>
+      {/* Dashboard preview */}
+      <div className="dashboard-preview">
+        <DashboardPreview />
+      </div>
+    </section>
+  );
+}
+
+/* ── Features ── */
+function Features() {
+  const features = [
+    { icon: '🧘', bg: '#ede9fe', name: 'Guided Meditation', desc: 'Personalized sessions crafted by certified mindfulness teachers, adapted to your current stress and mood levels.' },
+    { icon: '🌙', bg: '#fef9c3', name: 'Sleep Intelligence', desc: 'Science-backed sleep stories, body scans, and wind-down rituals that help you fall asleep 47% faster on average.' },
+    { icon: '💨', bg: '#d1fae5', name: 'Breathwork Studio', desc: 'Box breathing, 4-7-8, coherence breathing — guided by real-time biofeedback and adaptive pacing.' },
+    { icon: '✦', bg: '#ede9fe', name: 'AI Companion Vera', desc: 'Your personal mindfulness coach, available 24/7. Vera learns your patterns and suggests the right practice at the right time.' },
+    { icon: '📊', bg: '#dbeafe', name: 'Wellbeing Analytics', desc: 'Track mood, stress, focus, and emotional regulation over time. Correlate practices with real-world outcomes.' },
+    { icon: '🎯', bg: '#fee2e2', name: 'Focus Sessions', desc: 'Pomodoro-style deep work enhanced with ambient soundscapes, breath anchors, and cognitive resets.' },
+  ];
+  return (
+    <section className="section" id="features">
+      <div className="section-label">✦ Features</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20 }}>
+        <h2 className="section-title">Everything your mind<br/>needs in one place</h2>
+        <p className="section-sub">Built on peer-reviewed research in cognitive neuroscience, positive psychology, and contemplative practice.</p>
+      </div>
+      <div className="features-grid">
+        {features.map((f, i) => (
+          <div key={i} className="feature-card">
+            <div className="feature-icon" style={{ background: f.bg }}>{f.icon}</div>
+            <div className="feature-name">{f.name}</div>
+            <div className="feature-desc">{f.desc}</div>
+          </div>
+        ))}
+      </div>
+      <div className="stats-row">
+        {[
+          { num: '50K+', lbl: 'Active practitioners' },
+          { num: '94%', lbl: 'Report less stress in 4 weeks' },
+          { num: '2.4M', lbl: 'Sessions completed' },
+          { num: '4.9★', lbl: 'Average app rating' },
+        ].map((s, i) => (
+          <div key={i} className="stat-block">
+            <div className="stat-num">{s.num}</div>
+            <div className="stat-lbl">{s.lbl}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ── How it works ── */
+function HowItWorks() {
+  const steps = [
+    { num: '01', title: 'Create your profile', desc: 'Tell us about your goals, sleep patterns, and stress triggers. Takes 3 minutes.' },
+    { num: '02', title: 'Meet Vera', desc: 'Your AI companion designs a personalized practice plan based on your unique profile.' },
+    { num: '03', title: 'Practice daily', desc: 'Follow guided sessions in meditation, breathwork, or sleep. As short as 5 minutes.' },
+    { num: '04', title: 'Track & grow', desc: 'Watch your wellbeing scores improve. Adjust practices as your needs evolve.' },
+  ];
+  return (
+    <div className="how-bg" id="how-it-works">
+      <div className="section" style={{ maxWidth: 1200 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="section-label">◎ Process</div>
+          <h2 className="section-title">Simple. Consistent. Transformative.</h2>
+        </div>
+        <div className="how-steps">
+          {steps.map((s, i) => (
+            <div key={i} className="how-step">
+              <div className="how-step-num">{s.num}</div>
+              <div className="how-step-title">{s.title}</div>
+              <div className="how-step-desc">{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Mobile section ── */
+function MobileSection() {
+  return (
+    <div className="mobile-section" id="mobile">
+      <div className="mobile-section-inner">
+        <div className="mobile-text">
+          <div className="section-label">📱 Mobile App</div>
+          <h2 className="section-title">Calm is always in your pocket</h2>
+          <p className="section-sub">Full-featured iOS and Android apps that sync seamlessly with the web platform. Your practice travels with you.</p>
+          <div className="mobile-bullets">
+            {[
+              { icon: '⏰', bg: '#ede9fe', title: 'Smart scheduling', desc: 'Set focus blocks and mindfulness reminders that adapt to your calendar.' },
+              { icon: '🔒', bg: '#d1fae5', title: 'App-level focus locks', desc: 'Block distracting apps during deep work or wind-down periods.' },
+              { icon: '📈', bg: '#dbeafe', title: 'Screen time insights', desc: 'Understand your digital habits and their impact on mental wellness.' },
+            ].map((b, i) => (
+              <div key={i} className="mobile-bullet">
+                <div className="mobile-bullet-icon" style={{ background: b.bg }}>{b.icon}</div>
+                <div className="mobile-bullet-text">
+                  <div className="mobile-bullet-title">{b.title}</div>
+                  <div className="mobile-bullet-desc">{b.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
+            <button className="btn btn-primary" style={{ borderRadius: 12, padding: '12px 24px', fontSize: 15 }}>App Store</button>
+            <button className="btn btn-ghost-nav" style={{ borderRadius: 12, padding: '12px 24px', fontSize: 15 }}>Google Play</button>
+          </div>
+        </div>
+        {/* Phone frames */}
+        <div className="mobile-phones">
+          <div className="phone-frame float">
+            <div className="phone-topbar">
+              <span className="phone-time">9:41</span>
+              <span className="phone-status">▪▪▪ ◈ ▮</span>
+            </div>
+            <div style={{ width: 50, height: 6, background: '#352b38', borderRadius: 99, margin: '0 auto -3px', position: 'relative', zIndex: 1 }} />
+            <div className="phone-screen">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 24, paddingBottom: 16 }}>
+                <div style={{ width: 60, height: 60, borderRadius: 50, border: '2px solid rgba(155,148,232,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                  <svg viewBox="0 0 40 40" width="40" height="40" fill="none">
+                    <path d="M20 5 C20 5 10 12 10 20 C10 28 15 33 20 35 C25 33 30 28 30 20 C30 12 20 5 20 5Z" stroke="#9b94e8" strokeWidth="1.5" fill="none"/>
+                    <path d="M20 10 C20 10 13 15 13 21 C13 27 17 31 20 32 C23 31 27 27 27 21 C27 15 20 10 20 10Z" stroke="#9b94e8" strokeWidth="1" fill="rgba(155,148,232,0.1)"/>
+                  </svg>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--plum)', letterSpacing: -0.5, marginBottom: 4 }}>VERAMIND</div>
+                <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6, textAlign: 'center', lineHeight: 1.2 }}>Welcome back, Alex</div>
+                <div style={{ fontSize: 10, color: 'var(--slate)', textAlign: 'center', lineHeight: 1.5, maxWidth: 140, marginBottom: 20 }}>Your mindfulness companion for a calmer, clearer mind.</div>
+                <div style={{ background: 'var(--plum)', color: 'white', borderRadius: 99, padding: '10px 32px', fontSize: 12, fontWeight: 700, marginBottom: 10, width: '80%', textAlign: 'center' }}>Start Session</div>
+                <div style={{ fontSize: 10, color: 'var(--slate)' }}>Already have an account?</div>
+              </div>
+            </div>
+          </div>
+          <div className="phone-frame float-2">
+            <div className="phone-topbar">
+              <span className="phone-time">9:41</span>
+              <span className="phone-status">▪▪▪ ◈ ▮</span>
+            </div>
+            <div style={{ width: 50, height: 6, background: '#352b38', borderRadius: 99, margin: '0 auto -3px', position: 'relative', zIndex: 1 }} />
+            <div className="phone-screen-white">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <div className="phone-screen-title">Sessions</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 99, background: 'var(--lavender-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>↻</div>
+                  <div style={{ width: 24, height: 24, borderRadius: 99, background: 'var(--lavender-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white' }}>+</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--slate)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Upcoming</div>
+              <div className="phone-card" style={{ background: 'rgba(218,216,249,0.35)' }}>
+                <div className="phone-card-title">Morning Meditation</div>
+                <div className="phone-card-sub">Weekdays, 7:00 – 7:20 AM</div>
+                <div className="phone-timer">⏰ Starting in 1h 24m</div>
+              </div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--slate)', margin: '10px 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Quick Start</div>
+              <div className="phone-block-row">
+                {[['▤','Schedule'],['🧘','Meditate'],['🔒','Focus Lock']].map(([icon, lbl], i) => (
+                  <div key={i} className="phone-block-btn">
+                    <div className="phone-block-icon">{icon}</div>
+                    <div className="phone-block-lbl">{lbl}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--slate)', margin: '10px 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Today's Plan</div>
+              {[['Morning Meditation','7:00–7:20 AM'],['Breathwork','12:00 PM']].map(([t,s],i) => (
+                <div key={i} className="phone-card" style={{ background: i === 0 ? 'rgba(218,216,249,0.35)' : 'white', border: '1px solid var(--lavender-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div className="phone-card-title">{t}</div>
+                    <div className="phone-card-sub">{s}</div>
+                  </div>
+                  <div style={{ fontSize: 9, background: 'var(--lavender-deep)', color: 'white', borderRadius: 99, padding: '2px 6px', fontWeight: 700 }}>+Add</div>
+                </div>
+              ))}
+              <div style={{ background: 'var(--plum)', color: 'white', borderRadius: 12, margin: '10px 0 8px', padding: '9px', textAlign: 'center', fontSize: 11, fontWeight: 700 }}>Begin Now</div>
+              <div className="phone-bottom-nav">
+                {[['⌂','Home'],['▦','Sessions'],['◎','Profile']].map(([icon,lbl],i) => (
+                  <div key={i} className={`phone-nav-item ${i===1?'active':''}`}>
+                    <div style={{ background: i===1?'rgba(155,148,232,0.25)':undefined, borderRadius: 8, padding: '2px 4px' }}>{icon}</div>
+                    <div style={{ fontSize: 7 }}>{lbl}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Testimonials ── */
+function Testimonials() {
+  const testimonials = [
+    { name: 'Alexandra M.', role: 'Product Designer', init: 'AM', text: "Veramind completely transformed my morning routine. I went from waking up anxious to actually looking forward to my day. The AI recommendations are eerily accurate." },
+    { name: 'James Park', role: 'Software Engineer', init: 'JP', text: "I tried every meditation app out there. Veramind is the first one that stuck. The analytics showing my mood patterns over 3 months were genuinely eye-opening." },
+    { name: 'Sara Klein', role: 'Clinical Psychologist', init: 'SK', text: "I recommend Veramind to my clients as a between-session support tool. The CBT-informed exercises and evidence-based breathing protocols are top-tier." },
+    { name: 'Marcus Tang', role: 'Entrepreneur', init: 'MT', text: "Built two startups with chronic stress. Veramind's focus sessions and biofeedback-guided breathwork became essential to my daily CEO routine." },
+    { name: 'Emily Lee', role: 'Teacher', init: 'EL', text: "The sleep stories alone are worth it. I haven't needed sleep medication since week 2. My students also notice I'm calmer and more patient in class." },
+    { name: 'Priya Nair', role: 'Graduate Student', init: 'PN', text: "As a PhD student under immense pressure, Veramind's 5-minute micro-sessions between study blocks are a lifesaver. My focus improved measurably." },
+  ];
+  return (
+    <div style={{ background: 'var(--bg)', padding: '0 0 0' }} id="stories">
+      <div className="section">
+        <div className="section-label">♡ Stories</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20 }}>
+          <h2 className="section-title">Real minds, real results</h2>
+          <p className="section-sub">From students to executives — Veramind meets you where you are.</p>
+        </div>
+        <div className="testimonials-grid">
+          {testimonials.map((t, i) => (
+            <div key={i} className="testimonial-card">
+              <div className="testimonial-stars">{[1,2,3,4,5].map(s => <span key={s} className="testimonial-star">★</span>)}</div>
+              <div className="testimonial-text">"{t.text}"</div>
+              <div className="testimonial-author">
+                <div className="testimonial-avatar" style={{ background: `linear-gradient(135deg, ${['#dad8f9','#d8f9e8','#f9d8f0','#d8edf9','#fef9c3','#ede9fe'][i]}, #9b94e8)` }}>{t.init}</div>
+                <div>
+                  <div className="testimonial-name">{t.name}</div>
+                  <div className="testimonial-role">{t.role}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Pricing ── */
+function Pricing() {
+  const [annual, setAnnual] = useState(true);
+  const plans = [
+    {
+      name: 'Free', price: 0, period: 'forever',
+      features: ['5 guided meditations/month', 'Basic mood tracking', 'Community access', '7-day streak tracking'],
+      cta: 'Get started free', ctaStyle: 'ghost',
+    },
+    {
+      name: 'Pro', price: annual ? 12 : 16, period: annual ? '/mo billed annually' : '/month',
+      features: ['Unlimited sessions', 'AI companion Vera', 'Full analytics dashboard', 'Sleep & breathwork library', 'Priority support', 'Mobile app full access'],
+      cta: 'Start 14-day free trial', ctaStyle: 'outline', featured: true,
+    },
+    {
+      name: 'Team', price: annual ? 8 : 10, period: annual ? '/user/mo billed annually' : '/user/month',
+      features: ['Everything in Pro', 'Team wellbeing dashboard', 'Group sessions', 'Admin controls', 'SAML SSO', 'Dedicated CSM'],
+      cta: 'Contact sales', ctaStyle: 'ghost',
+    },
+  ];
+  return (
+    <div style={{ background: 'white', padding: '0 0 0' }} id="pricing">
+      <div className="section">
+        <div style={{ textAlign: 'center' }}>
+          <div className="section-label">◈ Pricing</div>
+          <h2 className="section-title">Invest in your mind</h2>
+          <p className="section-sub" style={{ margin: '0 auto 28px' }}>Start free. Upgrade when you're ready. Cancel anytime.</p>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'var(--lavender-soft)', borderRadius: 99, padding: '4px 6px' }}>
+            <button onClick={() => setAnnual(false)} style={{ padding: '8px 18px', borderRadius: 99, border: 'none', cursor: 'pointer', fontFamily: 'Urbanist', fontWeight: 600, fontSize: 14, background: !annual ? 'white' : 'transparent', color: 'var(--plum)', boxShadow: !annual ? '0 2px 8px rgba(53,43,56,0.08)' : 'none', transition: 'all 0.15s' }}>Monthly</button>
+            <button onClick={() => setAnnual(true)} style={{ padding: '8px 18px', borderRadius: 99, border: 'none', cursor: 'pointer', fontFamily: 'Urbanist', fontWeight: 600, fontSize: 14, background: annual ? 'white' : 'transparent', color: 'var(--plum)', boxShadow: annual ? '0 2px 8px rgba(53,43,56,0.08)' : 'none', transition: 'all 0.15s' }}>Annual <span style={{ fontSize: 11, background: '#d1fae5', color: '#059669', padding: '1px 6px', borderRadius: 99, marginLeft: 4 }}>-25%</span></button>
+          </div>
+        </div>
+        <div className="pricing-grid">
+          {plans.map((p, i) => (
+            <div key={i} className={`pricing-card ${p.featured ? 'featured' : ''}`} style={{ marginTop: p.featured ? -12 : 0 }}>
+              {p.featured && <div className="pricing-badge">Most Popular</div>}
+              <div className={`pricing-label ${p.featured ? 'featured-lbl' : ''}`}>{p.name}</div>
+              <div className="pricing-price">
+                {p.price === 0 ? 'Free' : <><sup>$</sup>{p.price}</>}
+              </div>
+              <div className="pricing-period">{p.period}</div>
+              <div className="pricing-features">
+                {p.features.map((f, fi) => (
+                  <div key={fi} className="pricing-feature">
+                    <div className="pricing-feature-icon" style={{ background: p.featured ? 'rgba(218,216,249,0.15)' : 'var(--lavender-soft)' }}>✓</div>
+                    {f}
+                  </div>
+                ))}
+              </div>
+              {p.ctaStyle === 'outline'
+                ? <button className="btn-pricing-outline">{p.cta}</button>
+                : <button className={p.featured ? 'btn-pricing-outline' : 'btn-pricing-dark'} style={!p.featured ? { background: 'var(--plum)', color: 'white', border: 'none' } : {}}>{p.cta}</button>
+              }
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── CTA ── */
+function CTA() {
+  return (
+    <div style={{ padding: '0 48px 80px' }}>
+      <div className="cta-section">
+        <div className="cta-orb cta-orb-1" />
+        <div className="cta-orb cta-orb-2" />
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(218,216,249,0.1)', border: '1px solid rgba(218,216,249,0.2)', borderRadius: 99, padding: '6px 16px', fontSize: 12, fontWeight: 700, color: 'rgba(218,216,249,0.7)', marginBottom: 20, letterSpacing: 0.8 }}>
+            ✦ START YOUR FREE JOURNEY
+          </div>
+          <div className="cta-title">Your calmer life<br/>starts today</div>
+          <div className="cta-sub">No credit card required. 14-day free trial. Cancel anytime.</div>
+          <div className="cta-ctas">
+            <button className="btn-cta-white">Begin for free →</button>
+            <button className="btn-cta-outline">Talk to us</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Footer ── */
+function Footer() {
+  return (
+    <footer className="footer">
+      <div className="footer-top" style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div className="footer-brand">
+          <div className="footer-logo">
+            <div className="footer-logo-mark">V</div>
+            <span className="footer-logo-text">Veramind</span>
+          </div>
+          <div className="footer-tagline">Science-backed mindfulness for a calmer, clearer, more focused life.</div>
+        </div>
+        {[
+          { title: 'Product', links: ['Features','Pricing','Mobile App','Integrations','Changelog'] },
+          { title: 'Company', links: ['About','Blog','Careers','Press','Contact'] },
+          { title: 'Legal', links: ['Privacy Policy','Terms of Use','Cookie Policy','GDPR','Security'] },
+        ].map((col, i) => (
+          <div key={i}>
+            <div className="footer-col-title">{col.title}</div>
+            {col.links.map(l => <a key={l} className="footer-link" href="#">{l}</a>)}
+          </div>
+        ))}
+      </div>
+      <div className="footer-bottom" style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div className="footer-copy">© 2026 Veramind, Inc. All rights reserved.</div>
+        <div className="footer-socials">
+          {['𝕏','in','ig','yt'].map(s => <a key={s} className="footer-social" href="#">{s}</a>)}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ── Root ── */
+function App() {
+  return (
+    <>
+      <Navbar />
+      <Hero />
+      <Features />
+      <HowItWorks />
+      <MobileSection />
+      <Testimonials />
+      <Pricing />
+      <CTA />
+      <Footer />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Veramind — Component Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --plum: #352b38;
+    --slate: #7e808c;
+    --lavender: #dad8f9;
+    --ghost: #f4f3f8;
+    --white: #ffffff;
+    --lavender-mid: #b8b4f0;
+    --lavender-deep: #9b94e8;
+    --lavender-soft: #eceaf9;
+    --pink-soft: #f9d8f0;
+    --green-soft: #d8f9e8;
+    --blue-soft: #d8edf9;
+    --peach: #f9e4d8;
+    --bg: #edeaf4;
+    --card: #ffffff;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-lg: 24px;
+    --shadow: 0 4px 24px rgba(53,43,56,0.07);
+    --shadow-md: 0 8px 32px rgba(53,43,56,0.10);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Urbanist', sans-serif;
+    background: var(--bg);
+    color: var(--plum);
+    min-height: 100vh;
+  }
+  /* Layout */
+  .app-shell { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 220px; min-width: 220px;
+    background: var(--white);
+    border-right: 1px solid var(--lavender-soft);
+    display: flex; flex-direction: column;
+    padding: 24px 0;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 20px 28px;
+    border-bottom: 1px solid var(--lavender-soft);
+    margin-bottom: 16px;
+  }
+  .logo-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #dad8f9, #9b94e8);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; color: var(--plum);
+  }
+  .logo-text { font-size: 18px; font-weight: 700; color: var(--plum); letter-spacing: -0.3px; }
+  .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+  .nav-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--slate); padding: 12px 8px 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 10px;
+    font-size: 13.5px; font-weight: 500; color: var(--slate);
+    cursor: pointer; transition: all 0.18s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--lavender-soft); color: var(--plum); }
+  .nav-item.active { background: var(--lavender); color: var(--plum); font-weight: 600; }
+  .nav-item .nav-icon { width: 18px; height: 18px; opacity: 0.7; }
+  .nav-badge {
+    margin-left: auto; background: var(--lavender-deep);
+    color: white; font-size: 10px; font-weight: 700;
+    padding: 1px 7px; border-radius: 99px;
+  }
+  .sidebar-footer { padding: 16px 12px 0; border-top: 1px solid var(--lavender-soft); }
+  .main-content {
+    margin-left: 220px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    position: sticky; top: 0; z-index: 90;
+    background: rgba(244,243,248,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--lavender-soft);
+    padding: 12px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .topbar-title { font-size: 22px; font-weight: 700; color: var(--plum); flex: 1; }
+  .topbar-search {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--white); border: 1.5px solid var(--lavender);
+    border-radius: 12px; padding: 8px 14px;
+    width: 240px;
+  }
+  .topbar-search input {
+    border: none; outline: none; background: transparent;
+    font-family: 'Urbanist', sans-serif; font-size: 14px; color: var(--plum); width: 100%;
+  }
+  .topbar-search input::placeholder { color: var(--slate); }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--white); border: 1.5px solid var(--lavender);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; color: var(--slate); font-size: 15px;
+  }
+  .icon-btn:hover { background: var(--lavender-soft); border-color: var(--lavender-mid); color: var(--plum); }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #dad8f9, #9b94e8);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--plum); cursor: pointer;
+  }
+  .page-body { padding: 32px; display: flex; flex-direction: column; gap: 48px; }
+  .section-header {
+    display: flex; align-items: baseline; gap: 12px;
+    padding-bottom: 12px; border-bottom: 1.5px solid var(--lavender-soft);
+    margin-bottom: 24px;
+  }
+  .section-title { font-size: 20px; font-weight: 700; color: var(--plum); }
+  .section-tag {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--lavender-deep); background: var(--lavender-soft);
+    padding: 2px 10px; border-radius: 99px;
+  }
+  /* Cards */
+  .card {
+    background: var(--white); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 20px;
+  }
+  .card-grid { display: grid; gap: 16px; }
+  .card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .card-grid-auto { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  /* Stat card */
+  .stat-card { border-radius: var(--radius); padding: 20px; }
+  .stat-card.blue { background: linear-gradient(135deg, #d8edf9 0%, #e8f4fd 100%); }
+  .stat-card.lavender { background: linear-gradient(135deg, #dad8f9 0%, #eceaf9 100%); }
+  .stat-card.pink { background: linear-gradient(135deg, #f9d8f0 0%, #fde8f9 100%); }
+  .stat-card.green { background: linear-gradient(135deg, #d8f9e8 0%, #e8fdf0 100%); }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 36px; font-weight: 800; color: var(--plum); line-height: 1; }
+  .stat-change { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-top: 6px; }
+  .stat-change.up { background: rgba(34,197,94,0.12); color: #16a34a; }
+  .stat-change.down { background: rgba(239,68,68,0.12); color: #dc2626; }
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Urbanist', sans-serif; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; outline: none; text-decoration: none; }
+  .btn-sm { padding: 6px 14px; font-size: 13px; border-radius: 8px; }
+  .btn-md { padding: 10px 20px; font-size: 14px; border-radius: 10px; }
+  .btn-lg { padding: 13px 28px; font-size: 16px; border-radius: 12px; }
+  .btn-xl { padding: 16px 36px; font-size: 18px; border-radius: 14px; }
+  .btn-primary { background: var(--plum); color: white; }
+  .btn-primary:hover { background: #4a3550; box-shadow: 0 4px 16px rgba(53,43,56,0.25); transform: translateY(-1px); }
+  .btn-secondary { background: var(--lavender); color: var(--plum); }
+  .btn-secondary:hover { background: var(--lavender-mid); transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--plum); border: 1.5px solid var(--lavender); }
+  .btn-ghost:hover { background: var(--lavender-soft); border-color: var(--lavender-mid); }
+  .btn-danger { background: #fee2e2; color: #dc2626; }
+  .btn-danger:hover { background: #fecaca; }
+  .btn-success { background: #d1fae5; color: #059669; }
+  .btn-success:hover { background: #a7f3d0; }
+  .btn-icon { padding: 10px; border-radius: 10px; background: var(--lavender-soft); color: var(--plum); }
+  .btn-icon:hover { background: var(--lavender); }
+  .btn-pill { border-radius: 99px !important; }
+  .btn-dark { background: var(--plum); color: white; border-radius: 99px !important; padding: 14px 36px; font-size: 16px; font-weight: 700; }
+  .btn-dark:hover { background: #4a3550; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(53,43,56,0.3); }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; letter-spacing: 0.3px; }
+  .badge-lavender { background: var(--lavender); color: var(--plum); }
+  .badge-plum { background: var(--plum); color: white; }
+  .badge-green { background: #d1fae5; color: #059669; }
+  .badge-red { background: #fee2e2; color: #dc2626; }
+  .badge-yellow { background: #fef9c3; color: #92400e; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-pink { background: var(--pink-soft); color: #9d174d; }
+  .badge-outline { background: transparent; border: 1.5px solid var(--lavender); color: var(--plum); }
+  /* Inputs */
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--plum); }
+  .form-hint { font-size: 12px; color: var(--slate); }
+  .form-error { font-size: 12px; color: #dc2626; }
+  .input {
+    font-family: 'Urbanist', sans-serif; font-size: 14px; color: var(--plum);
+    background: var(--white); border: 1.5px solid var(--lavender);
+    border-radius: 10px; padding: 10px 14px; outline: none;
+    transition: all 0.15s; width: 100%;
+  }
+  .input:focus { border-color: var(--lavender-deep); box-shadow: 0 0 0 3px rgba(155,148,232,0.15); }
+  .input.error { border-color: #dc2626; }
+  .input.success { border-color: #059669; }
+  .input-icon-wrap { position: relative; }
+  .input-icon-wrap .input { padding-left: 38px; }
+  .input-icon-wrap .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--slate); font-size: 15px; }
+  .input-group { display: flex; gap: 0; }
+  .input-group .input { border-radius: 10px 0 0 10px; border-right: none; }
+  .input-group .btn { border-radius: 0 10px 10px 0; }
+  textarea.input { resize: vertical; min-height: 80px; }
+  select.input { appearance: none; cursor: pointer; }
+  /* Toggles & Switches */
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .toggle {
+    width: 44px; height: 24px; border-radius: 99px;
+    background: var(--lavender); position: relative;
+    transition: background 0.2s; flex-shrink: 0; cursor: pointer;
+  }
+  .toggle.on { background: var(--lavender-deep); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: white;
+    transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .toggle.on::after { transform: translateX(20px); }
+  .toggle-label { font-size: 14px; font-weight: 500; color: var(--plum); }
+  /* Checkboxes & Radios */
+  .check-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .custom-check {
+    width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--lavender-mid);
+    background: white; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .custom-check.checked { background: var(--lavender-deep); border-color: var(--lavender-deep); }
+  .custom-check.checked::after { content: '✓'; color: white; font-size: 11px; font-weight: 700; }
+  .custom-radio {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--lavender-mid);
+    background: white; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .custom-radio.checked { border-color: var(--lavender-deep); }
+  .custom-radio.checked::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--lavender-deep); }
+  /* Progress */
+  .progress-bar { height: 6px; background: var(--lavender-soft); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--lavender-deep), var(--lavender-mid)); }
+  .progress-fill.green { background: linear-gradient(90deg, #34d399, #6ee7b7); }
+  .progress-fill.pink { background: linear-gradient(90deg, #f472b6, #ec4899); }
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--lavender-soft); border-radius: 12px; padding: 4px; }
+  .tab { padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--slate); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .tab.active { background: white; color: var(--plum); box-shadow: 0 2px 8px rgba(53,43,56,0.08); }
+  .tab:hover:not(.active) { color: var(--plum); }
+  /* Accordion */
+  .accordion-item { border-radius: 12px; background: white; overflow: hidden; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(53,43,56,0.05); }
+  .accordion-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--plum); transition: background 0.15s; }
+  .accordion-header:hover { background: var(--lavender-soft); }
+  .accordion-body { padding: 0 20px 16px; font-size: 14px; color: var(--slate); line-height: 1.6; display: none; }
+  .accordion-body.open { display: block; }
+  .accordion-icon { transition: transform 0.2s; color: var(--slate); }
+  .accordion-icon.open { transform: rotate(180deg); }
+  /* Charts */
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+  .bar { flex: 1; border-radius: 6px 6px 0 0; min-width: 8px; transition: opacity 0.2s; }
+  .bar:hover { opacity: 0.8; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--slate); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  /* Donut Chart */
+  .donut-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+  .donut-center { position: absolute; text-align: center; }
+  /* Table */
+  .data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .data-table th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate); padding: 10px 14px; text-align: left; background: var(--lavender-soft); }
+  .data-table th:first-child { border-radius: 10px 0 0 10px; }
+  .data-table th:last-child { border-radius: 0 10px 10px 0; }
+  .data-table td { padding: 12px 14px; font-size: 13.5px; color: var(--plum); border-bottom: 1px solid var(--lavender-soft); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--ghost); }
+  .cell-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 13px; }
+  /* Notifications */
+  .notification { display: flex; gap: 12px; padding: 14px 16px; border-radius: 12px; background: white; box-shadow: 0 2px 12px rgba(53,43,56,0.07); margin-bottom: 8px; }
+  .notif-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+  .notif-icon.lavender { background: var(--lavender-soft); }
+  .notif-icon.green { background: #d1fae5; }
+  .notif-icon.red { background: #fee2e2; }
+  .notif-icon.yellow { background: #fef9c3; }
+  .notif-body { flex: 1; }
+  .notif-title { font-size: 13.5px; font-weight: 600; color: var(--plum); margin-bottom: 2px; }
+  .notif-desc { font-size: 12px; color: var(--slate); }
+  .notif-time { font-size: 11px; color: var(--slate); white-space: nowrap; }
+  /* List items */
+  .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--lavender-soft); }
+  .list-item:last-child { border-bottom: none; }
+  .list-avatar { width: 40px; height: 40px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: linear-gradient(135deg, var(--lavender), var(--lavender-deep)); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--plum); font-size: 14px; }
+  .list-info { flex: 1; }
+  .list-name { font-size: 14px; font-weight: 600; color: var(--plum); }
+  .list-sub { font-size: 12px; color: var(--slate); }
+  .list-actions { display: flex; gap: 6px; }
+  /* Modal overlay */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(53,43,56,0.35); display: flex; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
+  .modal { background: white; border-radius: var(--radius-lg); padding: 28px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(53,43,56,0.18); }
+  .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .modal-body { font-size: 14px; color: var(--slate); margin-bottom: 20px; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  /* Tooltip */
+  .tooltip-wrap { position: relative; display: inline-flex; }
+  .tooltip-bubble { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--plum); color: white; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 8px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+  .tooltip-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--plum); }
+  .tooltip-wrap:hover .tooltip-bubble { opacity: 1; }
+  /* Slider */
+  .range-slider { -webkit-appearance: none; appearance: none; height: 6px; background: var(--lavender-soft); border-radius: 99px; outline: none; width: 100%; cursor: pointer; }
+  .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--lavender-deep); border: 3px solid white; box-shadow: 0 2px 6px rgba(53,43,56,0.2); }
+  /* Tags */
+  .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 99px; background: var(--lavender-soft); color: var(--plum); }
+  .tag .tag-remove { cursor: pointer; opacity: 0.6; }
+  .tag .tag-remove:hover { opacity: 1; }
+  /* Dropdown */
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-menu { position: absolute; top: calc(100% + 6px); left: 0; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(53,43,56,0.12); min-width: 180px; z-index: 50; padding: 6px; border: 1px solid var(--lavender-soft); }
+  .dropdown-item { padding: 8px 12px; border-radius: 8px; font-size: 13.5px; color: var(--plum); cursor: pointer; transition: background 0.15s; display: flex; align-items: center; gap: 8px; }
+  .dropdown-item:hover { background: var(--lavender-soft); }
+  .dropdown-divider { height: 1px; background: var(--lavender-soft); margin: 4px 0; }
+  /* Timeline */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline-item { display: flex; gap: 16px; padding-bottom: 24px; position: relative; }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--lavender-deep); flex-shrink: 0; margin-top: 4px; z-index: 1; }
+  .timeline-line { position: absolute; left: 5px; top: 16px; bottom: 0; width: 2px; background: var(--lavender-soft); }
+  .timeline-item:last-child .timeline-line { display: none; }
+  .timeline-content { flex: 1; }
+  .timeline-title { font-size: 14px; font-weight: 600; color: var(--plum); }
+  .timeline-time { font-size: 12px; color: var(--slate); margin-top: 2px; }
+  .timeline-desc { font-size: 13px; color: var(--slate); margin-top: 6px; line-height: 1.5; }
+  /* Breadcrumb */
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--slate); }
+  .breadcrumb a { color: var(--slate); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--plum); }
+  .breadcrumb-sep { color: var(--lavender-mid); }
+  .breadcrumb .current { color: var(--plum); font-weight: 600; }
+  /* Generative AI containers */
+  .ai-container { border-radius: var(--radius-lg); padding: 24px; background: linear-gradient(135deg, #f0effe 0%, #e8eafd 50%, #f5d8f9 100%); border: 1px solid var(--lavender); position: relative; overflow: hidden; }
+  .ai-container::before { content: ''; position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, rgba(155,148,232,0.2), transparent); }
+  .ai-label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--lavender-deep); background: white; padding: 4px 10px; border-radius: 99px; margin-bottom: 12px; }
+  .ai-prompt { font-size: 15px; font-weight: 600; color: var(--plum); margin-bottom: 12px; line-height: 1.5; }
+  .ai-response { font-size: 14px; color: var(--slate); line-height: 1.7; }
+  .ai-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .ai-input-bar { display: flex; gap: 0; align-items: center; background: white; border: 1.5px solid var(--lavender); border-radius: 14px; overflow: hidden; padding: 4px 4px 4px 16px; }
+  .ai-input-bar input { flex: 1; border: none; outline: none; font-family: 'Urbanist', sans-serif; font-size: 14px; color: var(--plum); background: transparent; }
+  .ai-input-bar input::placeholder { color: var(--slate); }
+  .ai-send-btn { width: 36px; height: 36px; border-radius: 10px; background: var(--plum); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; font-size: 16px; }
+  .ai-send-btn:hover { background: #4a3550; }
+  /* Quiz / Questions */
+  .quiz-card { background: white; border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow); }
+  .quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .quiz-progress-text { font-size: 12px; color: var(--slate); font-weight: 600; }
+  .quiz-question { font-size: 18px; font-weight: 700; color: var(--plum); margin-bottom: 20px; line-height: 1.4; }
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+  .quiz-option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 2px solid var(--lavender); cursor: pointer; transition: all 0.15s; font-size: 14px; font-weight: 500; color: var(--plum); }
+  .quiz-option:hover { border-color: var(--lavender-deep); background: var(--lavender-soft); }
+  .quiz-option.selected { border-color: var(--lavender-deep); background: var(--lavender-soft); font-weight: 600; }
+  .quiz-option.correct { border-color: #059669; background: #d1fae5; color: #065f46; }
+  .quiz-option.wrong { border-color: #dc2626; background: #fee2e2; color: #991b1b; }
+  .quiz-option-letter { width: 28px; height: 28px; border-radius: 8px; background: var(--lavender-soft); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; color: var(--lavender-deep); }
+  .quiz-option.selected .quiz-option-letter { background: var(--lavender-deep); color: white; }
+  /* Analysis cards */
+  .analysis-card { background: white; border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow); }
+  .analysis-title { font-size: 16px; font-weight: 700; color: var(--plum); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .insight-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--lavender-soft); }
+  .insight-row:last-child { border-bottom: none; }
+  .insight-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .insight-text { flex: 1; font-size: 13.5px; color: var(--plum); }
+  .insight-score { font-size: 16px; font-weight: 800; color: var(--plum); }
+  /* Pipeline table */
+  .pipeline-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; }
+  .pipeline-table th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate); padding: 8px 12px; text-align: left; }
+  .pipeline-table td { padding: 4px 6px; }
+  .pipeline-table .row-label { font-size: 13px; color: var(--slate); padding: 4px 12px; white-space: nowrap; }
+  .pipeline-cell { border-radius: 8px; padding: 10px 16px; font-weight: 700; font-size: 15px; color: var(--plum); text-align: center; }
+  /* Platform insight bars */
+  .platform-bar-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+  .platform-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+  .platform-bar-fill { flex: 1; }
+  .platform-bar-track { height: 5px; background: var(--lavender-soft); border-radius: 99px; overflow: hidden; margin-top: 3px; }
+  .platform-bar-progress { height: 100%; background: linear-gradient(90deg, var(--lavender-deep), var(--lavender-mid)); border-radius: 99px; }
+  .platform-pct { font-size: 12px; font-weight: 700; color: var(--slate); white-space: nowrap; }
+  /* Chip group */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 500; background: var(--lavender-soft); color: var(--plum); cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; }
+  .chip:hover { border-color: var(--lavender-mid); }
+  .chip.active { background: var(--lavender); border-color: var(--lavender-deep); font-weight: 600; }
+  /* Calendar mini */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day-name { text-align: center; font-size: 11px; font-weight: 700; color: var(--slate); padding: 4px 0; }
+  .cal-day { text-align: center; font-size: 13px; padding: 6px 4px; border-radius: 8px; cursor: pointer; color: var(--plum); transition: all 0.15s; }
+  .cal-day:hover { background: var(--lavender-soft); }
+  .cal-day.today { background: var(--lavender-deep); color: white; font-weight: 700; }
+  .cal-day.has-event::after { content: ''; display: block; width: 4px; height: 4px; border-radius: 50%; background: var(--lavender-deep); margin: 2px auto 0; }
+  .cal-day.today::after { background: white; }
+  .cal-day.other-month { color: var(--lavender-mid); }
+  /* Emotion / Mood */
+  .mood-row { display: flex; gap: 12px; justify-content: center; }
+  .mood-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 16px; border-radius: 14px; border: 2px solid var(--lavender-soft); background: white; cursor: pointer; transition: all 0.15s; }
+  .mood-btn:hover { border-color: var(--lavender-mid); transform: scale(1.05); }
+  .mood-btn.active { border-color: var(--lavender-deep); background: var(--lavender-soft); }
+  .mood-emoji { font-size: 24px; }
+  .mood-label { font-size: 11px; font-weight: 600; color: var(--slate); }
+  /* Dashboard header */
+  .dash-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+  .dash-greeting { font-size: 28px; font-weight: 800; color: var(--plum); }
+  .dash-sub { font-size: 14px; color: var(--slate); margin-top: 2px; }
+  /* Workbench */
+  .workbench { background: white; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+  .workbench-toolbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--lavender-soft); border-bottom: 1px solid var(--lavender); }
+  .workbench-body { padding: 20px; }
+  /* Console */
+  .console { background: var(--plum); border-radius: var(--radius); padding: 20px; font-family: 'Courier New', monospace; min-height: 120px; }
+  .console-line { font-size: 12px; color: #a89db0; line-height: 1.8; }
+  .console-line.prompt { color: var(--lavender-mid); }
+  .console-line.success { color: #6ee7b7; }
+  .console-line.error { color: #fca5a5; }
+  .console-line.info { color: #93c5fd; }
+  /* Misc */
+  .divider { height: 1px; background: var(--lavender-soft); margin: 4px 0; }
+  .section-block { margin-bottom: 0; }
+  .label { font-size: 12px; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+  .flex-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+  .flex-col { display: flex; flex-direction: column; gap: 12px; }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--lavender); border-radius: 99px; }
+  /* Pagination */
+  .pagination { display: flex; align-items: center; gap: 4px; }
+  .page-btn { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; color: var(--slate); background: white; transition: all 0.15s; }
+  .page-btn.active { background: var(--lavender-deep); color: white; border-color: var(--lavender-deep); }
+  .page-btn:hover:not(.active) { background: var(--lavender-soft); color: var(--plum); }
+  /* Skeleton */
+  @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+  .skeleton { background: linear-gradient(90deg, var(--lavender-soft) 25%, var(--lavender) 50%, var(--lavender-soft) 75%); background-size: 800px 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+  /* Gradient text */
+  .gradient-text { background: linear-gradient(135deg, #352b38, #9b94e8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  /* Stars */
+  .star-row { display: flex; gap: 3px; }
+  .star { font-size: 16px; color: #fbbf24; }
+  .star.empty { color: #e5e7eb; }
+  /* KPI ring */
+  .kpi-ring { position: relative; display: inline-flex; }
+  .kpi-ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  /* Alert */
+  .alert { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 12px; border-left: 4px solid; }
+  .alert-info { background: #eff6ff; border-color: #3b82f6; color: #1e40af; }
+  .alert-success { background: #f0fdf4; border-color: #22c55e; color: #166534; }
+  .alert-warning { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
+  .alert-error { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+  .alert-icon { font-size: 18px; flex-shrink: 0; }
+  .alert-body {}
+  .alert-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .alert-desc { font-size: 13px; opacity: 0.85; }
+  /* Heat map */
+  .heatmap { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .heat-cell { aspect-ratio: 1; border-radius: 4px; }
+  .heat-0 { background: var(--lavender-soft); }
+  .heat-1 { background: #c4bff7; }
+  .heat-2 { background: #a89bf2; }
+  .heat-3 { background: var(--lavender-deep); }
+  .heat-4 { background: #7065d4; }
+  /* Radial progress */
+  .radial-container { display: flex; gap: 20px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ── tiny helpers ── */
+const Icon = ({ name, size = 16, style = {} }) => {
+  const icons = {
+    home: "⌂", layout: "▦", users: "◎", calendar: "▤", file: "▭",
+    bell: "🔔", settings: "⚙", search: "⌕", chevron: "›", arrow: "→",
+    plus: "+", minus: "−", close: "×", check: "✓", info: "ℹ",
+    warning: "⚠", error: "✕", success: "✓", star: "★",
+    send: "↗", ai: "✦", refresh: "↻", filter: "⊞", download: "↓",
+    edit: "✎", trash: "⊘", copy: "⊕", eye: "◉", lock: "⊛",
+    chart: "▥", analytics: "◈", brain: "◎", heart: "♡",
+    mindful: "✿", leaf: "❧", moon: "◐", sun: "☀",
+    zap: "⚡", shield: "⊙", goal: "◉", journal: "▤",
+    phone: "☏", msg: "✉", dots: "⋯",
+  };
+  return <span style={{ fontSize: size, ...style }}>{icons[name] || "·"}</span>;
+};
+
+const SVGBar = ({ values, colors }) => {
+  const max = Math.max(...values);
+  const w = 200, h = 80, bw = 18, gap = 6;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="80">
+      {values.map((v, i) => {
+        const bh = (v / max) * (h - 10);
+        const x = i * (bw + gap) + 4;
+        return (
+          <g key={i}>
+            <rect x={x} y={h - bh} width={bw} height={bh} rx="4"
+              fill={colors[i % colors.length]} opacity="0.85" />
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
+
+const DonutChart = ({ segments, size = 100, thickness = 18 }) => {
+  const r = size / 2 - thickness / 2;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  const total = segments.reduce((a, b) => a + b.value, 0);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {segments.map((seg, i) => {
+        const dash = (seg.value / total) * circ;
+        const el = (
+          <circle key={i} cx={size/2} cy={size/2} r={r}
+            fill="none" stroke={seg.color} strokeWidth={thickness}
+            strokeDasharray={`${dash} ${circ - dash}`}
+            strokeDashoffset={-offset} strokeLinecap="round"
+            style={{ transform: `rotate(-90deg)`, transformOrigin: 'center' }}
+          />
+        );
+        offset += dash;
+        return el;
+      })}
+    </svg>
+  );
+};
+
+const LineSparkline = ({ values, color = "#9b94e8" }) => {
+  const max = Math.max(...values), min = Math.min(...values);
+  const w = 120, h = 40;
+  const pts = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * w;
+    const y = h - ((v - min) / (max - min || 1)) * (h - 8) - 4;
+    return `${x},${y}`;
+  }).join(' ');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={`0,${h} ${pts} ${w},${h}`} fill={color} fillOpacity="0.1" stroke="none" />
+    </svg>
+  );
+};
+
+/* ── Accordion ── */
+function Accordion({ items }) {
+  const [open, setOpen] = useState(null);
+  return (
+    <div>
+      {items.map((item, i) => (
+        <div key={i} className="accordion-item">
+          <div className="accordion-header" onClick={() => setOpen(open === i ? null : i)}>
+            <span>{item.title}</span>
+            <span className={`accordion-icon ${open === i ? 'open' : ''}`}>⌄</span>
+          </div>
+          <div className={`accordion-body ${open === i ? 'open' : ''}`}>{item.body}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Toggle ── */
+function Toggle({ label, defaultOn = false }) {
+  const [on, setOn] = useState(defaultOn);
+  return (
+    <div className="toggle-wrap" onClick={() => setOn(!on)}>
+      <div className={`toggle ${on ? 'on' : ''}`} />
+      <span className="toggle-label">{label}</span>
+    </div>
+  );
+}
+
+/* ── Tabs ── */
+function Tabs({ tabs, children }) {
+  const [active, setActive] = useState(0);
+  return (
+    <div>
+      <div className="tabs" style={{ marginBottom: 16 }}>
+        {tabs.map((t, i) => (
+          <div key={i} className={`tab ${active === i ? 'active' : ''}`} onClick={() => setActive(i)}>{t}</div>
+        ))}
+      </div>
+      {children && children[active]}
+    </div>
+  );
+}
+
+/* ── Quiz ── */
+function QuizComponent() {
+  const [selected, setSelected] = useState(null);
+  const [revealed, setRevealed] = useState(false);
+  const q = {
+    text: "Which mindfulness technique is most effective for acute stress relief?",
+    options: ["Box Breathing", "Body Scan Meditation", "Cognitive Reframing", "Progressive Muscle Relaxation"],
+    correct: 0
+  };
+  return (
+    <div className="quiz-card">
+      <div className="quiz-header">
+        <span className="badge badge-lavender">Question 3 / 8</span>
+        <span className="quiz-progress-text">37.5% complete</span>
+      </div>
+      <div className="progress-bar" style={{ marginBottom: 20 }}>
+        <div className="progress-fill" style={{ width: '37.5%' }} />
+      </div>
+      <div className="quiz-question">{q.text}</div>
+      <div className="quiz-options">
+        {q.options.map((opt, i) => {
+          let cls = 'quiz-option';
+          if (selected === i) cls += ' selected';
+          if (revealed && i === q.correct) cls += ' correct';
+          if (revealed && selected === i && i !== q.correct) cls += ' wrong';
+          return (
+            <div key={i} className={cls} onClick={() => !revealed && setSelected(i)}>
+              <div className={`quiz-option-letter ${selected === i ? 'selected' : ''}`}>{String.fromCharCode(65+i)}</div>
+              {opt}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+        <button className="btn btn-secondary btn-md" disabled={selected === null} onClick={() => setRevealed(true)}>Check Answer</button>
+        <button className="btn btn-primary btn-md" onClick={() => { setSelected(null); setRevealed(false); }}>Next →</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Modal ── */
+function ModalDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button className="btn btn-primary btn-md" onClick={() => setOpen(true)}>Open Modal</button>
+      {open && (
+        <div className="modal-overlay" onClick={() => setOpen(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-title">Archive Session?</div>
+            <div className="modal-body">This mindfulness session will be moved to your archive. You can restore it at any time from your session history.</div>
+            <div className="modal-actions">
+              <button className="btn btn-ghost btn-md" onClick={() => setOpen(false)}>Cancel</button>
+              <button className="btn btn-primary btn-md" onClick={() => setOpen(false)}>Archive</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ── Mood Selector ── */
+function MoodSelector() {
+  const [mood, setMood] = useState(null);
+  const moods = [
+    { emoji: '😔', label: 'Low' },
+    { emoji: '😐', label: 'Neutral' },
+    { emoji: '🙂', label: 'Good' },
+    { emoji: '😊', label: 'Great' },
+    { emoji: '🤩', label: 'Thriving' },
+  ];
+  return (
+    <div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--plum)', marginBottom: 12 }}>How are you feeling today?</div>
+      <div className="mood-row">
+        {moods.map((m, i) => (
+          <div key={i} className={`mood-btn ${mood === i ? 'active' : ''}`} onClick={() => setMood(i)}>
+            <span className="mood-emoji">{m.emoji}</span>
+            <span className="mood-label">{m.label}</span>
+          </div>
+        ))}
+      </div>
+      {mood !== null && (
+        <div style={{ marginTop: 12, fontSize: 13, color: 'var(--lavender-deep)', fontWeight: 600 }}>
+          Logged: {moods[mood].label} · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── AI Chat ── */
+function AIChat() {
+  const [msgs, setMsgs] = useState([
+    { role: 'ai', text: "Hello! I'm Vera, your mindfulness companion. How are you feeling right now?" },
+    { role: 'user', text: "I've been feeling anxious about work lately." },
+    { role: 'ai', text: "I hear you. Work anxiety is really common. Let's try a quick 3-step grounding exercise together. Take a slow breath in for 4 counts..." }
+  ]);
+  const [input, setInput] = useState('');
+  const send = () => {
+    if (!input.trim()) return;
+    setMsgs(m => [...m, { role: 'user', text: input }]);
+    setInput('');
+    setTimeout(() => setMsgs(m => [...m, { role: 'ai', text: "That's a great insight. Let me suggest a mindfulness practice tailored to what you're experiencing..." }]), 800);
+  };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 240, overflowY: 'auto' }}>
+        {msgs.map((m, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            {m.role === 'ai' && (
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #dad8f9, #9b94e8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>✦</div>
+            )}
+            <div style={{
+              padding: '10px 14px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+              background: m.role === 'user' ? 'var(--plum)' : 'var(--lavender-soft)',
+              color: m.role === 'user' ? 'white' : 'var(--plum)',
+              maxWidth: '75%', fontSize: 13.5, lineHeight: 1.5
+            }}>{m.text}</div>
+          </div>
+        ))}
+      </div>
+      <div className="ai-input-bar">
+        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="Ask Vera anything…" />
+        <button className="ai-send-btn" onClick={send}>↗</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Calendar ── */
+function MiniCalendar() {
+  const today = 2;
+  const days = ['S','M','T','W','T','F','S'];
+  const events = [5, 8, 12, 15, 19, 22, 26];
+  const grid = [28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2];
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, fontSize: 14 }}>May 2026</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="icon-btn" style={{ width: 28, height: 28, borderRadius: 8 }}>‹</button>
+          <button className="icon-btn" style={{ width: 28, height: 28, borderRadius: 8 }}>›</button>
+        </div>
+      </div>
+      <div className="cal-grid">
+        {days.map(d => <div key={d} className="cal-day-name">{d}</div>)}
+        {grid.map((d, i) => (
+          <div key={i} className={`cal-day ${d === today && i > 2 ? 'today' : ''} ${events.includes(d) && i > 2 ? 'has-event' : ''} ${i < 3 ? 'other-month' : ''}`}>{d}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Main App ── */
+function App() {
+  const [navActive, setNavActive] = useState('components');
+  const [chip, setChip] = useState([true, false, false, true, false]);
+  const [sliderVal, setSliderVal] = useState(65);
+  const [dropOpen, setDropOpen] = useState(false);
+  const [checks, setChecks] = useState([true, false, true]);
+  const [radios, setRadios] = useState(1);
+  const [accordOpen, setAccordOpen] = useState(null);
+
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'home' },
+    { id: 'analytics', label: 'Analytics', icon: 'analytics', badge: '3' },
+    { id: 'sessions', label: 'Sessions', icon: 'mindful' },
+    { id: 'users', label: 'Users', icon: 'users' },
+    { id: 'calendar', label: 'Calendar', icon: 'calendar' },
+    { id: 'journal', label: 'Journal', icon: 'journal' },
+  ];
+
+  const pipelineColors = [
+    ['#dbeafe','#eff6ff','#f0f9ff','#e0f2fe','#bfdbfe','#93c5fd'],
+    ['#d8f9e8','#d1fae5','#a7f3d0'],
+    ['#f9d8f0','#fce7f3','#fbcfe8','#f9a8d4'],
+    ['#d8edf9','#dbeafe','#bfdbfe','#93c5fd','#dbeafe','#bfdbfe'],
+    ['#dad8f9','#e0e7ff','#c7d2fe','#a5b4fc'],
+  ];
+
+  const platformData = [
+    { name: 'Calm', pct: 60, color: '#9b94e8', abbr: 'C' },
+    { name: 'Headspace', pct: 20, color: '#6ee7b7', abbr: 'H' },
+    { name: 'Insight Timer', pct: 10, color: '#fca5a5', abbr: 'I' },
+    { name: 'Waking Up', pct: 7, color: '#fcd34d', abbr: 'W' },
+    { name: 'Ten Percent', pct: 3, color: '#93c5fd', abbr: 'T' },
+  ];
+
+  return (
+    <div className="app-shell">
+      {/* Sidebar */}
+      <nav className="sidebar">
+        <div className="sidebar-logo">
+          <div className="logo-mark">V</div>
+          <span className="logo-text">Veramind</span>
+        </div>
+        <div className="sidebar-nav">
+          <span className="nav-section-label">Main</span>
+          {navItems.map(n => (
+            <a key={n.id} className={`nav-item ${navActive === n.id ? 'active' : ''}`} href="#" onClick={e => { e.preventDefault(); setNavActive(n.id); }}>
+              <Icon name={n.icon} size={16} />
+              {n.label}
+              {n.badge && <span className="nav-badge">{n.badge}</span>}
+            </a>
+          ))}
+          <span className="nav-section-label" style={{ marginTop: 8 }}>Settings</span>
+          <a className="nav-item" href="#"><Icon name="settings" size={16} /> Preferences</a>
+          <a className="nav-item" href="#"><Icon name="shield" size={16} /> Privacy</a>
+        </div>
+        <div className="sidebar-footer">
+          <div className="list-item" style={{ padding: '12px 0 0' }}>
+            <div className="list-avatar">AM</div>
+            <div className="list-info">
+              <div className="list-name" style={{ fontSize: 13 }}>Alexandra M.</div>
+              <div className="list-sub">Pro Plan</div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main */}
+      <div className="main-content">
+        {/* Topbar */}
+        <div className="topbar">
+          <div className="topbar-title">Component Library</div>
+          <div className="topbar-search">
+            <span style={{ color: 'var(--slate)', fontSize: 14 }}>⌕</span>
+            <input placeholder="Search components…" />
+          </div>
+          <div className="topbar-actions">
+            <div className="icon-btn">🔔</div>
+            <div className="icon-btn">⚙</div>
+            <div className="avatar">AM</div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="page-body">
+
+          {/* Breadcrumb */}
+          <div className="breadcrumb" style={{ marginBottom: -36 }}>
+            <a href="#">Veramind</a>
+            <span className="breadcrumb-sep">›</span>
+            <a href="#">Design System</a>
+            <span className="breadcrumb-sep">›</span>
+            <span className="current">Component Library</span>
+          </div>
+
+          {/* ── STAT CARDS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Stat Cards</div>
+              <span className="section-tag">Dashboard</span>
+            </div>
+            <div className="card-grid card-grid-4">
+              {[
+                { label: 'Sessions Today', val: '+42', pct: '24%', up: true, color: 'lavender', bars: [40,60,35,75,55,80,65,90,50,70] },
+                { label: 'Mood Score', val: '8.4', pct: '14%', up: false, color: 'pink', bars: [50,60,55,70,65,60,75,80,70,85] },
+                { label: 'Mindful Minutes', val: '2.4h', pct: '30%', up: true, color: 'blue', bars: [30,45,55,40,60,70,55,80,65,90] },
+                { label: 'Streak', val: '12d', pct: '8%', up: true, color: 'green', bars: [20,30,40,50,60,70,80,90,85,95] },
+              ].map((s, i) => (
+                <div key={i} className={`stat-card ${s.color}`}>
+                  <div className="stat-label">{s.label}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                    <div className="stat-value">{s.val}</div>
+                    <span className={`stat-change ${s.up ? 'up' : 'down'}`}>{s.up ? '↑' : '↓'} {s.pct}</span>
+                  </div>
+                  <SVGBar values={s.bars} colors={['#b8b4f0','#9b94e8','#7c74e0']} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── BUTTONS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Buttons</div>
+              <span className="section-tag">Actions</span>
+            </div>
+            <div className="card flex-col">
+              <div className="label">Variants</div>
+              <div className="btn-row">
+                <button className="btn btn-primary btn-md">Primary</button>
+                <button className="btn btn-secondary btn-md">Secondary</button>
+                <button className="btn btn-ghost btn-md">Ghost</button>
+                <button className="btn btn-danger btn-md">Danger</button>
+                <button className="btn btn-success btn-md">Success</button>
+                <button className="btn btn-icon btn-md">⚙</button>
+              </div>
+              <div className="label" style={{ marginTop: 8 }}>Sizes</div>
+              <div className="btn-row">
+                <button className="btn btn-primary btn-sm">Small</button>
+                <button className="btn btn-primary btn-md">Medium</button>
+                <button className="btn btn-primary btn-lg">Large</button>
+                <button className="btn btn-primary btn-xl">Extra Large</button>
+              </div>
+              <div className="label" style={{ marginTop: 8 }}>Pill / CTA</div>
+              <div className="btn-row">
+                <button className="btn btn-primary btn-md btn-pill">Start Session</button>
+                <button className="btn btn-secondary btn-md btn-pill">Learn More</button>
+                <button className="btn btn-dark">Get Started →</button>
+                <button className="btn btn-ghost btn-md btn-pill" style={{ borderRadius: 99 }}>View All</button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── BADGES & CHIPS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Badges, Tags & Chips</div>
+              <span className="section-tag">Labels</span>
+            </div>
+            <div className="card flex-col">
+              <div className="label">Badges</div>
+              <div className="btn-row">
+                <span className="badge badge-lavender">Lavender</span>
+                <span className="badge badge-plum">Plum</span>
+                <span className="badge badge-green">Active</span>
+                <span className="badge badge-red">Urgent</span>
+                <span className="badge badge-yellow">Pending</span>
+                <span className="badge badge-blue">Info</span>
+                <span className="badge badge-pink">Featured</span>
+                <span className="badge badge-outline">Outline</span>
+              </div>
+              <div className="label" style={{ marginTop: 8 }}>Chips (Selectable)</div>
+              <div className="chip-group">
+                {['Anxiety', 'Sleep', 'Focus', 'Stress', 'Gratitude', 'Breathing', 'Meditation'].map((c, i) => (
+                  <div key={i} className={`chip ${chip[i % chip.length] ? 'active' : ''}`}
+                    onClick={() => setChip(prev => { const n = [...prev]; n[i % n.length] = !n[i % n.length]; return n; })}>
+                    {c}
+                  </div>
+                ))}
+              </div>
+              <div className="label" style={{ marginTop: 8 }}>Tags (Removable)</div>
+              <div className="btn-row">
+                {['Focus', 'Evening', 'Guided', 'Body Scan'].map((t, i) => (
+                  <span key={i} className="tag">{t} <span className="tag-remove">×</span></span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── FORM INPUTS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Form Inputs</div>
+              <span className="section-tag">Forms</span>
+            </div>
+            <div className="card">
+              <div className="card-grid card-grid-2" style={{ gap: 20 }}>
+                <div className="flex-col">
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input className="input" placeholder="Alexandra Moore" />
+                    <span className="form-hint">This will appear on your profile</span>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <div className="input-icon-wrap">
+                      <span className="input-icon">✉</span>
+                      <input className="input" placeholder="alex@veramind.com" />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Password</label>
+                    <input className="input success" type="password" value="••••••••" readOnly />
+                    <span style={{ fontSize: 12, color: '#059669' }}>✓ Strong password</span>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Confirm Password</label>
+                    <input className="input error" type="password" value="••••••" readOnly />
+                    <span className="form-error">✕ Passwords do not match</span>
+                  </div>
+                </div>
+                <div className="flex-col">
+                  <div className="form-group">
+                    <label className="form-label">Session Type</label>
+                    <select className="input">
+                      <option>Guided Meditation</option>
+                      <option>Breathwork</option>
+                      <option>Body Scan</option>
+                      <option>Sleep Story</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Session Notes</label>
+                    <textarea className="input" placeholder="How did this session feel…" style={{ height: 80 }} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Search + Action</label>
+                    <div className="input-group">
+                      <input className="input" placeholder="Search sessions…" />
+                      <button className="btn btn-primary btn-md" style={{ borderRadius: '0 10px 10px 0', padding: '10px 16px' }}>Go</button>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Stress Level: {sliderVal}%</label>
+                    <input type="range" className="range-slider" min={0} max={100} value={sliderVal} onChange={e => setSliderVal(+e.target.value)} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── TOGGLES & CHECKBOXES ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Toggles, Checkboxes & Radios</div>
+              <span className="section-tag">Controls</span>
+            </div>
+            <div className="card">
+              <div className="card-grid card-grid-3">
+                <div className="flex-col">
+                  <div className="label">Toggles</div>
+                  <Toggle label="Daily reminders" defaultOn={true} />
+                  <Toggle label="Dark mode" />
+                  <Toggle label="Focus mode" defaultOn={true} />
+                  <Toggle label="Sound effects" />
+                </div>
+                <div className="flex-col">
+                  <div className="label">Checkboxes</div>
+                  {['Morning meditation', 'Breathing exercise', 'Gratitude journaling'].map((c, i) => (
+                    <div key={i} className="check-wrap" onClick={() => setChecks(prev => { const n = [...prev]; n[i] = !n[i]; return n; })}>
+                      <div className={`custom-check ${checks[i] ? 'checked' : ''}`} />
+                      <span style={{ fontSize: 14, color: 'var(--plum)' }}>{c}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex-col">
+                  <div className="label">Radio Buttons</div>
+                  {['5 minutes', '10 minutes', '20 minutes', '30 minutes'].map((r, i) => (
+                    <div key={i} className="check-wrap" onClick={() => setRadios(i)}>
+                      <div className={`custom-radio ${radios === i ? 'checked' : ''}`} />
+                      <span style={{ fontSize: 14, color: 'var(--plum)' }}>{r}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── TABS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Tabs</div>
+              <span className="section-tag">Navigation</span>
+            </div>
+            <div className="card">
+              <Tabs tabs={['Overview', 'Sessions', 'Insights', 'History']}>
+                <div style={{ padding: '16px 0', color: 'var(--slate)', fontSize: 14, lineHeight: 1.7 }}>
+                  <strong style={{ color: 'var(--plum)' }}>Overview</strong> — Your mindfulness journey at a glance. Track streaks, mood trends, and session history all in one place.
+                </div>
+                <div style={{ padding: '16px 0', color: 'var(--slate)', fontSize: 14 }}>Sessions content — recent meditation and breathwork logs.</div>
+                <div style={{ padding: '16px 0', color: 'var(--slate)', fontSize: 14 }}>Insights — AI-powered analysis of your patterns.</div>
+                <div style={{ padding: '16px 0', color: 'var(--slate)', fontSize: 14 }}>History — full timeline of all past sessions.</div>
+              </Tabs>
+            </div>
+          </div>
+
+          {/* ── ACCORDION ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Accordion</div>
+              <span className="section-tag">Content</span>
+            </div>
+            <Accordion items={[
+              { title: 'What is mindfulness meditation?', body: 'Mindfulness meditation is a mental training practice that teaches you to slow down racing thoughts, let go of negativity, and calm both your mind and body. It involves focusing on the present moment.' },
+              { title: 'How long should I meditate daily?', body: 'Even 5–10 minutes a day can create meaningful change. Research suggests 20 minutes daily produces measurable benefits in stress reduction, focus, and emotional regulation within 8 weeks.' },
+              { title: 'What breathing techniques help anxiety?', body: 'Box breathing (4-4-4-4), 4-7-8 breathing, and diaphragmatic breathing are highly effective for acute anxiety. Coherence breathing at 5-6 breaths per minute is excellent for ongoing stress management.' },
+              { title: 'Can mindfulness improve sleep quality?', body: 'Yes. Body scan meditation and progressive muscle relaxation performed before bed can significantly improve sleep onset latency and overall sleep quality by activating the parasympathetic nervous system.' },
+            ]} />
+          </div>
+
+          {/* ── ALERTS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Alerts & Notifications</div>
+              <span className="section-tag">Feedback</span>
+            </div>
+            <div className="flex-col">
+              <div className="alert alert-info"><span className="alert-icon">ℹ</span><div className="alert-body"><div className="alert-title">Session starting soon</div><div className="alert-desc">Your scheduled guided meditation begins in 5 minutes.</div></div></div>
+              <div className="alert alert-success"><span className="alert-icon">✓</span><div className="alert-body"><div className="alert-title">Streak achieved!</div><div className="alert-desc">Congratulations on your 7-day mindfulness streak. Keep it up!</div></div></div>
+              <div className="alert alert-warning"><span className="alert-icon">⚠</span><div className="alert-body"><div className="alert-title">High stress detected</div><div className="alert-desc">Your biometric data suggests elevated stress. A 5-min breathing exercise is recommended.</div></div></div>
+              <div className="alert alert-error"><span className="alert-icon">✕</span><div className="alert-body"><div className="alert-title">Session interrupted</div><div className="alert-desc">Your session was interrupted. Progress has been saved up to the 8:32 mark.</div></div></div>
+            </div>
+          </div>
+
+          {/* ── CHARTS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Visual Charts</div>
+              <span className="section-tag">Analytics</span>
+            </div>
+            <div className="card-grid card-grid-3">
+              {/* Bar Chart */}
+              <div className="card">
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Weekly Sessions</div>
+                <div style={{ fontSize: 12, color: 'var(--slate)', marginBottom: 12 }}>Sessions per day this week</div>
+                <div className="bar-chart">
+                  {[40,65,35,80,55,90,70].map((h, i) => (
+                    <div key={i} className="bar" style={{ height: `${h}%`, background: i === 5 ? 'linear-gradient(180deg, #9b94e8, #dad8f9)' : 'var(--lavender-soft)' }} />
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                  {['M','T','W','T','F','S','S'].map((d, i) => (
+                    <span key={i} style={{ fontSize: 11, color: 'var(--slate)', flex: 1, textAlign: 'center' }}>{d}</span>
+                  ))}
+                </div>
+              </div>
+              {/* Donut */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4, width: '100%' }}>Session Types</div>
+                <div style={{ fontSize: 12, color: 'var(--slate)', marginBottom: 12, width: '100%' }}>Distribution this month</div>
+                <div style={{ position: 'relative' }}>
+                  <DonutChart size={120} thickness={20} segments={[
+                    { value: 40, color: '#9b94e8' },
+                    { value: 25, color: '#6ee7b7' },
+                    { value: 20, color: '#fca5a5' },
+                    { value: 15, color: '#fcd34d' },
+                  ]} />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 20, fontWeight: 800 }}>142</span>
+                    <span style={{ fontSize: 10, color: 'var(--slate)' }}>total</span>
+                  </div>
+                </div>
+                <div className="chart-legend" style={{ marginTop: 12, justifyContent: 'center' }}>
+                  {[['Meditation','#9b94e8'],['Sleep','#6ee7b7'],['Breathe','#fca5a5'],['Focus','#fcd34d']].map(([l,c]) => (
+                    <div key={l} className="legend-item"><div className="legend-dot" style={{ background: c }} />{l}</div>
+                  ))}
+                </div>
+              </div>
+              {/* Line sparkline + stats */}
+              <div className="card">
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Mood Trend</div>
+                <div style={{ fontSize: 12, color: 'var(--slate)', marginBottom: 12 }}>30-day rolling average</div>
+                <LineSparkline values={[5,6,5.5,7,6.8,7.2,7.8,7.5,8,8.2,7.9,8.4]} color="#9b94e8" />
+                <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+                  <div><div style={{ fontSize: 22, fontWeight: 800 }}>8.4</div><div style={{ fontSize: 11, color: 'var(--slate)' }}>Current</div></div>
+                  <div><div style={{ fontSize: 22, fontWeight: 800, color: '#059669' }}>↑ 1.2</div><div style={{ fontSize: 11, color: 'var(--slate)' }}>vs last month</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── PROGRESS BARS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Progress & Metrics</div>
+              <span className="section-tag">Indicators</span>
+            </div>
+            <div className="card-grid card-grid-2">
+              <div className="card flex-col">
+                <div className="label">Progress Bars</div>
+                {[
+                  { label: 'Mindfulness streak', val: 78, color: '' },
+                  { label: 'Weekly goal', val: 55, color: 'green' },
+                  { label: 'Sleep quality', val: 90, color: 'pink' },
+                  { label: 'Anxiety reduction', val: 42, color: '' },
+                ].map((p, i) => (
+                  <div key={i}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 500 }}>{p.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--lavender-deep)' }}>{p.val}%</span>
+                    </div>
+                    <div className="progress-bar">
+                      <div className={`progress-fill ${p.color}`} style={{ width: `${p.val}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="card">
+                <div className="label" style={{ marginBottom: 16 }}>Radial KPIs</div>
+                <div className="radial-container">
+                  {[
+                    { label: 'Calm', pct: 84, color: '#9b94e8' },
+                    { label: 'Focus', pct: 67, color: '#6ee7b7' },
+                    { label: 'Energy', pct: 72, color: '#fca5a5' },
+                  ].map((r, i) => {
+                    const circ = 2 * Math.PI * 30;
+                    return (
+                      <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                        <div style={{ position: 'relative' }}>
+                          <svg width="72" height="72" viewBox="0 0 72 72">
+                            <circle cx="36" cy="36" r="30" fill="none" stroke="var(--lavender-soft)" strokeWidth="8" />
+                            <circle cx="36" cy="36" r="30" fill="none" stroke={r.color} strokeWidth="8"
+                              strokeDasharray={`${(r.pct/100)*circ} ${circ}`}
+                              strokeLinecap="round"
+                              style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                          </svg>
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800 }}>{r.pct}%</div>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--slate)' }}>{r.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── DATA TABLE ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Data Table</div>
+              <span className="section-tag">Data</span>
+            </div>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--lavender-soft)' }}>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Session Pipeline</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-ghost btn-sm">⊞ Filter</button>
+                  <button className="btn btn-primary btn-sm">+ New</button>
+                </div>
+              </div>
+              <div style={{ overflowX: 'auto', padding: '8px 0' }}>
+                <table className="data-table" style={{ minWidth: 600 }}>
+                  <thead>
+                    <tr>
+                      <th>User</th><th>Session Type</th><th>Duration</th><th>Mood Before</th><th>Mood After</th><th>Status</th><th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['Alexandra M.', 'Guided Meditation', '20 min', '😐 5.2', '😊 8.1', 'completed', 'May 2'],
+                      ['John W.', 'Breathwork', '10 min', '😔 3.8', '🙂 6.4', 'completed', 'May 2'],
+                      ['Emily L.', 'Body Scan', '30 min', '😐 5.0', '😊 7.9', 'in-progress', 'May 2'],
+                      ['Marcus T.', 'Sleep Story', '45 min', '😔 4.1', '—', 'scheduled', 'May 3'],
+                      ['Sara K.', 'Focus Session', '25 min', '😐 5.5', '🤩 9.0', 'completed', 'May 1'],
+                    ].map(([name, type, dur, before, after, status, date], i) => (
+                      <tr key={i}>
+                        <td><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div className="list-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>{name[0]}{name.split(' ')[1]?.[0]}</div>
+                          <span style={{ fontWeight: 600 }}>{name}</span>
+                        </div></td>
+                        <td>{type}</td>
+                        <td style={{ fontWeight: 600 }}>{dur}</td>
+                        <td>{before}</td>
+                        <td>{after}</td>
+                        <td><span className={`badge ${status === 'completed' ? 'badge-green' : status === 'in-progress' ? 'badge-blue' : 'badge-yellow'}`}>{status}</span></td>
+                        <td style={{ color: 'var(--slate)' }}>{date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--lavender-soft)' }}>
+                <span style={{ fontSize: 13, color: 'var(--slate)' }}>Showing 5 of 128 sessions</span>
+                <div className="pagination">
+                  <div className="page-btn">‹</div>
+                  {[1,2,3,'…',12].map((p, i) => (
+                    <div key={i} className={`page-btn ${p === 1 ? 'active' : ''}`}>{p}</div>
+                  ))}
+                  <div className="page-btn">›</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── PIPELINE TABLE ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Wellness Pipeline</div>
+              <span className="section-tag">Dashboard</span>
+            </div>
+            <div className="card" style={{ overflowX: 'auto' }}>
+              <table className="pipeline-table" style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th>Focus Area</th>
+                    <th>Sessions</th><th>Completed</th><th>Avg Score</th><th>Streak</th><th>Goal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: 'Anxiety Relief', vals: [30,24,8.4,12,20], colors: ['#dbeafe','#eff6ff','#dbeafe','#bfdbfe','#e0f2fe'] },
+                    { label: 'Sleep Improvement', vals: [27,20,7.9,8,15], colors: ['#d8f9e8','#d1fae5','#d8f9e8'] },
+                    { label: 'Focus & Clarity', vals: [46,30,8.8,15,25], colors: ['#f9d8f0','#fce7f3','#f9d8f0','#fbcfe8'] },
+                    { label: 'Stress Management', vals: [23,12,7.2,6,18], colors: ['#d8edf9','#dbeafe','#bfdbfe','#d8edf9','#bfdbfe'] },
+                    { label: 'Emotional Balance', vals: [52,44,9.1,21,30], colors: ['#dad8f9','#e0e7ff','#dad8f9','#c7d2fe'] },
+                  ].map((row, ri) => (
+                    <tr key={ri}>
+                      <td className="row-label">{row.label}</td>
+                      {row.vals.map((v, vi) => (
+                        <td key={vi}><div className="pipeline-cell" style={{ background: row.colors[vi % row.colors.length] }}>{v}</div></td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* ── LISTS & USERS ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Lists & User Items</div>
+              <span className="section-tag">Content</span>
+            </div>
+            <div className="card-grid card-grid-2">
+              <div className="card">
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Recent Users</div>
+                {[
+                  { name: 'Alexandra Moore', sub: 'Pro · 42 sessions', initials: 'AM', badge: 'Analyst' },
+                  { name: 'John Willkinson', sub: 'Free · 8 sessions', initials: 'JW', badge: 'Beginner' },
+                  { name: 'Emily Lee', sub: 'Pro · 127 sessions', initials: 'EL', badge: 'Developer' },
+                  { name: 'Marcus Tang', sub: 'Pro · 63 sessions', initials: 'MT', badge: 'Expert' },
+                ].map((u, i) => (
+                  <div key={i} className="list-item">
+                    <div className="list-avatar">{u.initials}</div>
+                    <div className="list-info">
+                      <div className="list-name">{u.name}</div>
+                      <div className="list-sub">{u.sub}</div>
+                    </div>
+                    <span className="badge badge-lavender">{u.badge}</span>
+                    <div className="list-actions">
+                      <div className="icon-btn" style={{ width: 28, height: 28 }}>☏</div>
+                      <div className="icon-btn" style={{ width: 28, height: 28 }}>✉</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="card">
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Platform Insights</div>
+                {[
+                  { name: 'Calm', pct: 60, color: '#9b94e8', abbr: 'C', bg: '#ede9fe' },
+                  { name: 'Headspace', pct: 20, color: '#6ee7b7', abbr: 'H', bg: '#d1fae5' },
+                  { name: 'Insight Timer', pct: 10, color: '#fca5a5', abbr: 'I', bg: '#fee2e2' },
+                  { name: 'Waking Up', pct: 7, color: '#fcd34d', abbr: 'W', bg: '#fef9c3' },
+                  { name: 'Ten Percent', pct: 3, color: '#93c5fd', abbr: 'T', bg: '#dbeafe' },
+                ].map((p, i) => (
+                  <div key={i} className="platform-bar-item">
+                    <div className="platform-icon" style={{ background: p.bg, color: p.color, fontWeight: 800 }}>{p.abbr}</div>
+                    <div className="platform-bar-fill">
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--plum)' }}>{p.name}</div>
+                      <div className="platform-bar-track">
+                        <div className="platform-bar-progress" style={{ width: `${p.pct}%`, background: `linear-gradient(90deg, ${p.color}, ${p.color}88)` }} />
+                      </div>
+                    </div>
+                    <span className="platform-pct">{p.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── TIMELINE ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Timeline</div>
+              <span className="section-tag">History</span>
+            </div>
+            <div className="card-grid card-grid-2">
+              <div className="card">
+                <div className="timeline">
+                  {[
+                    { title: 'Morning Meditation', time: '7:00 AM', desc: '20-minute guided body scan. Mood improved from 5.2 → 8.1.' },
+                    { title: 'Breathwork Session', time: '12:30 PM', desc: 'Box breathing technique. Stress marker dropped 34%.' },
+                    { title: 'Focus Block', time: '3:00 PM', desc: 'Pomodoro-style deep work with ambient soundscapes.' },
+                    { title: 'Evening Wind Down', time: '9:00 PM', desc: 'Sleep story + progressive muscle relaxation.' },
+                  ].map((t, i) => (
+                    <div key={i} className="timeline-item">
+                      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', width: 12 }}>
+                        <div className="timeline-dot" />
+                        {i < 3 && <div className="timeline-line" />}
+                      </div>
+                      <div className="timeline-content">
+                        <div className="timeline-title">{t.title}</div>
+                        <div className="timeline-time">{t.time}</div>
+                        <div className="timeline-desc">{t.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="card">
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Mini Calendar</div>
+                <MiniCalendar />
+              </div>
+            </div>
+          </div>
+
+          {/* ── AI / GENERATIVE ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">AI & Generative UI</div>
+              <span className="section-tag">Intelligence</span>
+            </div>
+            <div className="card-grid card-grid-2">
+              <div className="ai-container">
+                <div className="ai-label">✦ Vera AI</div>
+                <div className="ai-prompt">Based on your sleep patterns, I suggest a 10-minute body scan tonight</div>
+                <div className="ai-response">Your average sleep onset was 47 minutes this week, 23% above your baseline. A progressive muscle relaxation session before bed could reduce this significantly. Want me to schedule one?</div>
+                <div className="ai-actions">
+                  <button className="btn btn-primary btn-sm btn-pill">Schedule session</button>
+                  <button className="btn btn-ghost btn-sm btn-pill">Tell me more</button>
+                </div>
+              </div>
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #dad8f9, #9b94e8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>✦</div>
+                  <span style={{ fontWeight: 700, fontSize: 15 }}>Chat with Vera</span>
+                </div>
+                <AIChat />
+              </div>
+            </div>
+          </div>
+
+          {/* ── QUIZ ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Quiz & Assessment</div>
+              <span className="section-tag">Interactive</span>
+            </div>
+            <div className="card-grid card-grid-2">
+              <QuizComponent />
+              <div className="analysis-card">
+                <div className="analysis-title">
+                  <span>📊</span> Wellbeing Analysis
+                </div>
+                {[
+                  { label: 'Emotional Regulation', score: '9.1', icon: '🧘', bg: '#ede9fe', up: true },
+                  { label: 'Sleep Quality', score: '7.4', icon: '🌙', bg: '#fef9c3', up: false },
+                  { label: 'Focus & Attention', score: '8.8', icon: '🎯', bg: '#d1fae5', up: true },
+                  { label: 'Stress Resilience', score: '7.9', icon: '💪', bg: '#fee2e2', up: true },
+                  { label: 'Social Wellbeing', score: '8.2', icon: '🤝', bg: '#dbeafe', up: true },
+                ].map((r, i) => (
+                  <div key={i} className="insight-row">
+                    <div className="insight-icon" style={{ background: r.bg }}>{r.icon}</div>
+                    <div className="insight-text">{r.label}</div>
+                    <div className="progress-bar" style={{ width: 80 }}>
+                      <div className="progress-fill" style={{ width: `${+r.score * 10}%` }} />
+                    </div>
+                    <div className="insight-score">{r.score}</div>
+                    <span className={`stat-change ${r.up ? 'up' : 'down'}`} style={{ fontSize: 11 }}>{r.up ? '↑' : '↓'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── MOOD & WORKBENCH ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Mood & Workbench</div>
+              <span className="section-tag">Consoles</span>
+            </div>
+            <div className="card-grid card-grid-2">
+              <div className="card">
+                <MoodSelector />
+              </div>
+              <div className="workbench">
+                <div className="workbench-toolbar">
+                  <button className="btn btn-ghost btn-sm">File</button>
+                  <button className="btn btn-ghost btn-sm">Edit</button>
+                  <button className="btn btn-ghost btn-sm">View</button>
+                  <div style={{ flex: 1 }} />
+                  <button className="btn btn-primary btn-sm">▶ Run</button>
+                </div>
+                <div className="workbench-body">
+                  <div className="console">
+                    <div className="console-line prompt">$ vera --analyze mood --period 30d</div>
+                    <div className="console-line info">[INFO] Fetching biometric + session data…</div>
+                    <div className="console-line success">[OK] 847 data points loaded</div>
+                    <div className="console-line">Trend: +1.2 mood score over baseline</div>
+                    <div className="console-line success">[INSIGHT] Peak mindfulness: Thursday 7AM</div>
+                    <div className="console-line error">[WARN] Sleep debt detected: 6.2h avg (target: 8h)</div>
+                    <div className="console-line prompt">$ _</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── HEATMAP + SKELETON ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Heatmap, Skeleton & More</div>
+              <span className="section-tag">Misc</span>
+            </div>
+            <div className="card-grid card-grid-3">
+              <div className="card">
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Activity Heatmap</div>
+                <div className="heatmap">
+                  {Array.from({ length: 56 }, (_, i) => {
+                    const lvl = Math.floor(Math.random() * 5);
+                    return <div key={i} className={`heat-cell heat-${lvl}`} title={`${lvl} sessions`} />;
+                  })}
+                </div>
+                <div className="chart-legend" style={{ marginTop: 10 }}>
+                  {[0,1,2,3,4].map(l => (
+                    <div key={l} className="legend-item">
+                      <div className={`heat-cell heat-${l}`} style={{ width: 12, height: 12, flexShrink: 0 }} />
+                    </div>
+                  ))}
+                  <span style={{ fontSize: 11, color: 'var(--slate)' }}>Less → More</span>
+                </div>
+              </div>
+              <div className="card">
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Loading Skeletons</div>
+                <div className="flex-col" style={{ gap: 8 }}>
+                  <div className="skeleton" style={{ height: 14, width: '60%' }} />
+                  <div className="skeleton" style={{ height: 10, width: '90%' }} />
+                  <div className="skeleton" style={{ height: 10, width: '75%' }} />
+                  <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                    <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 12 }} />
+                    <div className="flex-col" style={{ flex: 1, gap: 6 }}>
+                      <div className="skeleton" style={{ height: 12, width: '70%' }} />
+                      <div className="skeleton" style={{ height: 10, width: '50%' }} />
+                    </div>
+                  </div>
+                  <div className="skeleton" style={{ height: 60, borderRadius: 12, marginTop: 4 }} />
+                </div>
+              </div>
+              <div className="card">
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Ratings & Stars</div>
+                {[
+                  { label: 'Morning Guided', stars: 5 },
+                  { label: 'Sleep Story', stars: 4 },
+                  { label: 'Breathwork Basic', stars: 3 },
+                ].map((r, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>{r.label}</span>
+                    <div className="star-row">
+                      {[1,2,3,4,5].map(s => <span key={s} className={`star ${s <= r.stars ? '' : 'empty'}`}>★</span>)}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Tooltip Demo</div>
+                  <div className="btn-row">
+                    {['Save', 'Share', 'Archive'].map(t => (
+                      <div key={t} className="tooltip-wrap">
+                        <button className="btn btn-ghost btn-sm">{t}</button>
+                        <div className="tooltip-bubble">{t} this session</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── MODAL + DROPDOWN ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Modals & Dropdowns</div>
+              <span className="section-tag">Overlays</span>
+            </div>
+            <div className="card">
+              <div className="btn-row">
+                <ModalDemo />
+                <div className="dropdown">
+                  <button className="btn btn-secondary btn-md" onClick={() => setDropOpen(!dropOpen)}>
+                    Actions ⌄
+                  </button>
+                  {dropOpen && (
+                    <div className="dropdown-menu">
+                      <div className="dropdown-item">✎ Edit session</div>
+                      <div className="dropdown-item">⊕ Duplicate</div>
+                      <div className="dropdown-item">↓ Export data</div>
+                      <div className="dropdown-divider" />
+                      <div className="dropdown-item" style={{ color: '#dc2626' }}>⊘ Delete</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── COLOR PALETTE ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Color Palette</div>
+              <span className="section-tag">Design Tokens</span>
+            </div>
+            <div className="card-grid card-grid-4">
+              {[
+                { name: 'Plum', hex: '#352b38', token: '--plum' },
+                { name: 'Slate', hex: '#7e808c', token: '--slate' },
+                { name: 'Lavender', hex: '#dad8f9', token: '--lavender' },
+                { name: 'Ghost', hex: '#f4f3f8', token: '--ghost' },
+                { name: 'Lavender Deep', hex: '#9b94e8', token: '--lavender-deep' },
+                { name: 'Lavender Mid', hex: '#b8b4f0', token: '--lavender-mid' },
+                { name: 'Lavender Soft', hex: '#eceaf9', token: '--lavender-soft' },
+                { name: 'BG', hex: '#edeaf4', token: '--bg' },
+              ].map((c, i) => (
+                <div key={i} className="card" style={{ padding: 12 }}>
+                  <div style={{ height: 56, background: c.hex, borderRadius: 10, marginBottom: 10 }} />
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{c.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--slate)' }}>{c.hex}</div>
+                  <div style={{ fontSize: 10, color: 'var(--lavender-deep)', marginTop: 2, fontFamily: 'monospace' }}>{c.token}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── TYPOGRAPHY ── */}
+          <div>
+            <div className="section-header">
+              <div className="section-title">Typography</div>
+              <span className="section-tag">Type</span>
+            </div>
+            <div className="card">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ fontSize: 48, fontWeight: 800, lineHeight: 1.1 }}>Display — Aa Bb Cc</div>
+                <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.2 }}>Heading 1 — Find your calm</div>
+                <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.3 }}>Heading 2 — Mindfulness platform</div>
+                <div style={{ fontSize: 20, fontWeight: 600 }}>Heading 3 — Daily sessions</div>
+                <div style={{ fontSize: 16, fontWeight: 600 }}>Heading 4 — Breathwork basics</div>
+                <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--slate)', lineHeight: 1.7 }}>Body — Veramind helps you build lasting mindfulness habits through guided meditation, breathwork, and science-backed wellness practices. Start your journey to inner peace today.</div>
+                <div style={{ fontSize: 12, color: 'var(--slate)' }}>Caption — Session logged at 7:04 AM · 20 minutes · Mood +2.9</div>
+                <div className="gradient-text" style={{ fontSize: 36, fontWeight: 800 }}>Gradient Text — Urbanist</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ height: 40 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

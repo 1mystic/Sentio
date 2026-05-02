@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calmness - Transform Your Mind and Body</title>
+
+    <!-- Gilroy Font from CDN -->
+    <link href="https://fonts.cdnfonts.com/css/gilroy-bold" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Lucide Icons from CDN -->
+    <script src="https://unpkg.com/lucide-react@0.294.0/dist/lucide-react.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+</head>
+<body>
+
+    <div class="container">
+        <header class="navbar">
+            <div class="logo">
+                <img src="https://i.imgur.com/8Q5N8tN.png" alt="Calmness Logo">
+                <span>CALMNESS</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Featured <i data-lucide="chevron-down" class="icon-small"></i></a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                </ul>
+            </nav>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary">Sign In</button>
+                <button class="btn btn-primary">Create Account</button>
+            </div>
+        </header>
+
+        <main class="hero">
+            <div class="hero-left">
+                <div class="hero-text">
+                    <span class="pill">Unlock The Power Of Mindful Yoga</span>
+                    <h1>Transform Your Mind And Body With Yoga</h1>
+                    <p>Join Our Classes To Find Balance, Build Strength, And Embrace Mindfulness. Accessible, Practical, And Tailored For Every Journey.</p>
+                    <div class="hero-buttons">
+                        <button class="btn btn-primary">Join Now</button>
+                        <button class="btn btn-secondary">Explore More</button>
+                    </div>
+                </div>
+
+                <div class="features">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i data-lucide="calendar-check"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Easy Access</h3>
+                            <p>Effortlessly Book Classes And Track Your Progress Anytime.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i data-lucide="fast-forward"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Fast And Practical</h3>
+                            <p>Short, Effective Sessions Designed To Fit Your Busy Schedule.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-right">
+                <div class="dashboard-card">
+                    <!-- Soul Stretch Section -->
+                    <div class="soul-stretch-card">
+                        <div class="image-container">
+                            <img src="https://i.imgur.com/uFouhD9.jpg" alt="Pastel sky for meditation">
+                            <div class="tags">
+                                <span class="tag">Yoga</span>
+                                <span class="tag">Meditation</span>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-header">
+                                <h3>Soul Stretch</h3>
+                                <p>$52.00 <span>/session</span></p>
+                            </div>
+                            <div class="card-footer">
+                                <span><i data-lucide="video" class="icon-small"></i> 12 Videos</span>
+                                <span><i data-lucide="clock" class="icon-small"></i> 14 Hour</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div class="progress-card">
+                        <div class="progress-info">
+                            <h4>Transform Stress into Positive Energy</h4>
+                            <p>Session Complete</p>
+                            <span><i data-lucide="pen-square" class="icon-tiny"></i> Designed by Humaira Pirwani</span>
+                        </div>
+                        <div class="progress-circle">
+                            <div class="progress-circle-inner">
+                                <span>48%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Yoga Styles Section -->
+                    <div class="yoga-styles">
+                        <div class="styles-header">
+                            <h4>Yoga Styles</h4>
+                            <span>35 Videos</span>
+                            <a href="#">All Styles</a>
+                        </div>
+                        <ul class="styles-list">
+                            <li>
+                                <img src="https://i.imgur.com/G5T8sA6.jpg" alt="Yoga style preview">
+                                <div class="style-info">
+                                    <h5>Breathe And Relax</h5>
+                                    <div class="style-details">
+                                        <span><i data-lucide="video" class="icon-tiny"></i> 12 Videos</span>
+                                        <span><i data-lucide="clock" class="icon-tiny"></i> 14 Hour</span>
+                                    </div>
+                                </div>
+                                <span class="level-tag">Level 1</span>
+                            </li>
+                            <li>
+                                <img src="https://i.imgur.com/f1Xb7Uf.jpg" alt="Yoga style preview">
+                                <div class="style-info">
+                                    <h5>Breathe And Relax</h5>
+                                    <div class="style-details">
+                                        <span><i data-lucide="video" class="icon-tiny"></i> 12 Videos</span>
+                                        <span><i data-lucide="clock" class="icon-tiny"></i> 14 Hour</span>
+                                    </div>
+                                </div>
+                                <span class="level-tag">Level 1</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Class Overview Section -->
+                    <div class="class-overview">
+                        <div class="overview-header">
+                            <div>
+                                <h4>Class Overview</h4>
+                                <p>This Section Summarizes Your Progress.</p>
+                            </div>
+                            <div class="toggle-switch">
+                                <button class="toggle-btn" data-period="day">Day</button>
+                                <button class="toggle-btn active" data-period="week">Week</button>
+                                <button class="toggle-btn" data-period="month">Month</button>
+                            </div>
+                        </div>
+                        <div class="overview-stats">
+                            <div class="stat-item">
+                                <p>Total Classes Attended</p>
+                                <span>104</span>
+                            </div>
+                            <div class="stat-item">
+                                <p>Hours Practiced</p>
+                                <span>51</span>
+                            </div>
+                            <div class="stat-item">
+                                <p>Upcoming Classes</p>
+                                <span>34</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
