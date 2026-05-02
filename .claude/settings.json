@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Read(//c/Users/athar/.claude/projects/g--synced-pc-1-Work-projects-Sentio/**)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(npx vite *)"
     ]
   }
 }
