@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { Brain, Check } from 'lucide-vue-next'
 const router = useRouter()
 </script>
 
@@ -7,7 +8,7 @@ const router = useRouter()
   <div class="welcome-wrap fade-up">
     <!-- Brain icon -->
     <div class="icon-circle">
-      <span class="brain-emoji">🧠</span>
+      <Brain :size="40" class="brain-icon" />
     </div>
 
     <div class="text-center">
@@ -21,15 +22,15 @@ const router = useRouter()
     <!-- Feature list -->
     <ul class="feature-list">
       <li class="feature-item">
-        <span class="feature-badge">✓</span>
+        <span class="feature-badge"><Check :size="13" /></span>
         <span>Discover your cognitive biases</span>
       </li>
       <li class="feature-item">
-        <span class="feature-badge">✓</span>
+        <span class="feature-badge"><Check :size="13" /></span>
         <span>Get personalized insights</span>
       </li>
       <li class="feature-item">
-        <span class="feature-badge">✓</span>
+        <span class="feature-badge"><Check :size="13" /></span>
         <span>Track your mental growth</span>
       </li>
     </ul>
@@ -71,9 +72,8 @@ const router = useRouter()
   box-shadow: 0 8px 28px rgba(155,148,232,0.25);
   border: 2px solid rgba(218,216,249,0.6);
 }
-.brain-emoji {
-  font-size: 40px;
-  line-height: 1;
+.brain-icon {
+  color: var(--lavender-deep);
 }
 
 /* Text */

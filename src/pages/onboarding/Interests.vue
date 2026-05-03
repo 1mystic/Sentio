@@ -1,22 +1,26 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  Brain, MessageSquare, Briefcase, Heart, DollarSign,
+  BookOpen, Activity, Globe, Microscope, Scale, Palette, TrendingUp
+} from 'lucide-vue-next'
 
 const router = useRouter()
 
 const allInterests = [
-  { id: 'decision', label: '🧠 Decision Making' },
-  { id: 'communication', label: '💬 Communication' },
-  { id: 'career', label: '💼 Work & Career' },
-  { id: 'relationships', label: '❤️ Relationships' },
-  { id: 'finance', label: '💰 Money & Finance' },
-  { id: 'learning', label: '🎓 Learning' },
-  { id: 'health', label: '🏋️ Health' },
-  { id: 'social', label: '🌍 Social Justice' },
-  { id: 'science', label: '🔬 Science' },
-  { id: 'politics', label: '🗳️ Politics' },
-  { id: 'creativity', label: '🎨 Creativity' },
-  { id: 'leadership', label: '📈 Leadership' }
+  { id: 'decision',      icon: Brain,         label: 'Decision Making' },
+  { id: 'communication', icon: MessageSquare,  label: 'Communication' },
+  { id: 'career',        icon: Briefcase,      label: 'Work & Career' },
+  { id: 'relationships', icon: Heart,          label: 'Relationships' },
+  { id: 'finance',       icon: DollarSign,     label: 'Money & Finance' },
+  { id: 'learning',      icon: BookOpen,       label: 'Learning' },
+  { id: 'health',        icon: Activity,       label: 'Health' },
+  { id: 'social',        icon: Globe,          label: 'Social Justice' },
+  { id: 'science',       icon: Microscope,     label: 'Science' },
+  { id: 'politics',      icon: Scale,          label: 'Politics' },
+  { id: 'creativity',    icon: Palette,        label: 'Creativity' },
+  { id: 'leadership',    icon: TrendingUp,     label: 'Leadership' },
 ]
 
 const selected = ref([])
@@ -66,6 +70,7 @@ function goBack() {
         :class="{ selected: isSelected(item.id) }"
         @click="toggle(item.id)"
       >
+        <component :is="item.icon" :size="14" class="pill-icon" />
         {{ item.label }}
       </button>
     </div>
@@ -139,10 +144,16 @@ function goBack() {
   transition: all 0.18s;
   text-align: center;
   line-height: 1.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.pill-icon { flex-shrink: 0; opacity: 0.75; }
+.interest-pill.selected .pill-icon { opacity: 1; }
 .interest-pill:hover {
   border-color: var(--lavender-mid);
   background: var(--lavender-soft);

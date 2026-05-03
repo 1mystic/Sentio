@@ -4,7 +4,10 @@
       "Read(//c/Users/athar/.claude/projects/g--synced-pc-1-Work-projects-Sentio/**)",
       "Bash(npm install *)",
       "Bash(npx vite *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(.venv/Scripts/python.exe db/seed_biases.py)",
+      "Bash(.venv/Scripts/python.exe db/seed_assessments.py)",
+      "Bash(.venv/Scripts/python.exe db/seed_therapists.py)"
     ]
   }
 }

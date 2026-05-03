@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import { User, Mail, Lock, Eye, EyeOff } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -98,7 +99,7 @@ async function handleGoogle() {
       <div class="form-group">
         <label class="form-label" for="name">Full Name</label>
         <div class="input-wrap">
-          <span class="input-icon">👤</span>
+          <span class="input-icon"><User :size="15" /></span>
           <input
             id="name"
             v-model="name"
@@ -115,7 +116,7 @@ async function handleGoogle() {
       <div class="form-group">
         <label class="form-label" for="email">Email</label>
         <div class="input-wrap">
-          <span class="input-icon">✉</span>
+          <span class="input-icon"><Mail :size="15" /></span>
           <input
             id="email"
             v-model="email"
@@ -132,7 +133,7 @@ async function handleGoogle() {
       <div class="form-group">
         <label class="form-label" for="password">Password</label>
         <div class="input-wrap">
-          <span class="input-icon">🔒</span>
+          <span class="input-icon"><Lock :size="15" /></span>
           <input
             id="password"
             v-model="password"
@@ -143,7 +144,7 @@ async function handleGoogle() {
             required
           />
           <button type="button" class="eye-btn" @click="showPass = !showPass">
-            <span v-if="showPass">🙈</span><span v-else>👁</span>
+            <EyeOff v-if="showPass" :size="16" /><Eye v-else :size="16" />
           </button>
         </div>
         <!-- Strength indicator -->
@@ -166,7 +167,7 @@ async function handleGoogle() {
       <div class="form-group">
         <label class="form-label" for="confirm">Confirm Password</label>
         <div class="input-wrap">
-          <span class="input-icon">🔒</span>
+          <span class="input-icon"><Lock :size="15" /></span>
           <input
             id="confirm"
             v-model="confirmPw"
@@ -178,7 +179,7 @@ async function handleGoogle() {
             required
           />
           <button type="button" class="eye-btn" @click="showConfirm = !showConfirm">
-            <span v-if="showConfirm">🙈</span><span v-else>👁</span>
+            <EyeOff v-if="showConfirm" :size="16" /><Eye v-else :size="16" />
           </button>
         </div>
         <p v-if="confirmPw && confirmPw !== password" class="form-error">Passwords do not match</p>
@@ -270,11 +271,11 @@ async function handleGoogle() {
 .input-icon {
   position: absolute;
   left: 12px;
-  font-size: 15px;
   pointer-events: none;
   z-index: 1;
-  line-height: 1;
   color: var(--slate);
+  display: flex;
+  align-items: center;
 }
 .input {
   font-family: 'Urbanist', sans-serif;
@@ -301,8 +302,6 @@ async function handleGoogle() {
   border: none;
   cursor: pointer;
   padding: 4px;
-  font-size: 16px;
-  line-height: 1;
   color: var(--slate);
   display: flex;
   align-items: center;

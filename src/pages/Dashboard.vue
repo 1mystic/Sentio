@@ -403,7 +403,7 @@ function hexPoints(ringFraction) {
 }
 
 const dataPoints = computed(() =>
-  scores.map((score, i) => polarPoint(i, maxR * score))
+  scores.value.map((score, i) => polarPoint(i, maxR * score))
 )
 
 const dataPolygonPoints = computed(() =>
