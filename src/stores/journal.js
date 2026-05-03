@@ -1,34 +1,85 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { supabase } from '@/composables/useSupabase.js'
+import { journalsApi } from '@/api/journals.js'
 
 export const useJournalStore = defineStore('journal', () => {
   const entries = ref([])
   const currentEntry = ref(null)
-  const isLoading = ref(false)
+  const themes = ref([])
+  const loading = ref(false)
+  const saving = ref(false)
+  const error = ref(null)
 
-  async function fetchEntries(userId) {
-    isLoading.value = true
-    const { data } = await supabase
-      .from('journal_entries')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-    entries.value = data || []
-    isLoading.value = false
-  }
-
-  async function createEntry(entryData) {
-    const { data, error } = await supabase.from('journal_entries').insert(entryData).select().single()
-    if (!error) entries.value.unshift(data)
-    return { data, error }
+  async function fetchEntries(params = {}) {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await journalsApi.list(params)
+      entries.value = data
+    } catch (err) {
+      error.value = err.message
+    } finally {
+      loading.value = false
+    }
   }
 
   async function fetchEntry(id) {
-    const { data } = await supabase.from('journal_entries').select('*').eq('id', id).single()
-    currentEntry.value = data
-    return data
+    loading.value = true
+    try {
+      const { data } = await journalsApi.get(id)
+      currentEntry.value = data
+      return data
+    } catch (err) {
+      error.value = err.message
+      return null
+    } finally {
+      loading.value = false
+    }
   }
 
-  return { entries, currentEntry, isLoading, fetchEntries, createEntry, fetchEntry }
+  async function createEntry(entryData) {
+    saving.value = true
+    error.value = null
+    try {
+      const { data } = await journalsApi.create(entryData)
+      entries.value.unshift(data)
+      return { data, error: null }
+    } catch (err) {
+      error.value = err.message
+      return { data: null, error: err.message }
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function deleteEntry(id) {
+    try {
+      await journalsApi.delete(id)
+      entries.value = entries.value.filter(e => e.id !== id)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async function getReflections(id) {
+    try {
+      const { data } = await journalsApi.reflections(id)
+      return data.questions || []
+    } catch {
+      return []
+    }
+  }
+
+  async function fetchThemes() {
+    try {
+      const { data } = await journalsApi.themes()
+      themes.value = data
+    } catch {}
+  }
+
+  return {
+    entries, currentEntry, themes, loading, saving, error,
+    fetchEntries, fetchEntry, createEntry, deleteEntry, getReflections, fetchThemes,
+  }
 })

@@ -1,38 +1,68 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { supabase } from '@/composables/useSupabase.js'
+import { assessmentsApi } from '@/api/assessments.js'
 
 export const useAssessmentStore = defineStore('assessment', () => {
-  const available = ref([])
+  const assessments = ref([])
+  const currentAssessment = ref(null)
   const results = ref([])
-  const isLoading = ref(false)
+  const loading = ref(false)
+  const submitting = ref(false)
+  const error = ref(null)
 
-  async function fetchAssessments() {
-    isLoading.value = true
-    const { data } = await supabase.from('assessments').select('*').order('title')
-    available.value = data || []
-    isLoading.value = false
+  async function fetchList() {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await assessmentsApi.list()
+      assessments.value = data
+    } catch (err) {
+      error.value = err.message
+    } finally {
+      loading.value = false
+    }
   }
 
-  async function fetchResults(userId) {
-    const { data } = await supabase
-      .from('assessment_results')
-      .select('*, assessments(title, slug)')
-      .eq('user_id', userId)
-      .order('completed_at', { ascending: false })
-    results.value = data || []
+  async function fetchOne(id) {
+    loading.value = true
+    try {
+      const { data } = await assessmentsApi.get(id)
+      currentAssessment.value = data
+      return data
+    } catch (err) {
+      error.value = err.message
+      return null
+    } finally {
+      loading.value = false
+    }
   }
 
-  async function submitAssessment(assessmentId, userId, rawScores, computedScores) {
-    const { data, error } = await supabase.from('assessment_results').insert({
-      assessment_id: assessmentId,
-      user_id: userId,
-      raw_scores: rawScores,
-      computed_scores: computedScores
-    }).select().single()
-    if (!error) results.value.unshift(data)
-    return { data, error }
+  async function submit(id, payload) {
+    submitting.value = true
+    error.value = null
+    try {
+      const { data } = await assessmentsApi.submit(id, payload)
+      return { data, error: null }
+    } catch (err) {
+      error.value = err.message
+      return { data: null, error: err.message }
+    } finally {
+      submitting.value = false
+    }
   }
 
-  return { available, results, isLoading, fetchAssessments, fetchResults, submitAssessment }
+  async function fetchHistory(id) {
+    try {
+      const { data } = await assessmentsApi.history(id)
+      results.value = data
+      return data
+    } catch {
+      return []
+    }
+  }
+
+  return {
+    assessments, currentAssessment, results, loading, submitting, error,
+    fetchList, fetchOne, submit, fetchHistory,
+  }
 })

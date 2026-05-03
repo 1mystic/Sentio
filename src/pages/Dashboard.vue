@@ -1,6 +1,12 @@
 <template>
   <div class="dashboard">
 
+    <!-- Loading overlay while insights load -->
+    <div v-if="insightsStore.loading" class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Loading your insights...</p>
+    </div>
+
     <!-- Section 1: Stat Cards -->
     <section class="stats-grid">
       <div
@@ -14,12 +20,18 @@
         <div
           v-if="stat.dir === 'up'"
           class="stat-change up"
-        >{{ stat.change }}</div>
+        >
+          <component :is="stat.changeIcon" v-if="stat.changeIcon" :size="11" />
+          {{ stat.changeText }}
+        </div>
         <div
           v-else
           class="stat-change"
           style="background: rgba(251,191,36,0.15); color: #92400e;"
-        >{{ stat.change }}</div>
+        >
+          <component :is="stat.changeIcon" v-if="stat.changeIcon" :size="11" />
+          {{ stat.changeText }}
+        </div>
       </div>
     </section>
 
@@ -132,7 +144,7 @@
       </div>
 
       <div class="ai-container" style="margin-bottom: 24px;">
-        <div class="ai-label">✨ Sentio AI</div>
+        <div class="ai-label"><Sparkles :size="12" /> Sentio AI</div>
         <div class="ai-prompt">Based on your recent journal entries...</div>
         <div class="ai-response">
           You've shown strong confirmation bias patterns — particularly around work decisions. Your journal entries from Tuesday and Thursday both reveal a tendency to seek information that confirms your existing project timeline estimates...
@@ -147,7 +159,9 @@
           <div class="insight-title">{{ insight.title }}</div>
           <div class="insight-desc">{{ insight.desc }}</div>
           <div class="card-footer" style="margin-top: 14px;">
-            <button class="btn btn-ghost btn-sm">Explore →</button>
+            <button class="btn btn-ghost btn-sm">
+              Explore <ArrowRight :size="13" />
+            </button>
           </div>
         </div>
       </div>
@@ -168,9 +182,9 @@
             class="quick-action-row"
             @click="router.push(action.path)"
           >
-            <span class="quick-action-icon">{{ action.icon }}</span>
+            <component :is="action.icon" :size="18" class="quick-action-icon" />
             <span class="quick-action-label">{{ action.label }}</span>
-            <span class="quick-action-arrow">→</span>
+            <ArrowRight :size="14" class="quick-action-arrow" />
           </div>
         </div>
       </div>
@@ -183,14 +197,16 @@
         <div class="recommendations-list">
           <div v-for="rec in recommendations" :key="rec.name" class="rec-card">
             <div class="rec-top">
-              <span class="rec-emoji">{{ rec.emoji }}</span>
+              <div class="rec-icon-wrap">
+                <component :is="rec.icon" :size="22" class="rec-icon" />
+              </div>
               <div class="rec-info">
                 <div class="rec-name">{{ rec.name }}</div>
                 <span class="badge" :class="`badge-${rec.badgeColor}`" style="font-size: 10px;">{{ rec.category }}</span>
               </div>
             </div>
             <button class="btn btn-secondary btn-sm" style="margin-top: 10px; width: 100%;">
-              Start Learning →
+              Start Learning <ArrowRight :size="13" />
             </button>
           </div>
         </div>
@@ -202,18 +218,34 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.js'
 import { useRouter } from 'vue-router'
+import { useInsightsStore } from '@/stores/insights.js'
+import { useJournalStore } from '@/stores/journal.js'
+import {
+  Sparkles, ArrowRight, TrendingUp, TrendingDown, Flame,
+  BookOpen, ClipboardList, Search, MessageSquare, Brain, BarChart2, Lightbulb
+} from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const router = useRouter()
 
+const insightsStore = useInsightsStore()
+const journalStore = useJournalStore()
+
+onMounted(async () => {
+  await Promise.all([
+    insightsStore.fetchAll(),
+    journalStore.fetchEntries({ limit: 5 }),
+  ])
+})
+
 const stats = ref([
-  { label: 'BIASES IDENTIFIED', value: '7', change: '↑ 2 this week', dir: 'up', variant: 'blue' },
-  { label: 'JOURNAL ENTRIES', value: '12', change: '↑ 3 this week', dir: 'up', variant: 'lavender' },
-  { label: 'CURRENT STREAK', value: '5', change: '🔥 days', dir: 'neutral', variant: 'pink' },
-  { label: 'INSIGHTS UNLOCKED', value: '23', change: '↑ 4 this month', dir: 'up', variant: 'green' },
+  { label: 'BIASES IDENTIFIED', value: '7', changeText: '2 this week', changeIcon: TrendingUp, dir: 'up', variant: 'blue' },
+  { label: 'JOURNAL ENTRIES', value: '12', changeText: '3 this week', changeIcon: TrendingUp, dir: 'up', variant: 'lavender' },
+  { label: 'CURRENT STREAK', value: '5', changeText: 'days', changeIcon: Flame, dir: 'neutral', variant: 'pink' },
+  { label: 'INSIGHTS UNLOCKED', value: '23', changeText: '4 this month', changeIcon: TrendingUp, dir: 'up', variant: 'green' },
 ])
 
 const traits = ref(['Analytical', 'Detail-oriented', 'Logic-driven', 'Skeptical'])
@@ -240,16 +272,16 @@ const insights = ref([
 ])
 
 const quickActions = ref([
-  { icon: '📝', label: 'Write a journal entry', path: '/journal/new' },
-  { icon: '🧩', label: 'Take an assessment', path: '/assessments' },
-  { icon: '🔍', label: 'Explore a bias', path: '/explore' },
-  { icon: '💬', label: 'Chat with AI Guide', path: '/ai-guide' },
+  { icon: BookOpen, label: 'Write a journal entry', path: '/journal/new' },
+  { icon: ClipboardList, label: 'Take an assessment', path: '/assessments' },
+  { icon: Search, label: 'Explore a bias', path: '/explore' },
+  { icon: MessageSquare, label: 'Chat with AI Guide', path: '/ai-guide' },
 ])
 
 const recommendations = ref([
-  { name: 'Availability Heuristic', emoji: '🧠', category: 'Memory', badgeColor: 'blue' },
-  { name: 'Dunning-Kruger Effect', emoji: '📊', category: 'Self', badgeColor: 'yellow' },
-  { name: 'Halo Effect', emoji: '✨', category: 'Social', badgeColor: 'pink' },
+  { name: 'Availability Heuristic', icon: Brain, category: 'Memory', badgeColor: 'blue' },
+  { name: 'Dunning-Kruger Effect', icon: BarChart2, category: 'Self', badgeColor: 'yellow' },
+  { name: 'Halo Effect', icon: Sparkles, category: 'Social', badgeColor: 'pink' },
 ])
 
 // --- Radar chart ---
@@ -489,9 +521,9 @@ const labelAnchors = computed(() =>
   border-color: var(--lavender);
   transform: translateX(4px);
 }
-.quick-action-icon { font-size: 18px; width: 24px; text-align: center; }
+.quick-action-icon { color: var(--lavender-deep); flex-shrink: 0; }
 .quick-action-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--plum); }
-.quick-action-arrow { font-size: 14px; color: var(--slate); }
+.quick-action-arrow { color: var(--slate); }
 
 /* ── Recommendations ── */
 .recommendations-list { display: flex; flex-direction: column; gap: 12px; }
@@ -507,12 +539,13 @@ const labelAnchors = computed(() =>
   border-color: var(--lavender);
 }
 .rec-top { display: flex; align-items: center; gap: 12px; }
-.rec-emoji {
-  font-size: 22px; width: 42px; height: 42px;
+.rec-icon-wrap {
+  width: 42px; height: 42px;
   background: white; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(53,43,56,0.06);
+  color: var(--lavender-deep);
 }
 .rec-info { display: flex; flex-direction: column; gap: 4px; }
 .rec-name { font-size: 14px; font-weight: 700; color: var(--plum); }
@@ -547,4 +580,18 @@ const labelAnchors = computed(() =>
   font-size: 13px !important;
   border-radius: 8px !important;
 }
+
+/* ── Loading Overlay ── */
+.loading-overlay {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px; color: var(--slate); gap: 16px;
+}
+.spinner {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 3px solid var(--lavender); border-top-color: var(--lavender-deep);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+svg { display: block; }
 </style>

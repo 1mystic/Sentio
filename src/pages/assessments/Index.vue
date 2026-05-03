@@ -23,10 +23,20 @@
       </button>
     </div>
 
+    <!-- Skeleton loading state -->
+    <div v-if="assessmentStore.loading" class="assessment-grid">
+      <div v-for="n in 4" :key="n" class="assessment-card card skeleton-assessment">
+        <div class="skeleton sk-emoji"></div>
+        <div class="skeleton sk-atitle"></div>
+        <div class="skeleton sk-adesc"></div>
+        <div class="skeleton sk-stats"></div>
+      </div>
+    </div>
+
     <!-- Assessment Grid -->
-    <div class="assessment-grid">
+    <div v-else class="assessment-grid">
       <div
-        v-for="a in filteredAssessments"
+        v-for="a in displayAssessments"
         :key="a.id"
         class="assessment-card card"
         :style="{ borderTop: `4px solid ${a.color}` }"
@@ -80,12 +90,19 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAssessmentStore } from '@/stores/assessment.js'
 
 const router = useRouter()
+const assessmentStore = useAssessmentStore()
+
 const activeTab = ref('Available')
 const tabs = ['Available', 'In Progress', 'Completed']
+
+onMounted(() => {
+  assessmentStore.fetchList()
+})
 
 const assessments = ref([
   { id: 1, title: 'Cognitive Bias Inventory', emoji: '🧠', category: 'Core', status: 'available', time: 12, questions: 20, color: '#dad8f9', description: 'A comprehensive test covering 10 major cognitive biases. Establishes your baseline profile.' },
@@ -100,12 +117,19 @@ const assessments = ref([
 
 function countByStatus(tab) {
   const map = { 'Available': 'available', 'In Progress': 'in-progress', 'Completed': 'completed' }
-  return assessments.value.filter(a => a.status === map[tab]).length
+  const source = assessmentStore.assessments.length > 0 ? assessmentStore.assessments : assessments.value
+  return source.filter(a => a.status === map[tab]).length
 }
 
 const filteredAssessments = computed(() => {
   const map = { 'Available': 'available', 'In Progress': 'in-progress', 'Completed': 'completed' }
   return assessments.value.filter(a => a.status === map[activeTab.value])
+})
+
+const displayAssessments = computed(() => {
+  const map = { 'Available': 'available', 'In Progress': 'in-progress', 'Completed': 'completed' }
+  const source = assessmentStore.assessments.length > 0 ? assessmentStore.assessments : assessments.value
+  return source.filter(a => a.status === map[activeTab.value])
 })
 </script>
 
@@ -169,4 +193,16 @@ const filteredAssessments = computed(() => {
 .score-label { font-size: 12px; font-weight: 700; color: var(--plum); }
 
 .card-action { margin-top: auto; }
+
+/* Skeleton */
+.skeleton-assessment { pointer-events: none; gap: 12px; }
+.skeleton {
+  background: var(--lavender); border-radius: 8px;
+  animation: a-pulse 1.4s ease-in-out infinite;
+}
+.sk-emoji  { height: 36px; width: 36px; border-radius: 50%; }
+.sk-atitle { height: 18px; width: 60%; }
+.sk-adesc  { height: 32px; width: 100%; }
+.sk-stats  { height: 14px; width: 50%; }
+@keyframes a-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.3; } }
 </style>

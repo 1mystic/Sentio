@@ -13,13 +13,25 @@ const loading = ref(false)
 const showPass = ref(false)
 
 async function handleLogin() {
-  // DEV MODE: skip real auth, go straight to dashboard
-  router.push('/dashboard')
+  if (!email.value || !password.value) {
+    error.value = 'Please enter your email and password.'
+    return
+  }
+  loading.value = true
+  error.value = ''
+  const { error: err } = await auth.signIn(email.value, password.value)
+  loading.value = false
+  if (err) {
+    error.value = err.message || 'Sign in failed. Check your credentials.'
+  } else {
+    router.push('/dashboard')
+  }
 }
 
 async function handleGoogle() {
-  // Google OAuth — wired to supabase in auth store
-  error.value = 'Google sign-in coming soon.'
+  // Google OAuth — requires client ID configured in Supabase dashboard
+  // Will be enabled after Vercel deployment with OAuth callback URL
+  error.value = 'Google sign-in will be available after deployment. Use email sign in for now.'
 }
 </script>
 

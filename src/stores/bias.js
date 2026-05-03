@@ -1,25 +1,48 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { supabase } from '@/composables/useSupabase.js'
+import { ref, computed } from 'vue'
+import { biasesApi } from '@/api/biases.js'
 
 export const useBiasStore = defineStore('bias', () => {
-  const allBiases = ref([])
-  const isLoading = ref(false)
+  const biases = ref([])
+  const currentBias = ref(null)
+  const loading = ref(false)
+  const error = ref(null)
 
-  async function fetchBiases() {
-    isLoading.value = true
-    const { data, error } = await supabase.from('biases').select('*').order('name')
-    if (!error) allBiases.value = data || []
-    isLoading.value = false
+  const byCategory = computed(() => {
+    return biases.value.reduce((acc, b) => {
+      if (!acc[b.category]) acc[b.category] = []
+      acc[b.category].push(b)
+      return acc
+    }, {})
+  })
+
+  async function fetchAll(params = {}) {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await biasesApi.list(params)
+      biases.value = data
+    } catch (err) {
+      error.value = err.message
+    } finally {
+      loading.value = false
+    }
   }
 
-  function getBiasBySlug(slug) {
-    return allBiases.value.find(b => b.slug === slug)
+  async function fetchBySlug(slug) {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await biasesApi.getBySlug(slug)
+      currentBias.value = data
+      return data
+    } catch (err) {
+      error.value = err.message
+      return null
+    } finally {
+      loading.value = false
+    }
   }
 
-  function getBiasesByCategory(category) {
-    return allBiases.value.filter(b => b.category === category)
-  }
-
-  return { allBiases, isLoading, fetchBiases, getBiasBySlug, getBiasesByCategory }
+  return { biases, currentBias, loading, error, byCategory, fetchAll, fetchBySlug }
 })

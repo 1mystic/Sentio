@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from services.safety import safety
 from services.claude_service import stream_response
+from services.rag_service import rag_query
 from services.supabase_client import get_supabase
 from routers._auth_helpers import get_user_id
 import json
@@ -24,10 +25,13 @@ async def chat(data: ChatRequest, authorization: str | None = Header(None)):
     The endpoint:
     1. Checks the user's message for crisis signals.
     2. Loads the user's bias fingerprint for personalised context.
-    3. Streams Claude's response token-by-token as SSE chunks.
-    4. Persists the conversation to ai_conversations after completion.
+    3. Runs RAG retrieval to inject relevant knowledge articles.
+    4. Streams Claude's response token-by-token as SSE chunks.
+    5. Emits a sources event after the stream if RAG returned citations.
+    6. Persists the conversation to ai_conversations after completion.
 
     Each SSE chunk is:  data: {"chunk": "..."}\n\n
+    Sources event:      data: {"sources": [...]}\n\n
     The stream ends with: data: [DONE]\n\n
     """
     # Safety gate
@@ -69,17 +73,26 @@ async def chat(data: ChatRequest, authorization: str | None = Header(None)):
             deduped_themes.append(t)
     journal_themes = deduped_themes[:5]
 
+    # RAG retrieval — get relevant knowledge articles
+    rag_context, sources = await rag_query(data.message)
+
     async def generate():
         full_response = ""
         try:
             async for chunk in stream_response(
                 data.message,
+                rag_context=rag_context,
                 bias_fingerprint=bias_fingerprint,
                 journal_themes=journal_themes,
             ):
                 if safety.check_output(chunk):
                     full_response += chunk
                     yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+
+            # Emit sources after the main stream completes
+            if sources:
+                yield f"data: {json.dumps({'sources': sources})}\n\n"
+
         except Exception as e:
             logger.error(f"Streaming error: {e}")
             yield f"data: {json.dumps({'error': 'Stream interrupted'})}\n\n"

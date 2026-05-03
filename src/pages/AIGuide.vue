@@ -34,7 +34,7 @@
       >
         <div v-if="msg.role === 'assistant'" class="msg-avatar">✨</div>
         <div class="bubble" :class="msg.role">
-          <div class="bubble-text">{{ msg.content }}</div>
+          <div class="bubble-text">{{ msg.content }}<span v-if="msg.streaming" class="typing-cursor">▌</span></div>
           <div class="bubble-ts">{{ msg.ts }}</div>
         </div>
       </div>
@@ -77,8 +77,12 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
+const auth = useAuthStore()
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
 const messages = ref([
   { id: 1, role: 'assistant', content: 'Hello! I\'m Sentio AI — your cognitive bias guide. I\'m here to help you explore patterns in your thinking, reflect on decisions, and understand psychological concepts in a practical way.\n\nWhat\'s on your mind today?', ts: '9:41 AM' }
 ])
@@ -88,40 +92,77 @@ const messagesEl = ref(null)
 const inputEl = ref(null)
 const suggestions = ['What biases affect my decisions most?', 'Help me reflect on a recent conflict', 'Explain confirmation bias with examples', 'How can I think more objectively?']
 
-const simulatedReplies = [
-  'That\'s a great reflection. Based on what you\'ve shared, this sounds like it could involve confirmation bias — the tendency to favor information that confirms what we already believe. Would you like to explore this further with a specific example from your experience?',
-  'This is a really insightful question. The availability heuristic plays a big role here — our brains judge the likelihood of events based on how easily examples come to mind. Recent or vivid events feel more probable, even when statistics say otherwise.',
-  'What you\'re describing sounds like the sunk cost fallacy. We tend to continue investing in something because of what we\'ve already put in — time, money, emotion — rather than evaluating what\'s the best path forward from now. Does that resonate?',
-  'Recognizing this pattern is already a huge step. The Dunning-Kruger effect suggests that people with limited knowledge in a domain tend to overestimate their competence. The good news? As expertise grows, so does appropriate humility.',
-]
-let replyIndex = 0
-
 async function sendMessage() {
   if (!input.value.trim() || loading.value) return
   const userMsg = {
-    id: Date.now(),
-    role: 'user',
-    content: input.value,
+    id: Date.now(), role: 'user', content: input.value,
     ts: new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })
   }
   messages.value.push(userMsg)
+  const userInput = input.value
   input.value = ''
   loading.value = true
   if (inputEl.value) { inputEl.value.style.height = 'auto' }
   await nextTick()
   messagesEl.value?.scrollTo({ top: messagesEl.value.scrollHeight, behavior: 'smooth' })
 
-  await new Promise(r => setTimeout(r, 1500))
-  messages.value.push({
-    id: Date.now() + 1,
-    role: 'assistant',
-    content: simulatedReplies[replyIndex % simulatedReplies.length],
-    ts: new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })
-  })
-  replyIndex++
-  loading.value = false
-  await nextTick()
-  messagesEl.value?.scrollTo({ top: messagesEl.value.scrollHeight, behavior: 'smooth' })
+  // Add streaming AI message placeholder
+  const aiMsg = {
+    id: Date.now() + 1, role: 'assistant', content: '',
+    ts: new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
+    streaming: true
+  }
+  messages.value.push(aiMsg)
+
+  try {
+    const token = auth.session?.access_token
+    const response = await fetch(`${API_BASE}/ai/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ message: userInput }),
+    })
+
+    if (!response.ok) throw new Error('API error')
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const text = decoder.decode(value)
+      const lines = text.split('\n').filter(l => l.startsWith('data:'))
+
+      for (const line of lines) {
+        const raw = line.slice(5).trim()
+        if (raw === '[DONE]') { aiMsg.streaming = false; break }
+        try {
+          const parsed = JSON.parse(raw)
+          if (parsed.chunk) {
+            aiMsg.content += parsed.chunk
+            await nextTick()
+            messagesEl.value?.scrollTo({ top: messagesEl.value.scrollHeight, behavior: 'smooth' })
+          }
+          if (parsed.error) {
+            aiMsg.content = 'Sorry, I encountered an error. Please try again.'
+            aiMsg.streaming = false
+          }
+        } catch {}
+      }
+    }
+  } catch (err) {
+    // Fallback to simulated response if API not running
+    aiMsg.content = "I'm having trouble connecting to the server. Please make sure the API is running at " + API_BASE + "."
+  } finally {
+    aiMsg.streaming = false
+    loading.value = false
+    await nextTick()
+    messagesEl.value?.scrollTo({ top: messagesEl.value.scrollHeight, behavior: 'smooth' })
+  }
 }
 
 function useSuggestion(s) {
@@ -198,4 +239,8 @@ function autoResize(e) {
 .safety-notice { font-size: 11px; color: var(--slate); font-style: italic; text-align: center; }
 .safety-link { color: var(--lavender-deep); text-decoration: none; font-weight: 600; }
 .safety-link:hover { text-decoration: underline; }
+
+/* Typing cursor */
+.typing-cursor { animation: blink 0.7s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 </style>

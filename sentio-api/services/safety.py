@@ -1,44 +1,37 @@
+"""Content safety checking: crisis detection and clinical overreach prevention."""
+import re
 from dataclasses import dataclass
 from typing import Literal
 
 CRISIS_KEYWORDS = [
-    "suicide",
-    "suicidal",
-    "kill myself",
-    "end my life",
-    "don't want to live",
-    "dont want to live",
-    "self-harm",
-    "self harm",
-    "hurt myself",
-    "cutting myself",
-    "overdose",
-    "want to die",
-    "better off without me",
-    "no reason to live",
+    "suicide", "suicidal", "kill myself", "end my life", "want to die",
+    "self-harm", "self harm", "hurt myself", "cutting myself",
+    "no reason to live", "better off dead", "overdose", "take my life",
+    "end it all", "don't want to be here", "can't go on",
+    # Keep legacy variants from original file
+    "don't want to live", "dont want to live", "better off without me",
     "not worth living",
-    "end it all",
 ]
 
-CRISIS_RESOURCES = (
-    "If you're in crisis, please reach out immediately:\n"
-    "  iCall (India): 9152987821\n"
-    "  Vandrevala Foundation: 1860-2662-345\n"
-    "  iCall chat: icallhelpline.org\n"
-    "These services are free, confidential, and available 24/7."
+# Patterns that indicate clinical overreach in AI output
+CLINICAL_OVERREACH_PATTERNS = [
+    r"\bdiagnos\w+\b",  # diagnose, diagnosed, diagnosis
+    r"\b(?:bipolar|schizophrenia|borderline personality|clinical depression|OCD|PTSD)\b",
+    r"\bprescri\w+\b",   # prescribe, prescription
+    r"\bmedication\b",
+    r"\btherapy\s+session\b",
+    r"\btreat(?:ment|ing|ed)\s+(?:your|the)\s+(?:condition|disorder|illness)\b",
+]
+
+CRISIS_RESPONSE = (
+    "It sounds like you may be going through something really difficult. "
+    "Please reach out for support:\n\n"
+    "**iCall** (TISS): 9152987821\n"
+    "**Vandrevala Foundation**: 1860-2662-345\n"
+    "**iCall Online**: icallhelpline.org\n\n"
+    "You don't have to face this alone. Sentio is an educational tool — "
+    "for crisis support, please speak with a trained counsellor."
 )
-
-# Phrases that indicate the AI response is overstepping into clinical territory
-_BLOCKED_OUTPUT_PHRASES = [
-    "you have",
-    "you suffer from",
-    "you are diagnosed",
-    "take medication",
-    "prescribe",
-    "clinical diagnosis",
-    "you need therapy",
-    "you should see a psychiatrist",
-]
 
 
 @dataclass
@@ -62,7 +55,7 @@ class SafetyChecker:
         if any(kw in lower for kw in CRISIS_KEYWORDS):
             return SafetyResult(
                 action="REDIRECT",
-                message=CRISIS_RESOURCES,
+                message=CRISIS_RESPONSE,
                 block_ai_response=True,
             )
         return SafetyResult(action="PROCEED")
@@ -72,8 +65,10 @@ class SafetyChecker:
 
         Blocks chunks that contain clinical overreach language.
         """
-        lower = text.lower()
-        return not any(phrase in lower for phrase in _BLOCKED_OUTPUT_PHRASES)
+        for pattern in CLINICAL_OVERREACH_PATTERNS:
+            if re.search(pattern, text, re.IGNORECASE):
+                return False
+        return True
 
 
 # Module-level singleton — import this everywhere

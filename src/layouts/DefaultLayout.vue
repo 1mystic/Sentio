@@ -16,7 +16,7 @@
           class="nav-item"
           :class="{ active: $route.path === item.path }"
         >
-          <span class="nav-icon">{{ item.icon }}</span>
+          <component :is="item.icon" :size="18" class="nav-icon" />
           <span class="nav-label">{{ item.label }}</span>
         </router-link>
 
@@ -28,7 +28,7 @@
           class="nav-item"
           :class="{ active: $route.path === item.path }"
         >
-          <span class="nav-icon">{{ item.icon }}</span>
+          <component :is="item.icon" :size="18" class="nav-icon" />
           <span class="nav-label">{{ item.label }}</span>
         </router-link>
       </nav>
@@ -49,12 +49,12 @@
       <!-- Topbar -->
       <header class="topbar">
         <div class="topbar-search">
-          <span class="search-icon">⌕</span>
+          <Search :size="16" class="search-icon" />
           <input type="text" placeholder="Search biases, journal, assessments…" class="search-input" />
         </div>
         <div class="topbar-right">
-          <button class="btn-icon" title="Notifications">🔔</button>
-          <router-link to="/ai-guide" class="btn-icon" title="AI Guide" style="text-decoration:none">✦</router-link>
+          <button class="btn-icon" title="Notifications"><Bell :size="18" /></button>
+          <router-link to="/ai-guide" class="btn-icon" title="AI Guide" style="text-decoration:none"><Sparkles :size="18" /></router-link>
         </div>
       </header>
 
@@ -70,6 +70,11 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.js'
 import { useUserStore } from '@/stores/user.js'
+import {
+  LayoutDashboard, Brain, BookOpen, ClipboardList,
+  MessageSquare, UserCheck, TrendingUp,
+  Search, Bell, Sparkles
+} from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const userStore = useUserStore()
@@ -79,16 +84,16 @@ const userEmail = computed(() => auth.user?.email || '')
 const userInitial = computed(() => userName.value[0]?.toUpperCase() || 'U')
 
 const mainNav = [
-  { path: '/dashboard', icon: '⌂', label: 'Dashboard' },
-  { path: '/explore', icon: '◎', label: 'Bias Explorer' },
-  { path: '/journal', icon: '✏', label: 'Journal' },
-  { path: '/assessments', icon: '▦', label: 'Assessments' },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/explore', icon: Brain, label: 'Bias Explorer' },
+  { path: '/journal', icon: BookOpen, label: 'Journal' },
+  { path: '/assessments', icon: ClipboardList, label: 'Assessments' },
 ]
 
 const toolsNav = [
-  { path: '/ai-guide', icon: '✦', label: 'AI Guide' },
-  { path: '/therapists', icon: '♡', label: 'Find Therapist' },
-  { path: '/progress', icon: '↑', label: 'Progress' },
+  { path: '/ai-guide', icon: MessageSquare, label: 'AI Guide' },
+  { path: '/therapists', icon: UserCheck, label: 'Find Therapist' },
+  { path: '/progress', icon: TrendingUp, label: 'Progress' },
 ]
 </script>
 
@@ -127,7 +132,9 @@ const toolsNav = [
 }
 .nav-item:hover { background: var(--lavender-soft); color: var(--plum); }
 .nav-item.active { background: var(--lavender); color: var(--plum); font-weight: 600; }
-.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-icon { flex-shrink: 0; opacity: 0.75; display: block; }
+.nav-item:hover .nav-icon { opacity: 1; }
+.nav-item.active .nav-icon { opacity: 1; }
 .nav-label { font-size: 14px; }
 
 .sidebar-footer { padding: 12px 8px; border-top: 1px solid var(--lavender-soft); }
@@ -155,7 +162,7 @@ const toolsNav = [
   background: white; border: 1.5px solid var(--lavender);
   border-radius: 12px; padding: 8px 14px; max-width: 400px;
 }
-.search-icon { color: var(--slate); font-size: 16px; }
+.search-icon { color: var(--slate); flex-shrink: 0; }
 .search-input {
   border: none; outline: none;
   font-family: 'Urbanist', sans-serif; font-size: 14px;
@@ -164,5 +171,15 @@ const toolsNav = [
 .search-input::placeholder { color: var(--slate); }
 .topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
+.btn-icon {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--slate); padding: 6px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.btn-icon:hover { background: var(--lavender-soft); color: var(--plum); }
+
 .page-body { flex: 1; overflow-y: auto; padding: 32px; display: flex; flex-direction: column; gap: 32px; }
+
+svg { display: block; }
 </style>

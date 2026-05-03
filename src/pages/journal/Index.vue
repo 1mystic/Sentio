@@ -15,7 +15,7 @@
     <!-- Filter Bar -->
     <div class="filter-bar">
       <div class="search-wrap">
-        <span class="search-icon">🔍</span>
+        <Search :size="14" class="search-icon" />
         <input
           v-model="search"
           class="input search-input"
@@ -38,10 +38,20 @@
       </select>
     </div>
 
+    <!-- Skeleton loading state -->
+    <div v-if="journalStore.loading" class="entry-list">
+      <div v-for="n in 3" :key="n" class="entry-card card skeleton-entry">
+        <div class="skeleton sk-meta"></div>
+        <div class="skeleton sk-title"></div>
+        <div class="skeleton sk-excerpt"></div>
+        <div class="skeleton sk-tags"></div>
+      </div>
+    </div>
+
     <!-- Entry List -->
-    <div class="entry-list">
+    <div v-else class="entry-list">
       <div
-        v-for="entry in filteredEntries"
+        v-for="entry in displayEntries"
         :key="entry.id"
         class="entry-card card"
       >
@@ -69,16 +79,18 @@
             <span v-if="entry.biases.length > 3" class="badge badge-lavender">+{{ entry.biases.length - 3 }} more</span>
           </div>
           <div class="entry-actions">
-            <router-link :to="`/journal/${entry.id}`" class="btn btn-ghost btn-sm">Read →</router-link>
-            <button class="btn btn-icon" title="More options">···</button>
+            <router-link :to="`/journal/${entry.id}`" class="btn btn-ghost btn-sm">
+              Read <ArrowRight :size="13" />
+            </router-link>
+            <button class="btn btn-icon" title="More options"><MoreHorizontal :size="16" /></button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Empty state -->
-    <div v-if="filteredEntries.length === 0" class="empty-state">
-      <div class="empty-icon">📝</div>
+    <div v-if="!journalStore.loading && displayEntries.length === 0" class="empty-state">
+      <div class="empty-icon"><BookOpen :size="40" /></div>
       <p class="empty-text">No entries match your search.</p>
     </div>
 
@@ -86,13 +98,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useJournalStore } from '@/stores/journal.js'
+import { Search, ArrowRight, MoreHorizontal, BookOpen } from 'lucide-vue-next'
 
 const router = useRouter()
+const journalStore = useJournalStore()
+
 const activeTab = ref('All')
 const search = ref('')
 const tabs = ['All', 'This Week', 'This Month']
+
+onMounted(() => {
+  journalStore.fetchEntries()
+})
 
 const entries = ref([
   { id: 1, date: '2026-04-30', time: '9:41 AM', mood: '😊', title: 'Productive morning session', content: 'Had a great planning session this morning. I noticed I kept dismissing Sarah\'s timeline concerns without really considering them.', biases: ['Confirmation Bias', 'Overconfidence'], color: 'green' },
@@ -105,6 +125,15 @@ const entries = ref([
 
 const filteredEntries = computed(() => {
   return entries.value.filter(e => e.title.toLowerCase().includes(search.value.toLowerCase()))
+})
+
+// Merge API entries with hardcoded fallback
+const displayEntries = computed(() => {
+  const source = journalStore.entries.length > 0 ? journalStore.entries : entries.value
+  return source.filter(e =>
+    e.title?.toLowerCase().includes(search.value.toLowerCase()) ||
+    e.content?.toLowerCase().includes(search.value.toLowerCase())
+  )
 })
 </script>
 
@@ -139,8 +168,8 @@ const filteredEntries = computed(() => {
 .btn-ghost { background: transparent; color: var(--plum); border: 1.5px solid var(--lavender); padding: 10px 20px; border-radius: 10px; font-size: 14px; }
 .btn-ghost:hover { background: var(--lavender-soft); }
 .btn-sm { padding: 6px 14px !important; font-size: 13px !important; border-radius: 8px !important; }
-.btn-icon { background: transparent; border: none; color: var(--slate); font-size: 18px; padding: 4px 8px; border-radius: 6px; cursor: pointer; letter-spacing: 1px; }
-.btn-icon:hover { background: var(--lavender-soft); }
+.btn-icon { background: transparent; border: none; color: var(--slate); padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.btn-icon:hover { background: var(--lavender-soft); color: var(--plum); }
 
 /* Badges */
 .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; display: inline-flex; align-items: center; }
@@ -148,9 +177,9 @@ const filteredEntries = computed(() => {
 
 /* Filter Bar */
 .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 320px; }
-.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
-.search-input { padding-left: 36px; }
+.search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 320px; display: flex; align-items: center; background: white; border: 1.5px solid var(--lavender); border-radius: 10px; padding: 0 14px; gap: 8px; }
+.search-icon { color: var(--slate); flex-shrink: 0; }
+.search-input { padding-left: 0 !important; border: none !important; box-shadow: none !important; }
 .input { font-family: 'Urbanist'; font-size: 14px; color: var(--plum); background: white; border: 1.5px solid var(--lavender); border-radius: 10px; padding: 10px 14px; outline: none; transition: all 0.15s; width: 100%; box-sizing: border-box; }
 .input:focus { border-color: var(--lavender-deep); box-shadow: 0 0 0 3px rgba(155,148,232,0.15); }
 .sort-select { width: auto; flex-shrink: 0; cursor: pointer; }
@@ -184,6 +213,20 @@ const filteredEntries = computed(() => {
 
 /* Empty */
 .empty-state { text-align: center; padding: 60px 20px; }
-.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-icon { color: var(--slate); margin-bottom: 12px; display: flex; justify-content: center; }
 .empty-text { font-size: 16px; color: var(--slate); }
+
+/* Skeleton */
+.skeleton-entry { pointer-events: none; gap: 12px; }
+.skeleton {
+  background: var(--lavender); border-radius: 8px;
+  animation: sk-pulse 1.4s ease-in-out infinite;
+}
+.sk-meta  { height: 14px; width: 160px; }
+.sk-title { height: 18px; width: 55%; }
+.sk-excerpt { height: 32px; width: 100%; }
+.sk-tags  { height: 22px; width: 220px; }
+@keyframes sk-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.3; } }
+
+svg { display: block; }
 </style>

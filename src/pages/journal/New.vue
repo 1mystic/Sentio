@@ -132,8 +132,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useJournalStore } from '@/stores/journal.js'
 
 const router = useRouter()
+const journalStore = useJournalStore()
 const title = ref('')
 const content = ref('')
 const mood = ref('😊')
@@ -184,13 +186,20 @@ function removeTag(tag) {
 
 async function saveEntry(publish) {
   saving.value = true
-  await new Promise(r => setTimeout(r, 800))
+  const { data, error: err } = await journalStore.createEntry({
+    content: content.value,
+    prompt_used: title.value || null,
+    mood: mood.value,
+  })
   saving.value = false
-  toastVisible.value = true
-  setTimeout(() => {
-    toastVisible.value = false
+  if (err) {
+    // Show error toast (use inline error state)
+    console.error('Failed to save:', err)
+    toastVisible.value = true
+    setTimeout(() => { toastVisible.value = false }, 2500)
+  } else {
     router.push('/journal')
-  }, 1200)
+  }
 }
 </script>
 

@@ -11,7 +11,9 @@
     <!-- Hero Section -->
     <div class="hero-card">
       <div class="hero-left">
-        <div class="hero-emoji-circle">{{ bias.emoji }}</div>
+        <div class="hero-icon-circle">
+          <component :is="getBiasIcon(bias.id)" :size="38" />
+        </div>
         <div class="hero-text">
           <div class="hero-meta">
             <span class="badge badge-lavender">{{ bias.category }}</span>
@@ -63,7 +65,7 @@
 
         <div class="why-card">
           <div class="why-header">
-            <span class="why-icon">💡</span>
+            <Lightbulb :size="20" class="why-icon" />
             <span class="why-title">Why it happens</span>
           </div>
           <p class="body-text">{{ bias.whyItHappens }}</p>
@@ -80,9 +82,9 @@
               class="related-card"
               @click="router.push('/explore/' + rel.id)"
             >
-              <span class="related-emoji">{{ rel.emoji }}</span>
+              <component :is="getBiasIcon(rel.id)" :size="18" class="related-icon" />
               <span class="related-name">{{ rel.name }}</span>
-              <span class="related-arrow">→</span>
+              <ArrowRight :size="12" class="related-arrow" />
             </div>
           </div>
         </div>
@@ -110,7 +112,7 @@
       <!-- In Your Life Tab -->
       <div v-if="activeTab === 'in-your-life'" class="tab-pane">
         <div class="ai-container" style="margin-bottom: 24px;">
-          <div class="ai-label">✨ Personalized Analysis</div>
+          <div class="ai-label"><Sparkles :size="11" /> Personalized Analysis</div>
           <div class="ai-prompt">How {{ bias.name }} shows up in your life</div>
           <div class="ai-response">
             Based on your recent journal entries, you've encountered this bias {{ bias.weeklyEncounters }} times this week alone.
@@ -160,7 +162,7 @@
     <!-- CTA Section -->
     <div class="cta-section">
       <div class="cta-content">
-        <div class="cta-emoji">🎯</div>
+        <ClipboardList :size="36" class="cta-icon" />
         <div class="cta-text">
           <div class="cta-title">Ready to test yourself?</div>
           <div class="cta-desc">Take a short assessment to see how strongly this bias affects your thinking</div>
@@ -178,6 +180,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import {
+  Search, Brain, Anchor, TrendingDown, Star, Calendar,
+  Lock, Users, BookMarked, Scan, Megaphone, HandHelping, Sparkles,
+  BarChart2, ArrowRight, Lightbulb, ClipboardList
+} from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -185,10 +192,28 @@ const router = useRouter()
 const activeTab = ref('overview')
 const tabs = ['Overview', 'Examples', 'In Your Life', 'How to Counter']
 
+const biasIconMap = {
+  'confirmation-bias': Search,
+  'availability-heuristic': Brain,
+  'anchoring-bias': Anchor,
+  'dunning-kruger': BarChart2,
+  'sunk-cost': TrendingDown,
+  'halo-effect': Sparkles,
+  'fundamental-attribution': HandHelping,
+  'bandwagon-effect': Megaphone,
+  'optimism-bias': Star,
+  'recency-bias': Calendar,
+  'status-quo-bias': Lock,
+  'in-group-bias': Users,
+}
+
+function getBiasIcon(id) {
+  return biasIconMap[id] || Brain
+}
+
 const bias = ref({
   id: 'confirmation-bias',
   name: 'Confirmation Bias',
-  emoji: '🔍',
   category: 'Belief',
   tagline: 'We see what we want to see',
   prevalence: 85,
@@ -234,9 +259,9 @@ const bias = ref({
 })
 
 const relatedBiases = [
-  { id: 'availability-heuristic', name: 'Availability Heuristic', emoji: '🧠' },
-  { id: 'dunning-kruger', name: 'Dunning-Kruger Effect', emoji: '📊' },
-  { id: 'anchoring-bias', name: 'Anchoring Bias', emoji: '⚓' },
+  { id: 'availability-heuristic', name: 'Availability Heuristic' },
+  { id: 'dunning-kruger', name: 'Dunning-Kruger Effect' },
+  { id: 'anchoring-bias', name: 'Anchoring Bias' },
 ]
 
 const timelineItems = [
@@ -277,11 +302,11 @@ const timelineItems = [
   flex-wrap: wrap;
 }
 .hero-left { display: flex; align-items: center; gap: 20px; }
-.hero-emoji-circle {
+.hero-icon-circle {
   width: 80px; height: 80px; border-radius: 99px;
   background: white;
   display: flex; align-items: center; justify-content: center;
-  font-size: 38px; flex-shrink: 0;
+  color: var(--lavender-deep); flex-shrink: 0;
   box-shadow: 0 4px 20px rgba(53,43,56,0.1);
 }
 .hero-meta { margin-bottom: 8px; }
@@ -354,7 +379,7 @@ const timelineItems = [
   border: 1px solid var(--lavender);
 }
 .why-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.why-icon { font-size: 20px; }
+.why-icon { color: var(--lavender-deep); }
 .why-title { font-size: 16px; font-weight: 700; color: var(--plum); }
 
 /* ── Related Biases ── */
@@ -366,9 +391,9 @@ const timelineItems = [
   cursor: pointer; transition: all 0.17s;
 }
 .related-card:hover { background: var(--lavender-soft); border-color: var(--lavender); transform: translateY(-2px); }
-.related-emoji { font-size: 18px; }
+.related-icon { color: var(--lavender-deep); flex-shrink: 0; }
 .related-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--plum); }
-.related-arrow { font-size: 12px; color: var(--slate); }
+.related-arrow { color: var(--slate); }
 
 /* ── Example cards ── */
 .example-card { display: flex; gap: 16px; }
@@ -458,7 +483,7 @@ const timelineItems = [
   flex-wrap: wrap;
 }
 .cta-content { display: flex; align-items: center; gap: 16px; }
-.cta-emoji { font-size: 36px; }
+.cta-icon { color: rgba(255,255,255,0.85); }
 .cta-title { font-size: 20px; font-weight: 700; color: white; margin-bottom: 4px; }
 .cta-desc { font-size: 14px; color: rgba(255,255,255,0.7); }
 .cta-actions { display: flex; gap: 12px; align-items: center; }
@@ -496,4 +521,6 @@ const timelineItems = [
   font-size: 13px !important;
   border-radius: 8px !important;
 }
+
+svg { display: block; }
 </style>

@@ -154,6 +154,32 @@ async def aggregate_themes(authorization: str | None = Header(None)):
     return top
 
 
+@router.post("/{entry_id}/reflections")
+async def generate_reflections(entry_id: str, authorization: str | None = Header(None)):
+    """Generate 3 Claude-powered reflection questions for a journal entry."""
+    user_id = get_user_id(authorization)
+    supabase = get_supabase()
+
+    result = (
+        supabase.table("journal_entries")
+        .select("content,detected_biases")
+        .eq("id", entry_id)
+        .eq("user_id", user_id)
+        .single()
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
+
+    entry = result.data
+    from services.claude_service import generate_journal_reflections
+    questions = await generate_journal_reflections(
+        entry["content"],
+        entry.get("detected_biases") or [],
+    )
+    return {"questions": questions, "entry_id": entry_id}
+
+
 @router.get("/{entry_id}")
 async def get_entry(entry_id: str, authorization: str | None = Header(None)):
     """Return a single journal entry belonging to the authenticated user."""
