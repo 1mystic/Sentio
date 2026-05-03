@@ -1,9 +1,12 @@
+uvicorn main:app --reload --port 8000
+
 Next steps to run:
 
 cd sentio-ml && pip install -r requirements.txt
 python data/generate_training_data.py — generates 750 training examples (~$2-3 in Claude API)
 python train_bias_classifier.py — fine-tunes the model
-For RAG: cd sentio-api && pip install sentence-transformers && python db/seed_knowledge.py
+For RAG: cd sentio-api && pip install sentence-transformers && 
+
 wfgriwlzgxgnlsbwotkp.supabase.co/auth/v1/signup:1  Failed to load resource: the server responded with a status of 500 ()
 
 ⚠
