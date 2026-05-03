@@ -13,15 +13,8 @@ const loading = ref(false)
 const showPass = ref(false)
 
 async function handleLogin() {
-  loading.value = true
-  error.value = ''
-  const { error: err } = await auth.signIn(email.value, password.value)
-  loading.value = false
-  if (err) {
-    error.value = err.message || 'Login failed'
-  } else {
-    router.push('/dashboard')
-  }
+  // DEV MODE: skip real auth, go straight to dashboard
+  router.push('/dashboard')
 }
 
 async function handleGoogle() {

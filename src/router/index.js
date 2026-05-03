@@ -33,11 +33,10 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
-router.beforeEach(async (to) => {
-  const auth = useAuthStore()
-  if (!auth.user && to.meta.requiresAuth) {
-    return '/login'
-  }
-})
+// DEV MODE: auth guard disabled — re-enable for production
+// router.beforeEach(async (to) => {
+//   const auth = useAuthStore()
+//   if (!auth.user && to.meta.requiresAuth) return '/login'
+// })
 
 export default router

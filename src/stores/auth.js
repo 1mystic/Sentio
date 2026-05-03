@@ -10,14 +10,8 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!user.value)
 
   async function initialize() {
-    const { data: { session: s } } = await supabase.auth.getSession()
-    session.value = s
-    user.value = s?.user ?? null
-
-    supabase.auth.onAuthStateChange((_event, s) => {
-      session.value = s
-      user.value = s?.user ?? null
-    })
+    // DEV MODE: mock user so all pages are accessible without real auth
+    user.value = { id: 'dev-user', email: 'dev@sentio.app', user_metadata: { full_name: 'Dev User' } }
   }
 
   async function signUp(email, password, displayName) {
