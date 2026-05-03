@@ -28,7 +28,7 @@ CHUNK_WORDS = 400
 CHUNK_OVERLAP = 50
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 
-# (title, category) pairs — ~45 articles → ~100-150 chunks after splitting
+# (title, category) pairs — ~45 articles -> ~100-150 chunks after splitting
 ARTICLES = [
     # Core cognitive biases
     ("Confirmation bias",                 "cognitive_bias"),
@@ -165,9 +165,9 @@ def main():
 
     for title, category in ARTICLES:
         if title in existing_titles:
-            print(f"\n→ {title} [{category}] — already seeded, skipping")
+            print(f"\n-> {title} [{category}] - already seeded, skipping")
             continue
-        print(f"\n→ {title} [{category}]")
+        print(f"\n-> {title} [{category}]")
         result = fetch_wikipedia(title)
         if result is None:
             failed.append(title)
@@ -177,7 +177,7 @@ def main():
         text = clean(raw)
         pieces = chunk(text)
         word_count = len(text.split())
-        print(f"  {word_count} words → {len(pieces)} chunk(s)")
+        print(f"  {word_count} words -> {len(pieces)} chunk(s)")
 
         if args.dry_run:
             continue
@@ -202,7 +202,7 @@ def main():
 
         supabase.table("knowledge_articles").insert(rows).execute()
         total += len(rows)
-        print(f"  ✓ inserted {len(rows)} row(s)")
+        print(f"  + inserted {len(rows)} row(s)")
         time.sleep(1.5)  # Wikipedia rate-limit buffer
 
     print(f"\n{'='*50}")
