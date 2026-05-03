@@ -14,8 +14,14 @@
       <router-link to="/assessments" class="btn btn-ghost btn-sm exit-btn">× Exit</router-link>
     </div>
 
+    <!-- Loading -->
+    <div v-if="assessStore.loading" class="state-center">
+      <div class="spinner"></div>
+      <p>Loading assessment…</p>
+    </div>
+
     <!-- Question Card -->
-    <div class="question-wrap">
+    <div v-else-if="currentQuestion" class="question-wrap">
       <div class="card question-card">
 
         <div class="q-number">Question {{ currentQ + 1 }}</div>
@@ -24,14 +30,14 @@
 
         <div class="options-list">
           <div
-            v-for="(option, i) in currentQuestion.options"
+            v-for="(label, i) in currentQuestion.optionLabels"
             :key="i"
             class="option-card"
-            :class="{ selected: answers[currentQ] === option }"
-            @click="selectAnswer(option)"
+            :class="{ selected: answers[currentQ] === label }"
+            @click="selectAnswer(label)"
           >
             <span class="option-letter">{{ String.fromCharCode(65 + i) }}</span>
-            <span class="option-text">{{ option }}</span>
+            <span class="option-text">{{ label }}</span>
           </div>
         </div>
 
@@ -54,9 +60,9 @@
             <button
               v-else
               class="btn btn-primary"
-              :disabled="!answers[currentQ]"
+              :disabled="!answers[currentQ] || submitting"
               @click="finish"
-            >Finish Assessment →</button>
+            >{{ submitting ? 'Saving…' : 'Finish Assessment →' }}</button>
           </div>
         </div>
 
@@ -67,26 +73,30 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAssessmentStore } from '@/stores/assessment.js'
 
+const route = useRoute()
 const router = useRouter()
-
-const questions = ref([
-  { id: 1, text: 'You\'ve been following a stock for months, convinced it will recover. It\'s down 40% from your purchase price. You...', options: ['Sell immediately to cut losses', 'Hold — I believe in my analysis', 'Buy more to average down', 'Seek opinions from others first', 'Check what the original reasons for buying were'] },
-  { id: 2, text: 'You read a news article that contradicts your political views. Your first reaction is to...', options: ['Look for flaws in the article\'s methodology', 'Consider that it might have valid points', 'Share it to discuss with others', 'Close the tab and not engage', 'Look for a counter-article to balance it'] },
-  { id: 3, text: 'Your first impression of a new colleague is very positive. When they make a mistake at work, you...', options: ['Assume it\'s out of character for them', 'Update your impression significantly', 'Investigate to understand what happened', 'Defend them to others', 'Give them benefit of the doubt temporarily'] },
-  { id: 4, text: 'You\'re planning a 6-month project. Your gut says 6 months. Historical data says similar projects take 9 months. You estimate...', options: ['6 months — I know this project better', '9 months — trust the data', '7-8 months — compromise', '12 months — better to over-estimate', 'Ask the team for their estimates first'] },
-  { id: 5, text: 'A plane crash is widely reported in the news this week. How does it affect your fear of flying?', options: ['Significantly increases it', 'Slightly increases it', 'No change — I know statistics', 'Actually makes me think more rationally', 'Depends on the cause of the crash'] },
-  { id: 6, text: 'A friend is late for your coffee meeting (again). You immediately think...', options: ['They don\'t value my time', 'Something must have come up', 'I should text to check in', 'I\'m annoyed but won\'t say anything', 'This is a pattern I need to address'] },
-  { id: 7, text: 'You\'re presented with a product described as "95% fat free" vs one labeled "5% fat". You...', options: ['Prefer the 95% fat free option', 'They\'re the same — no preference', 'Check the full nutrition label', 'Would need more context to decide', 'Trust neither framing'] },
-  { id: 8, text: 'After making a difficult decision, new information suggests it was wrong. You...', options: ['Defend the original decision', 'Regret and ruminate', 'Accept it and adapt going forward', 'Look for reasons it could still work out', 'Analyze what went wrong to learn from it'] },
-  { id: 9, text: 'Your team achieves a major success. You believe the main reason was...', options: ['My leadership and contributions', 'The team\'s collective effort', 'Good timing and circumstances', 'The process and systems we followed', 'A combination of all these factors'] },
-  { id: 10, text: 'You\'re about to start a home renovation and get three quotes. You tend to...', options: ['Go with the first one you received', 'Choose the cheapest option', 'Anchor to the first quote when evaluating others', 'Research market rates before deciding', 'Choose based on gut feeling about the contractor'] },
-])
+const assessStore = useAssessmentStore()
 
 const currentQ = ref(0)
 const answers = ref({})
+const submitting = ref(false)
+
+onMounted(() => assessStore.fetchOne(route.params.id))
+
+const assessment = computed(() => assessStore.currentAssessment)
+
+// Normalise questions: support both {text, options:[string]} and {text, options:[{text,score,category}]}
+const questions = computed(() => {
+  const qs = assessment.value?.questions || []
+  return qs.map(q => ({
+    ...q,
+    optionLabels: q.options.map(o => (typeof o === 'string' ? o : o.text)),
+  }))
+})
 
 const currentQuestion = computed(() => questions.value[currentQ.value])
 
@@ -97,8 +107,51 @@ function selectAnswer(option) {
   }
 }
 
-function finish() {
-  router.push('/assessments/1/results')
+function computeScores() {
+  const raw = {}
+  const categoryTotals = {}
+  const categoryCounts = {}
+
+  questions.value.forEach((q, i) => {
+    const selectedLabel = answers.value[i]
+    const optObj = typeof q.options[0] === 'string'
+      ? { score: q.options.indexOf(selectedLabel) + 1, category: q.category || 'general' }
+      : q.options.find(o => o.text === selectedLabel) || { score: 1, category: 'general' }
+
+    raw[q.id || `q${i}`] = optObj.score
+    const cat = optObj.category || q.category || 'general'
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + optObj.score
+    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1
+  })
+
+  const computed_scores = {}
+  for (const cat of Object.keys(categoryTotals)) {
+    computed_scores[cat] = Math.round((categoryTotals[cat] / categoryCounts[cat]) * 10)
+  }
+  return { raw, computed_scores }
+}
+
+async function finish() {
+  submitting.value = true
+  const { raw, computed_scores } = computeScores()
+  const { data, error } = await assessStore.submit(route.params.id, {
+    raw_scores: raw,
+    computed_scores,
+  })
+  submitting.value = false
+
+  if (data) {
+    router.push({
+      path: `/assessments/${route.params.id}/results`,
+      state: { result: data, scores: computed_scores },
+    })
+  } else {
+    // Even if submit fails (e.g. no auth), go to results with local scores
+    router.push({
+      path: `/assessments/${route.params.id}/results`,
+      state: { scores: computed_scores },
+    })
+  }
 }
 </script>
 
@@ -155,4 +208,7 @@ function finish() {
 .nav-bar { display: flex; align-items: center; justify-content: space-between; padding-top: 8px; border-top: 1.5px solid var(--lavender-soft); }
 .nav-right { display: flex; align-items: center; gap: 12px; }
 .nav-hint { font-size: 12px; color: var(--slate); font-style: italic; }
+.state-center { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 80px 0; color: var(--slate); }
+.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--lavender); border-top-color: var(--lavender-deep); animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

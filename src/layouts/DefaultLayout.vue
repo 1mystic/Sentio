@@ -14,7 +14,7 @@
           :key="item.path"
           :to="item.path"
           class="nav-item"
-          :class="{ active: $route.path === item.path }"
+          :class="{ active: $route.path.startsWith(item.path) }"
         >
           <component :is="item.icon" :size="18" class="nav-icon" />
           <span class="nav-label">{{ item.label }}</span>
@@ -26,7 +26,7 @@
           :key="item.path"
           :to="item.path"
           class="nav-item"
-          :class="{ active: $route.path === item.path }"
+          :class="{ active: $route.path.startsWith(item.path) }"
         >
           <component :is="item.icon" :size="18" class="nav-icon" />
           <span class="nav-label">{{ item.label }}</span>
@@ -34,13 +34,16 @@
       </nav>
 
       <div class="sidebar-footer">
-        <router-link to="/profile" class="nav-item">
+        <router-link to="/profile" class="nav-item user-row">
           <div class="user-avatar">{{ userInitial }}</div>
           <div class="user-info">
             <div class="user-name">{{ userName }}</div>
             <div class="user-email">{{ userEmail }}</div>
           </div>
         </router-link>
+        <button class="signout-btn" @click="handleSignOut" title="Sign out">
+          <LogOut :size="15" />
+        </button>
       </div>
     </aside>
 
@@ -67,21 +70,32 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useUserStore } from '@/stores/user.js'
 import {
   LayoutDashboard, Brain, BookOpen, ClipboardList,
   MessageSquare, UserCheck, TrendingUp,
-  Search, Bell, Sparkles
+  Search, Bell, Sparkles, LogOut
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const userStore = useUserStore()
+const router = useRouter()
 
-const userName = computed(() => userStore.profile?.display_name || auth.user?.email?.split('@')[0] || 'User')
+onMounted(() => {
+  if (!userStore.profile) userStore.fetchProfile()
+})
+
+const userName = computed(() => userStore.profile?.display_name || userStore.profile?.full_name || auth.user?.user_metadata?.full_name || auth.user?.email?.split('@')[0] || 'User')
 const userEmail = computed(() => auth.user?.email || '')
 const userInitial = computed(() => userName.value[0]?.toUpperCase() || 'U')
+
+async function handleSignOut() {
+  await auth.signOut()
+  router.push('/login')
+}
 
 const mainNav = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -137,7 +151,10 @@ const toolsNav = [
 .nav-item.active .nav-icon { opacity: 1; }
 .nav-label { font-size: 14px; }
 
-.sidebar-footer { padding: 12px 8px; border-top: 1px solid var(--lavender-soft); }
+.sidebar-footer { padding: 12px 8px; border-top: 1px solid var(--lavender-soft); display: flex; align-items: center; gap: 4px; }
+.user-row { flex: 1; min-width: 0; }
+.signout-btn { background: none; border: none; cursor: pointer; color: var(--slate); padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.signout-btn:hover { background: #fee2e2; color: #dc2626; }
 .user-avatar {
   width: 32px; height: 32px; border-radius: 99px;
   background: linear-gradient(135deg, var(--lavender), var(--lavender-deep));

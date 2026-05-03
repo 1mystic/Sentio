@@ -119,18 +119,24 @@
       <!-- Archetype (40%) -->
       <div class="card archetype-card">
         <div class="archetype-emoji-wrap">
-          <span class="archetype-emoji">🦅</span>
+          <span class="archetype-emoji">{{ archetype ? '🧠' : '✨' }}</span>
         </div>
-        <div class="archetype-title">The Critical Thinker</div>
-        <span class="badge badge-lavender" style="margin-bottom: 14px; display: inline-block;">Your Archetype</span>
+        <div class="archetype-title">{{ archetype || 'Your Archetype' }}</div>
+        <span class="badge badge-lavender" style="margin-bottom: 14px; display: inline-block;">
+          {{ archetype ? 'Cognitive Style' : 'Pending' }}
+        </span>
         <p class="archetype-desc">
-          You tend to analyze situations deeply but may miss emotional cues. Your strength lies in logical reasoning.
+          {{ archetype
+            ? 'Your cognitive archetype is based on your assessment results and journaling patterns.'
+            : 'Complete assessments and journal entries to unlock your personalised cognitive archetype.' }}
         </p>
         <div class="trait-list">
           <span class="badge badge-lavender" v-for="trait in traits" :key="trait">{{ trait }}</span>
         </div>
         <div class="card-footer" style="margin-top: 24px;">
-          <button class="btn btn-primary btn-sm">Explore Archetype</button>
+          <button class="btn btn-primary btn-sm" @click="router.push('/assessments')">
+            {{ archetype ? 'Explore Archetype' : 'Take Assessment' }}
+          </button>
         </div>
       </div>
 
@@ -145,9 +151,14 @@
 
       <div class="ai-container" style="margin-bottom: 24px;">
         <div class="ai-label"><Sparkles :size="12" /> Sentio AI</div>
-        <div class="ai-prompt">Based on your recent journal entries...</div>
+        <div class="ai-prompt">Based on your recent journal entries…</div>
         <div class="ai-response">
-          You've shown strong confirmation bias patterns — particularly around work decisions. Your journal entries from Tuesday and Thursday both reveal a tendency to seek information that confirms your existing project timeline estimates...
+          <template v-if="insightsStore.weeklyInsights.length">
+            <span v-for="(ins, i) in insightsStore.weeklyInsights.slice(0,2)" :key="i">{{ ins.text }} </span>
+          </template>
+          <template v-else>
+            Write journal entries to unlock AI-powered insights about your cognitive patterns.
+          </template>
         </div>
       </div>
 
@@ -205,7 +216,7 @@
                 <span class="badge" :class="`badge-${rec.badgeColor}`" style="font-size: 10px;">{{ rec.category }}</span>
               </div>
             </div>
-            <button class="btn btn-secondary btn-sm" style="margin-top: 10px; width: 100%;">
+            <button class="btn btn-secondary btn-sm" style="margin-top: 10px; width: 100%;" @click="router.push(rec.path || '/explore')">
               Start Learning <ArrowRight :size="13" />
             </button>
           </div>
@@ -224,53 +235,77 @@ import { useRouter } from 'vue-router'
 import { useInsightsStore } from '@/stores/insights.js'
 import { useJournalStore } from '@/stores/journal.js'
 import {
-  Sparkles, ArrowRight, TrendingUp, TrendingDown, Flame,
+  Sparkles, ArrowRight, TrendingUp, Flame,
   BookOpen, ClipboardList, Search, MessageSquare, Brain, BarChart2, Lightbulb
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const router = useRouter()
-
 const insightsStore = useInsightsStore()
 const journalStore = useJournalStore()
 
 onMounted(async () => {
   await Promise.all([
     insightsStore.fetchAll(),
-    journalStore.fetchEntries({ limit: 5 }),
+    journalStore.fetchEntries({ limit: 30 }),
   ])
 })
 
-const stats = ref([
-  { label: 'BIASES IDENTIFIED', value: '7', changeText: '2 this week', changeIcon: TrendingUp, dir: 'up', variant: 'blue' },
-  { label: 'JOURNAL ENTRIES', value: '12', changeText: '3 this week', changeIcon: TrendingUp, dir: 'up', variant: 'lavender' },
-  { label: 'CURRENT STREAK', value: '5', changeText: 'days', changeIcon: Flame, dir: 'neutral', variant: 'pink' },
-  { label: 'INSIGHTS UNLOCKED', value: '23', changeText: '4 this month', changeIcon: TrendingUp, dir: 'up', variant: 'green' },
-])
+// --- Stats (computed from real data) ---
+function computeStreak(entries) {
+  if (!entries.length) return 0
+  const sorted = [...entries].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  let streak = 0
+  let cursor = new Date(); cursor.setHours(0, 0, 0, 0)
+  const seen = new Set()
+  for (const e of sorted) {
+    const d = new Date(e.created_at); d.setHours(0, 0, 0, 0)
+    const key = d.toDateString()
+    if (seen.has(key)) continue
+    const diff = Math.round((cursor - d) / 86400000)
+    if (diff <= 1) { streak++; seen.add(key); cursor = d }
+    else break
+  }
+  return streak
+}
 
+const stats = computed(() => {
+  const biasScores = insightsStore.biasFingerprint?.bias_scores || {}
+  const biasCount = Object.values(biasScores).filter(v => v > 0.2).length
+  const entryCount = journalStore.entries.length
+  const streak = computeStreak(journalStore.entries)
+  const insightCount = insightsStore.weeklyInsights.length
+
+  return [
+    { label: 'BIASES IDENTIFIED', value: biasCount || '—', changeText: 'from your journals', changeIcon: TrendingUp, dir: 'up', variant: 'blue' },
+    { label: 'JOURNAL ENTRIES', value: entryCount || '—', changeText: 'total entries', changeIcon: TrendingUp, dir: 'up', variant: 'lavender' },
+    { label: 'CURRENT STREAK', value: streak || '—', changeText: 'days in a row', changeIcon: Flame, dir: 'up', variant: 'pink' },
+    { label: 'WEEKLY INSIGHTS', value: insightCount || '—', changeText: 'this week', changeIcon: TrendingUp, dir: 'up', variant: 'green' },
+  ]
+})
+
+// --- Archetype ---
+const archetype = computed(() => insightsStore.biasFingerprint?.archetype || null)
 const traits = ref(['Analytical', 'Detail-oriented', 'Logic-driven', 'Skeptical'])
 
-const insights = ref([
-  {
-    badgeLabel: 'COGNITIVE',
-    badgeColor: 'yellow',
-    title: 'Confirmation Bias Spike',
-    desc: 'Your reading and information-seeking showed strong confirmation patterns this week.',
-  },
-  {
-    badgeLabel: 'BEHAVIORAL',
-    badgeColor: 'blue',
-    title: 'Anchoring on First Offer',
-    desc: 'In 3 recent decisions, initial numbers had outsized influence on final choices.',
-  },
-  {
-    badgeLabel: 'PATTERN',
-    badgeColor: 'lavender',
-    title: 'Weekly Reflection Loop',
-    desc: 'Strong metacognitive pattern emerging — keep up the daily journaling.',
-  },
-])
+// --- Weekly insights ---
+const INSIGHT_TYPE_META = {
+  journal:   { label: 'ACTIVITY',  color: 'lavender' },
+  themes:    { label: 'THEMES',    color: 'blue' },
+  sentiment: { label: 'MOOD',      color: 'yellow' },
+  empty:     { label: 'TIP',       color: 'green' },
+}
+const insights = computed(() => {
+  if (!insightsStore.weeklyInsights.length) return [
+    { badgeLabel: 'TIP', badgeColor: 'green', title: 'Start Journaling', desc: 'Write your first journal entry to unlock personalised weekly insights.' },
+  ]
+  return insightsStore.weeklyInsights.slice(0, 3).map(i => {
+    const meta = INSIGHT_TYPE_META[i.type] || { label: 'INSIGHT', color: 'lavender' }
+    return { badgeLabel: meta.label, badgeColor: meta.color, title: i.text.slice(0, 60), desc: i.text }
+  })
+})
 
+// --- Recommendations ---
 const quickActions = ref([
   { icon: BookOpen, label: 'Write a journal entry', path: '/journal/new' },
   { icon: ClipboardList, label: 'Take an assessment', path: '/assessments' },
@@ -278,13 +313,39 @@ const quickActions = ref([
   { icon: MessageSquare, label: 'Chat with AI Guide', path: '/ai-guide' },
 ])
 
-const recommendations = ref([
-  { name: 'Availability Heuristic', icon: Brain, category: 'Memory', badgeColor: 'blue' },
-  { name: 'Dunning-Kruger Effect', icon: BarChart2, category: 'Self', badgeColor: 'yellow' },
-  { name: 'Halo Effect', icon: Sparkles, category: 'Social', badgeColor: 'pink' },
-])
+const recommendations = computed(() => {
+  const recs = insightsStore.recommendations
+  const list = []
+  if (recs?.next_bias) {
+    list.push({
+      name: recs.next_bias.name || recs.next_bias,
+      icon: Brain,
+      category: recs.next_bias.category || 'Bias',
+      badgeColor: 'blue',
+      path: `/explore/${recs.next_bias.slug || recs.next_bias}`,
+    })
+  }
+  if (recs?.next_assessment) {
+    list.push({
+      name: recs.next_assessment.title || recs.next_assessment,
+      icon: BarChart2,
+      category: 'Assessment',
+      badgeColor: 'yellow',
+      path: `/assessments/${recs.next_assessment.id || ''}`,
+    })
+  }
+  // Pad with defaults if API returned nothing yet
+  if (!list.length) {
+    list.push(
+      { name: 'Availability Heuristic', icon: Brain, category: 'Memory', badgeColor: 'blue', path: '/explore/availability-heuristic' },
+      { name: 'Dunning-Kruger Effect', icon: BarChart2, category: 'Self', badgeColor: 'yellow', path: '/explore/dunning-kruger-effect' },
+      { name: 'Halo Effect', icon: Sparkles, category: 'Social', badgeColor: 'lavender', path: '/explore/halo-effect' },
+    )
+  }
+  return list
+})
 
-// --- Radar chart ---
+// --- Radar chart (live from bias fingerprint) ---
 const svgSize = 240
 const cx = svgSize / 2
 const cy = svgSize / 2
@@ -292,8 +353,31 @@ const maxR = 88
 const rings = [0.25, 0.5, 0.75, 1.0]
 const numAxes = 6
 
-const axisLabels = ['Confirmation', 'Availability', 'Anchoring', 'Dunning-Kruger', 'Sunk Cost', 'Attribution']
-const scores = [0.7, 0.4, 0.6, 0.5, 0.3, 0.8]
+const FALLBACK_RADAR = {
+  labels: ['Confirmation', 'Availability', 'Anchoring', 'Dunning-Kruger', 'Sunk Cost', 'Attribution'],
+  scores: [0.4, 0.3, 0.35, 0.3, 0.25, 0.35],
+}
+
+const radarData = computed(() => {
+  const biasScores = insightsStore.biasFingerprint?.bias_scores || {}
+  const entries = Object.entries(biasScores)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, numAxes)
+  if (!entries.length) return FALLBACK_RADAR
+
+  // Pad to exactly numAxes if needed
+  while (entries.length < numAxes) entries.push([`bias_${entries.length}`, 0])
+
+  return {
+    labels: entries.map(([k]) =>
+      k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/ Bias$/, '').replace(/ Error$/, '').trim()
+    ),
+    scores: entries.map(([, v]) => Math.min(1, v)),
+  }
+})
+
+const axisLabels = computed(() => radarData.value.labels)
+const scores = computed(() => radarData.value.scores)
 
 const legendColors = ['#9b94e8', '#b8b4f0', '#7e93e8', '#e89b94', '#94e8b4', '#e8c894']
 

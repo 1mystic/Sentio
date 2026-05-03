@@ -5,7 +5,7 @@
     <div class="page-header">
       <div class="header-left">
         <h1 class="page-title">My Journal</h1>
-        <span class="badge badge-lavender">12 entries</span>
+        <span class="badge badge-lavender">{{ journalStore.entries.length }} entries</span>
       </div>
       <router-link to="/journal/new" class="btn btn-primary">
         <span>＋</span> New Entry
@@ -31,10 +31,10 @@
           @click="activeTab = tab"
         >{{ tab }}</button>
       </div>
-      <select class="input sort-select">
-        <option>Newest First</option>
-        <option>Oldest First</option>
-        <option>Most Biases</option>
+      <select v-model="sortOrder" class="input sort-select">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="most_biases">Most Biases</option>
       </select>
     </div>
 
@@ -91,7 +91,10 @@
     <!-- Empty state -->
     <div v-if="!journalStore.loading && displayEntries.length === 0" class="empty-state">
       <div class="empty-icon"><BookOpen :size="40" /></div>
-      <p class="empty-text">No entries match your search.</p>
+      <p class="empty-text">
+        {{ journalStore.entries.length === 0 ? 'No journal entries yet. Start writing!' : 'No entries match your filters.' }}
+      </p>
+      <router-link v-if="journalStore.entries.length === 0" to="/journal/new" class="btn btn-primary" style="margin-top: 12px;">Write First Entry</router-link>
     </div>
 
   </div>
@@ -99,41 +102,93 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useJournalStore } from '@/stores/journal.js'
 import { Search, ArrowRight, MoreHorizontal, BookOpen } from 'lucide-vue-next'
 
-const router = useRouter()
 const journalStore = useJournalStore()
 
 const activeTab = ref('All')
 const search = ref('')
+const sortOrder = ref('newest')
 const tabs = ['All', 'This Week', 'This Month']
 
 onMounted(() => {
-  journalStore.fetchEntries()
+  journalStore.fetchEntries({ limit: 50 })
 })
 
-const entries = ref([
-  { id: 1, date: '2026-04-30', time: '9:41 AM', mood: '😊', title: 'Productive morning session', content: 'Had a great planning session this morning. I noticed I kept dismissing Sarah\'s timeline concerns without really considering them.', biases: ['Confirmation Bias', 'Overconfidence'], color: 'green' },
-  { id: 2, date: '2026-04-28', time: '11:22 PM', mood: '😐', title: 'That meeting went sideways', content: 'The project review meeting was tough. I found myself anchoring on the original budget estimate even when presented with new information.', biases: ['Anchoring Bias', 'Status Quo'], color: 'blue' },
-  { id: 3, date: '2026-04-26', time: '8:15 PM', mood: '😔', title: 'Feeling stuck on the project', content: 'Still working on the same feature. Started wondering if I\'m falling for the sunk cost fallacy — we\'ve already spent 3 weeks on this approach.', biases: ['Sunk Cost Fallacy'], color: 'lavender' },
-  { id: 4, date: '2026-04-24', time: '7:00 PM', mood: '😊', title: 'Great conversation with mentor', content: 'My mentor challenged me on my assumption about the user research. I had completely missed the contradictory data from the last usability test.', biases: ['Confirmation Bias', 'Availability Heuristic', 'Halo Effect'], color: 'pink' },
-  { id: 5, date: '2026-04-22', time: '10:30 PM', mood: '😤', title: 'Frustrated with team dynamics', content: 'Today was frustrating. I kept attributing the delays to Raj\'s poor planning without considering the external dependencies he was dealing with.', biases: ['Attribution Error'], color: 'yellow' },
-  { id: 6, date: '2026-04-20', time: '8:45 PM', mood: '😴', title: 'Low energy reflection', content: 'Not much to write about today. Did notice I was avoiding reading the competitor analysis report because I don\'t want it to challenge our current strategy.', biases: ['Confirmation Bias', 'Ostrich Effect'], color: 'blue' },
-])
+const BIAS_NAMES = {
+  confirmation_bias: 'Confirmation Bias',
+  anchoring_bias: 'Anchoring',
+  availability_heuristic: 'Availability',
+  sunk_cost_fallacy: 'Sunk Cost',
+  overconfidence: 'Overconfidence',
+  dunning_kruger: 'Dunning-Kruger',
+  halo_effect: 'Halo Effect',
+  attribution_error: 'Attribution Error',
+  status_quo_bias: 'Status Quo',
+  ostrich_effect: 'Ostrich Effect',
+  bandwagon_effect: 'Bandwagon Effect',
+  framing_effect: 'Framing Effect',
+  hindsight_bias: 'Hindsight Bias',
+  planning_fallacy: 'Planning Fallacy',
+  self_serving_bias: 'Self-Serving Bias',
+}
 
-const filteredEntries = computed(() => {
-  return entries.value.filter(e => e.title.toLowerCase().includes(search.value.toLowerCase()))
-})
+function moodFromSentiment(score) {
+  if (score == null) return '📝'
+  if (score >= 0.6) return '😊'
+  if (score >= 0.3) return '😐'
+  if (score >= 0.0) return '😔'
+  return '😤'
+}
 
-// Merge API entries with hardcoded fallback
+function normalizeEntry(e) {
+  const dt = e.created_at ? new Date(e.created_at) : null
+  const date = dt ? dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
+  const time = dt ? dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : ''
+  const biases = (e.detected_biases || []).map(b => {
+    const id = b.bias_id || b.bias || ''
+    return BIAS_NAMES[id] || id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  }).filter(Boolean)
+  return {
+    id: e.id,
+    date,
+    time,
+    mood: moodFromSentiment(e.sentiment_score),
+    title: e.prompt_used || e.content?.slice(0, 60) || 'Untitled entry',
+    content: e.content || '',
+    biases,
+    _raw: e,
+  }
+}
+
+const normalizedEntries = computed(() =>
+  journalStore.entries.map(normalizeEntry)
+)
+
 const displayEntries = computed(() => {
-  const source = journalStore.entries.length > 0 ? journalStore.entries : entries.value
-  return source.filter(e =>
-    e.title?.toLowerCase().includes(search.value.toLowerCase()) ||
-    e.content?.toLowerCase().includes(search.value.toLowerCase())
-  )
+  const now = new Date()
+  let list = normalizedEntries.value
+
+  if (activeTab.value === 'This Week') {
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000)
+    list = list.filter(e => e._raw.created_at && new Date(e._raw.created_at) >= weekAgo)
+  } else if (activeTab.value === 'This Month') {
+    const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000)
+    list = list.filter(e => e._raw.created_at && new Date(e._raw.created_at) >= monthAgo)
+  }
+
+  if (search.value.trim()) {
+    const q = search.value.toLowerCase()
+    list = list.filter(e =>
+      e.title.toLowerCase().includes(q) || e.content.toLowerCase().includes(q)
+    )
+  }
+
+  if (sortOrder.value === 'oldest') list = [...list].reverse()
+  else if (sortOrder.value === 'most_biases') list = [...list].sort((a, b) => b.biases.length - a.biases.length)
+
+  return list
 })
 </script>
 

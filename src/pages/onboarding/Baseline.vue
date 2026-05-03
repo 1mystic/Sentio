@@ -42,6 +42,7 @@ function selectOption(idx) {
 function goNext() {
   if (currentAnswer.value === null) return
   if (isLast.value) {
+    sessionStorage.setItem('sentio_baseline', JSON.stringify(answers.value))
     router.push('/onboarding/interests')
   } else {
     currentQ.value++

@@ -1,0 +1,42 @@
+Next steps to run:
+
+cd sentio-ml && pip install -r requirements.txt
+python data/generate_training_data.py — generates 750 training examples (~$2-3 in Claude API)
+python train_bias_classifier.py — fine-tunes the model
+For RAG: cd sentio-api && pip install sentence-transformers && python db/seed_knowledge.py
+wfgriwlzgxgnlsbwotkp.supabase.co/auth/v1/signup:1  Failed to load resource: the server responded with a status of 500 ()
+
+⚠
+Database error saving new user
+
+stil check why , is the backend not properly connected to frontend whats the issue, are we missing some supabase key etc
+The error is coming directly from Supabase's auth server — not from the FastAPI backend. "Database error saving new user" is Supabase's error when the handle_new_user trigger fires after signup but the profiles table doesn't exist (or pgvector isn't enabled) in project wfgriwlzgxgnlsbwotkp. Let me verify.
+
+Read g:\synced-pc\1_Work\projects\Sentio\sentio-api\db\schema.sql
+Confirmed. The issue is clear: the schema has never been deployed to wfgriwlzgxgnlsbwotkp (the project the app actually uses). The trigger on_auth_user_created fires on every signup and tries to insert into public.profiles — but that table doesn't exist, so Supabase aborts the signup with a 500.
+
+The schema was previously deployed to a different project (ibpgzviwquauzhkmlvnl per the old notes), but all env files point to wfgriwlzgxgnlsbwotkp.
+
+To fix — 2 minutes in Supabase:
+
+Go to https://supabase.com/dashboard/project/wfgriwlzgxgnlsbwotkp/sql/new
+
+Paste the full contents of sentio-api/db/schema.sql and run it
+
+Run this verification query to confirm:
+
+
+SELECT table_name FROM information_schema.tables 
+WHERE table_schema = 'public' 
+ORDER BY table_name;
+You should see: ai_conversations, assessment_results, assessments, biases, bookings, journal_entries, knowledge_articles, profiles, therapists, user_bias_profiles
+
+After schema is deployed, re-run the seeds:
+
+cd sentio-api
+python db/seed_biases.py
+python db/seed_assessments.py
+python db/seed_therapists.py
+Why the backend isn't the issue here: The frontend calls Supabase auth directly (supabase.auth.signUp) — the FastAPI backend is never involved in signup. The 500 is Supabase's own auth service rejecting the user creation because the trigger blows up before the user row is committed.
+
+Once the schema is deployed, signups will work immediately — no code changes needed.

@@ -63,11 +63,11 @@
 
         <!-- Action Bar -->
         <div class="action-bar">
-          <button class="btn btn-ghost" @click="saveEntry(false)" :disabled="saving">
-            {{ saving ? 'Saving…' : 'Save Draft' }}
+          <button class="btn btn-ghost" @click="saveEntry(true)" :disabled="saving || !content.trim()">
+            {{ saving ? 'Saving…' : 'Save & Keep Editing' }}
           </button>
-          <button class="btn btn-primary" @click="saveEntry(true)" :disabled="saving">
-            {{ saving ? 'Publishing…' : 'Publish Entry' }}
+          <button class="btn btn-primary" @click="saveEntry(false)" :disabled="saving || !content.trim()">
+            {{ saving ? 'Saving…' : 'Save Entry' }}
           </button>
         </div>
 
@@ -127,8 +127,9 @@
     </div>
 
     <!-- Toast -->
-    <div v-if="toastVisible" class="toast">
-      <Check :size="14" /> Entry saved!
+    <div v-if="toastVisible" class="toast" :class="{ 'toast-error': toastError }">
+      <Check v-if="!toastError" :size="14" />
+      {{ toastError ? 'Failed to save. Please try again.' : 'Saved!' }}
     </div>
 
   </div>
@@ -149,6 +150,7 @@ const moods = ['😊', '😐', '😔', '😤', '😴']
 const showPrompts = ref(false)
 const saving = ref(false)
 const toastVisible = ref(false)
+const toastError = ref(false)
 const tagInput = ref('')
 const tags = ref([])
 
@@ -190,21 +192,23 @@ function removeTag(tag) {
   tags.value = tags.value.filter(t => t !== tag)
 }
 
-async function saveEntry(publish) {
+async function saveEntry(keepEditing = false) {
+  if (!content.value.trim()) return
   saving.value = true
   const { data, error: err } = await journalStore.createEntry({
     content: content.value,
     prompt_used: title.value || null,
-    mood: mood.value,
   })
   saving.value = false
   if (err) {
-    // Show error toast (use inline error state)
-    console.error('Failed to save:', err)
+    toastError.value = true
     toastVisible.value = true
-    setTimeout(() => { toastVisible.value = false }, 2500)
+    setTimeout(() => { toastVisible.value = false; toastError.value = false }, 3000)
+  } else if (keepEditing) {
+    toastVisible.value = true
+    setTimeout(() => { toastVisible.value = false }, 2000)
   } else {
-    router.push('/journal')
+    router.push(`/journal/${data.id}`)
   }
 }
 </script>
@@ -313,6 +317,7 @@ async function saveEntry(publish) {
 
 /* Toast */
 .toast { position: fixed; bottom: 32px; right: 32px; background: var(--plum); color: white; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 32px rgba(53,43,56,0.18); z-index: 1000; display: inline-flex; align-items: center; gap: 8px; }
+.toast-error { background: #dc2626; }
 
 svg { display: block; }
 </style>

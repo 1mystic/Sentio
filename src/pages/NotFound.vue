@@ -20,7 +20,7 @@
       <h1 class="notfound-title">Oops! Page not found</h1>
       <p class="notfound-desc">The page you're looking for seems to have wandered off into cognitive bias territory.</p>
       <div class="notfound-actions">
-        <button class="btn btn-ghost" @click="router.back()">← Go Back</button>
+        <button class="btn btn-ghost" @click="router.back()"><ArrowLeft :size="15" /> Go Back</button>
         <router-link to="/dashboard" class="btn btn-primary">Go to Dashboard</router-link>
       </div>
       <p class="notfound-hint">Lost? Try navigating to <router-link to="/explore" class="hint-link">Explore Biases</router-link> or <router-link to="/journal" class="hint-link">Your Journal</router-link>.</p>
@@ -31,6 +31,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { ArrowLeft, LayoutDashboard, AlertCircle } from 'lucide-vue-next'
 const router = useRouter()
 </script>
 

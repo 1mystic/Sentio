@@ -20,19 +20,19 @@
           <h2 class="profile-name">{{ name }}</h2>
           <div class="profile-email">{{ email }}</div>
           <div class="member-badge">
-            <span class="badge badge-lavender">🗓 Member since May 2026</span>
+            <span class="badge badge-lavender">🗓 Member since {{ memberSince }}</span>
           </div>
           <div class="profile-stats">
             <div class="pstat">
-              <span class="pstat-val">12</span>
+              <span class="pstat-val">{{ entryCount }}</span>
               <span class="pstat-label">Entries</span>
             </div>
             <div class="pstat">
-              <span class="pstat-val">3</span>
+              <span class="pstat-val">{{ assessmentCount }}</span>
               <span class="pstat-label">Assessments</span>
             </div>
             <div class="pstat">
-              <span class="pstat-val">🔥 7</span>
+              <span class="pstat-val">🔥 {{ streak }}</span>
               <span class="pstat-label">Day Streak</span>
             </div>
           </div>
@@ -68,7 +68,10 @@
               <label class="form-label">Bio</label>
               <textarea v-model="bio" class="input bio-textarea" placeholder="Tell us a bit about yourself..." rows="3"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+            <div v-if="saveError" style="font-size:12px;color:#dc2626;">{{ saveError }}</div>
+            <button type="submit" class="btn btn-primary btn-sm" :disabled="userStore.saving">
+              {{ userStore.saving ? 'Saving…' : 'Save Changes' }}
+            </button>
           </form>
         </div>
 
@@ -145,18 +148,70 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.js'
+import { useUserStore } from '@/stores/user.js'
+import { useJournalStore } from '@/stores/journal.js'
+import { useAssessmentStore } from '@/stores/assessment.js'
 
 const auth = useAuthStore()
+const userStore = useUserStore()
+const journalStore = useJournalStore()
+const assessmentStore = useAssessmentStore()
+
 const name = ref(auth.user?.user_metadata?.full_name || 'User')
 const email = ref(auth.user?.email || '')
 const bio = ref('')
 const notifications = ref({ daily: true, weekly: true, assessments: false, ai: true })
 const toastVisible = ref(false)
+const saveError = ref('')
+
+onMounted(async () => {
+  const profile = await userStore.fetchProfile()
+  if (profile) {
+    name.value = profile.display_name || profile.full_name || name.value
+    email.value = profile.email || email.value
+    bio.value = profile.bio || ''
+    if (profile.preferences?.notifications) {
+      Object.assign(notifications.value, profile.preferences.notifications)
+    }
+  }
+  journalStore.fetchEntries({ limit: 100 })
+  assessmentStore.fetchList()
+})
 
 const initials = computed(() => {
   return name.value.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U'
+})
+
+const memberSince = computed(() => {
+  const created = auth.user?.created_at
+  if (!created) return 'May 2026'
+  return new Date(created).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+})
+
+const entryCount = computed(() => journalStore.entries.length)
+
+const assessmentCount = computed(() =>
+  assessmentStore.assessments.filter(a => a.completed).length
+)
+
+const streak = computed(() => {
+  const entries = [...journalStore.entries]
+    .filter(e => e.created_at)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  if (!entries.length) return 0
+  let count = 0
+  let prev = new Date()
+  prev.setHours(0, 0, 0, 0)
+  for (const e of entries) {
+    const d = new Date(e.created_at)
+    d.setHours(0, 0, 0, 0)
+    const diff = Math.round((prev - d) / 86400000)
+    if (diff <= 1) { count++; prev = d }
+    else break
+  }
+  return count
 })
 
 const notifItems = [
@@ -171,8 +226,18 @@ function toggleNotif(key) {
 }
 
 async function saveProfile() {
-  toastVisible.value = true
-  setTimeout(() => { toastVisible.value = false }, 2000)
+  saveError.value = ''
+  const { error } = await userStore.saveProfile({
+    display_name: name.value,
+    bio: bio.value,
+    preferences: { notifications: notifications.value },
+  })
+  if (error) {
+    saveError.value = 'Failed to save. Please try again.'
+  } else {
+    toastVisible.value = true
+    setTimeout(() => { toastVisible.value = false }, 2000)
+  }
 }
 </script>
 

@@ -17,7 +17,7 @@
         <div class="filter-block">
           <div class="filter-label">Search</div>
           <div class="search-wrap">
-            <span class="search-icon">🔍</span>
+            <Search :size="14" class="search-icon" />
             <input v-model="search" class="input search-input" placeholder="Search by name..." />
           </div>
         </div>
@@ -69,7 +69,18 @@
       <!-- Therapist Grid -->
       <div class="therapist-grid-wrap">
         <div class="results-count">Showing {{ filteredTherapists.length }} therapists</div>
-        <div class="therapist-grid">
+        <div v-if="therapistStore.loading" class="therapist-grid">
+          <div v-for="n in 4" :key="n" class="therapist-card card" style="pointer-events:none;">
+            <div style="display:flex;gap:14px;align-items:flex-start;">
+              <div style="width:56px;height:56px;border-radius:50%;background:var(--lavender);animation:sk-pulse 1.4s ease-in-out infinite;flex-shrink:0;"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                <div style="height:16px;width:60%;background:var(--lavender);border-radius:6px;animation:sk-pulse 1.4s ease-in-out infinite;"></div>
+                <div style="height:12px;width:80%;background:var(--lavender);border-radius:6px;animation:sk-pulse 1.4s ease-in-out infinite;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="therapist-grid">
           <div
             v-for="t in filteredTherapists"
             :key="t.id"
@@ -80,7 +91,7 @@
               <div class="therapist-info">
                 <div class="therapist-name-row">
                   <span class="therapist-name">{{ t.name }}</span>
-                  <span class="badge badge-green">✓ Verified</span>
+                  <span class="badge badge-green"><CheckCircle :size="11" style="margin-right:3px;" /> Verified</span>
                 </div>
                 <div class="therapist-creds">{{ t.credentials }}</div>
               </div>
@@ -91,9 +102,9 @@
             </div>
 
             <div class="therapist-stats">
-              <span class="stat">⭐ {{ t.rating }}</span>
-              <span class="stat">👥 {{ t.clients }}+ clients</span>
-              <span class="stat">📅 {{ t.experience }} yrs exp</span>
+              <span class="stat"><Star :size="12" /> {{ t.rating }}</span>
+              <span class="stat"><Users :size="12" /> {{ t.clients }}+ clients</span>
+              <span class="stat"><Calendar :size="12" /> {{ t.experience }} yrs exp</span>
             </div>
 
             <div class="avail-row">
@@ -115,8 +126,8 @@
           </div>
         </div>
 
-        <div v-if="filteredTherapists.length === 0" class="empty-state">
-          <div class="empty-icon">🔍</div>
+        <div v-if="!therapistStore.loading && filteredTherapists.length === 0" class="empty-state">
+          <div class="empty-icon"><Search :size="36" /></div>
           <p>No therapists match your filters. <button class="link-btn" @click="clearFilters">Clear filters</button></p>
         </div>
       </div>
@@ -126,10 +137,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useTherapistStore } from '@/stores/therapist.js'
+import { Star, Users, Calendar, CheckCircle, Search } from 'lucide-vue-next'
 
-const router = useRouter()
+const therapistStore = useTherapistStore()
 
 const search = ref('')
 const selectedSpecs = ref([])
@@ -142,14 +154,50 @@ const modes = ['All', 'Online', 'In-person', 'Both']
 const languages = ['English', 'Hindi', 'Telugu', 'Tamil', 'Bengali']
 const availabilityOptions = ['Any time', 'This week', 'This month']
 
-const therapists = ref([
-  { id: 1, name: 'Dr. Priya Sharma', initials: 'PS', credentials: 'M.Sc. Clinical Psych, NIMHANS', specializations: ['CBT', 'Anxiety', 'Decision Patterns'], rating: 4.9, clients: 140, experience: 8, price: 900, mode: 'online', available: true, gradient: 'linear-gradient(135deg, #9b94e8, #dad8f9)' },
-  { id: 2, name: 'Dr. Arjun Mehta', initials: 'AM', credentials: 'Ph.D. Psychology, IIT Bombay', specializations: ['ACT', 'Cognitive Biases', 'Performance'], rating: 4.8, clients: 95, experience: 6, price: 800, mode: 'both', available: true, gradient: 'linear-gradient(135deg, #88c9a0, #d8f9e8)' },
-  { id: 3, name: 'Sneha Krishnan', initials: 'SK', credentials: 'M.Phil. Psychotherapy, DU', specializations: ['Mindfulness', 'Stress', 'Relationships'], rating: 4.7, clients: 80, experience: 5, price: 650, mode: 'online', available: false, gradient: 'linear-gradient(135deg, #e8c56a, #fef9c3)' },
-  { id: 4, name: 'Dr. Rohan Patel', initials: 'RP', credentials: 'M.D. Psychiatry, AIIMS', specializations: ['DBT', 'Trauma', 'ADHD'], rating: 4.9, clients: 200, experience: 12, price: 1200, mode: 'in-person', available: true, gradient: 'linear-gradient(135deg, #e88fa0, #f9d8f0)' },
-  { id: 5, name: 'Anika Bose', initials: 'AB', credentials: 'M.A. Counselling, Christ University', specializations: ['CBT', 'Depression', 'Self-worth'], rating: 4.6, clients: 65, experience: 4, price: 600, mode: 'online', available: true, gradient: 'linear-gradient(135deg, #8ac4e8, #d8edf9)' },
-  { id: 6, name: 'Dr. Vivek Nair', initials: 'VN', credentials: 'Ph.D. Behavioural Psych, Pune', specializations: ['Behavioural Therapy', 'OCD', 'Phobias'], rating: 4.8, clients: 110, experience: 9, price: 950, mode: 'both', available: false, gradient: 'linear-gradient(135deg, #a8b4e8, #dad8f9)' },
-])
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #9b94e8, #dad8f9)',
+  'linear-gradient(135deg, #88c9a0, #d8f9e8)',
+  'linear-gradient(135deg, #e8c56a, #fef9c3)',
+  'linear-gradient(135deg, #e88fa0, #f9d8f0)',
+  'linear-gradient(135deg, #8ac4e8, #d8edf9)',
+  'linear-gradient(135deg, #a8b4e8, #dad8f9)',
+]
+
+const FALLBACK_THERAPISTS = [
+  { id: 1, name: 'Dr. Priya Sharma', initials: 'PS', credentials: 'M.Sc. Clinical Psych, NIMHANS', specializations: ['CBT', 'Anxiety', 'Decision Patterns'], rating: 4.9, clients: 140, experience: 8, price: 900, mode: 'online', available: true },
+  { id: 2, name: 'Dr. Arjun Mehta', initials: 'AM', credentials: 'Ph.D. Psychology, IIT Bombay', specializations: ['ACT', 'Cognitive Biases', 'Performance'], rating: 4.8, clients: 95, experience: 6, price: 800, mode: 'both', available: true },
+  { id: 3, name: 'Sneha Krishnan', initials: 'SK', credentials: 'M.Phil. Psychotherapy, DU', specializations: ['Mindfulness', 'Stress', 'Relationships'], rating: 4.7, clients: 80, experience: 5, price: 650, mode: 'online', available: false },
+  { id: 4, name: 'Dr. Rohan Patel', initials: 'RP', credentials: 'M.D. Psychiatry, AIIMS', specializations: ['DBT', 'Trauma', 'ADHD'], rating: 4.9, clients: 200, experience: 12, price: 1200, mode: 'in-person', available: true },
+  { id: 5, name: 'Anika Bose', initials: 'AB', credentials: 'M.A. Counselling, Christ University', specializations: ['CBT', 'Depression', 'Self-worth'], rating: 4.6, clients: 65, experience: 4, price: 600, mode: 'online', available: true },
+  { id: 6, name: 'Dr. Vivek Nair', initials: 'VN', credentials: 'Ph.D. Behavioural Psych, Pune', specializations: ['Behavioural Therapy', 'OCD', 'Phobias'], rating: 4.8, clients: 110, experience: 9, price: 950, mode: 'both', available: false },
+]
+
+onMounted(() => {
+  therapistStore.fetchList()
+})
+
+function normalizeTherapist(t, idx) {
+  const nameParts = (t.name || '').trim().split(' ')
+  const initials = nameParts.map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
+  return {
+    ...t,
+    initials: t.initials || initials,
+    credentials: t.credentials || t.qualification || '',
+    specializations: t.specializations || [],
+    rating: t.rating ?? 4.8,
+    clients: t.clients ?? t.client_count ?? 0,
+    experience: t.experience ?? t.years_experience ?? 0,
+    price: t.price ?? t.session_price ?? 0,
+    mode: (t.mode || t.session_format || 'online').toLowerCase(),
+    available: t.available ?? t.accepting_clients ?? false,
+    gradient: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
+  }
+}
+
+const therapistSource = computed(() => {
+  const raw = therapistStore.therapists.length > 0 ? therapistStore.therapists : FALLBACK_THERAPISTS
+  return raw.map(normalizeTherapist)
+})
 
 function avatarStyle(t) {
   return { background: t.gradient }
@@ -164,7 +212,7 @@ function clearFilters() {
 }
 
 const filteredTherapists = computed(() => {
-  return therapists.value.filter(t => {
+  return therapistSource.value.filter(t => {
     if (search.value && !t.name.toLowerCase().includes(search.value.toLowerCase())) return false
     if (selectedSpecs.value.length > 0 && !selectedSpecs.value.some(s => t.specializations.includes(s))) return false
     if (selectedMode.value !== 'All' && t.mode !== selectedMode.value.toLowerCase()) return false
@@ -208,9 +256,9 @@ const filteredTherapists = computed(() => {
 .filter-sidebar { background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(53,43,56,0.07); padding: 24px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 20px; }
 .filter-block { display: flex; flex-direction: column; gap: 10px; }
 .filter-label { font-size: 12px; font-weight: 700; color: var(--plum); text-transform: uppercase; letter-spacing: 0.06em; }
-.search-wrap { position: relative; }
-.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; pointer-events: none; }
-.search-input { padding-left: 32px; font-size: 13px; }
+.search-wrap { display: flex; align-items: center; gap: 8px; background: white; border: 1.5px solid var(--lavender); border-radius: 10px; padding: 0 12px; }
+.search-icon { color: var(--slate); flex-shrink: 0; }
+.search-input { padding-left: 0 !important; border: none !important; box-shadow: none !important; background: transparent; }
 .checkbox-list, .radio-list { display: flex; flex-direction: column; gap: 6px; }
 .checkbox-item, .radio-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--plum); cursor: pointer; }
 .checkbox-item input, .radio-item input { accent-color: var(--lavender-deep); }
@@ -234,7 +282,7 @@ const filteredTherapists = computed(() => {
 
 .spec-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .therapist-stats { display: flex; gap: 14px; flex-wrap: wrap; }
-.stat { font-size: 12px; color: var(--slate); font-weight: 500; }
+.stat { font-size: 12px; color: var(--slate); font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
 
 .avail-row { display: flex; align-items: center; gap: 7px; }
 .avail-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--slate); opacity: 0.4; }
@@ -250,6 +298,7 @@ const filteredTherapists = computed(() => {
 
 /* Empty */
 .empty-state { text-align: center; padding: 60px 20px; }
-.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-icon { color: var(--slate); margin-bottom: 12px; display: flex; justify-content: center; }
 .empty-state p { font-size: 15px; color: var(--slate); }
+@keyframes sk-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.3; } }
 </style>

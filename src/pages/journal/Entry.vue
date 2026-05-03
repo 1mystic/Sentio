@@ -1,115 +1,177 @@
 <template>
   <div class="entry-page">
 
-    <!-- Breadcrumb + Back -->
-    <div class="page-top">
-      <div class="breadcrumb">
-        <router-link to="/journal" class="bc-link">Journal</router-link>
-        <span class="bc-sep">/</span>
-        <span class="bc-current">{{ entry.date }}</span>
-      </div>
-      <router-link to="/journal" class="btn btn-ghost btn-sm">← Back</router-link>
+    <!-- Loading -->
+    <div v-if="loading" class="state-center">
+      <Loader :size="28" class="spin-icon" />
+      <p>Loading entry…</p>
     </div>
 
-    <div class="entry-layout">
+    <!-- Not found -->
+    <div v-else-if="notFound" class="state-center">
+      <p>Entry not found.</p>
+      <router-link to="/journal" class="btn btn-ghost btn-sm">← Back to Journal</router-link>
+    </div>
 
-      <!-- Main Column -->
-      <div class="main-col">
-
-        <!-- Entry Header Card -->
-        <div class="card header-card">
-          <div class="header-meta">
-            <span class="entry-date-full">{{ entry.date }}</span>
-            <span class="entry-dot">·</span>
-            <span class="entry-time">{{ entry.time }}</span>
-          </div>
-          <div class="entry-mood-large">{{ entry.mood }}</div>
-          <h1 class="entry-title">{{ entry.title }}</h1>
+    <template v-else-if="entry">
+      <!-- Breadcrumb + Back -->
+      <div class="page-top">
+        <div class="breadcrumb">
+          <router-link to="/journal" class="bc-link">Journal</router-link>
+          <span class="bc-sep">/</span>
+          <span class="bc-current">{{ formattedDate }}</span>
         </div>
-
-        <!-- Entry Content Card -->
-        <div class="card content-card">
-          <div class="entry-content" v-html="highlightedContent"></div>
-        </div>
-
-        <!-- Action Bar -->
-        <div class="action-bar">
-          <button class="btn btn-ghost">✏️ Edit</button>
-          <button class="btn btn-danger btn-sm">🗑 Delete</button>
-        </div>
-
+        <router-link to="/journal" class="btn btn-ghost btn-sm"><ArrowLeft :size="14" /> Back</router-link>
       </div>
 
-      <!-- Sidebar: AI Analysis -->
-      <div class="sidebar">
-        <div class="card ai-card">
-          <div class="ai-header">
-            <span>✨</span>
-            <span class="ai-title">Sentio Analysis</span>
-          </div>
+      <div class="entry-layout">
 
-          <div class="bias-list">
-            <div v-for="bias in entry.biases" :key="bias.name" class="bias-row">
-              <div class="bias-row-top">
-                <span class="badge badge-lavender">{{ bias.name }}</span>
-                <span class="bias-score">{{ bias.score }}/10</span>
-              </div>
-              <p class="bias-note">{{ bias.note }}</p>
-              <router-link :to="`/explore/${bias.name.toLowerCase().replace(/\s+/g, '-')}`" class="btn btn-secondary btn-sm explore-btn">
-                Explore {{ bias.name.split(' ')[0] }} →
-              </router-link>
+        <!-- Main Column -->
+        <div class="main-col">
+
+          <!-- Entry Header Card -->
+          <div class="card header-card">
+            <div class="header-meta">
+              <span class="entry-date-full">{{ formattedDate }}</span>
+              <span class="entry-dot">·</span>
+              <span class="entry-time">{{ formattedTime }}</span>
+            </div>
+            <h1 class="entry-title">{{ entry.prompt_used || 'Journal Entry' }}</h1>
+            <div v-if="emotions.length" class="theme-tags">
+              <span v-for="theme in emotions.slice(0, 4)" :key="theme" class="theme-tag">{{ theme }}</span>
             </div>
           </div>
 
-          <div class="divider"></div>
+          <!-- Entry Content Card -->
+          <div class="card content-card">
+            <div class="entry-content" v-html="formattedContent"></div>
+          </div>
 
-          <div class="insight-section">
-            <div class="insight-label">💡 Overall Insight</div>
-            <p class="insight-text">{{ entry.insight }}</p>
+          <!-- Action Bar -->
+          <div class="action-bar">
+            <button class="btn btn-danger btn-sm" :disabled="deleting" @click="handleDelete">
+              <Trash2 :size="14" /> {{ deleting ? 'Deleting…' : 'Delete' }}
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Sidebar: AI Analysis -->
+        <div class="sidebar">
+          <div class="card ai-card">
+            <div class="ai-header">
+              <Sparkles :size="16" class="ai-sparkle" />
+              <span class="ai-title">Sentio Analysis</span>
+            </div>
+
+            <!-- Biases detected -->
+            <div v-if="detectedBiases.length" class="bias-list">
+              <div v-for="bias in detectedBiases" :key="bias.id" class="bias-row">
+                <div class="bias-row-top">
+                  <span class="badge badge-lavender">{{ bias.name }}</span>
+                  <span class="bias-score">{{ bias.score }}/10</span>
+                </div>
+                <p v-if="bias.note" class="bias-note">{{ bias.note }}</p>
+                <router-link :to="`/explore/${bias.slug}`" class="btn btn-secondary btn-sm explore-btn">
+                  Explore <ArrowRight :size="12" />
+                </router-link>
+              </div>
+            </div>
+
+            <div v-else class="no-analysis">
+              <p>Analysis is processing… check back in a moment.</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="insight-section">
+              <div class="insight-label">
+                <Lightbulb :size="14" style="display:inline-block;vertical-align:middle;margin-right:4px;" />
+                Sentiment
+              </div>
+              <p class="insight-text">
+                <template v-if="entry.sentiment_score != null">
+                  {{ entry.sentiment_score > 0.2 ? 'Positive' : entry.sentiment_score < -0.2 ? 'Challenging' : 'Neutral' }} tone
+                  ({{ entry.sentiment_score > 0 ? '+' : '' }}{{ (entry.sentiment_score * 100).toFixed(0) }})
+                </template>
+                <template v-else>Sentiment analysis pending.</template>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-    </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useJournalStore } from '@/stores/journal.js'
+import { Sparkles, ArrowLeft, ArrowRight, Trash2, Lightbulb, Loader } from 'lucide-vue-next'
 
+const route = useRoute()
 const router = useRouter()
+const journalStore = useJournalStore()
 
-const entry = ref({
-  id: 1,
-  date: 'April 30, 2026',
-  time: '9:41 AM',
-  mood: '😊',
-  title: 'Productive morning session',
-  content: `Had a great planning session this morning. I kept dismissing Sarah's timeline concerns without really considering them.\n\nI was so confident my estimate was right that I wasn't even processing her data points. Looking back, I had already decided the timeline was fine before the meeting even started.\n\nMaybe I need to actively seek out dissenting views before I lock in on a position. It's uncomfortable but I notice I do this a lot — I find the evidence that matches what I already think.`,
-  biases: [
-    { name: 'Confirmation Bias', score: 8.2, note: 'Strong pattern — dismissing contradictory information' },
-    { name: 'Overconfidence', score: 6.8, note: 'Expressed high certainty before gathering all data' },
-  ],
-  insight: 'This entry shows a classic confirmation bias pattern combined with overconfidence. You had a pre-formed conclusion and selectively processed information that confirmed it. The fact that you recognized this in reflection is a great sign — try to catch it in the moment next time.'
+const loading = ref(true)
+const deleting = ref(false)
+const notFound = ref(false)
+
+onMounted(async () => {
+  const data = await journalStore.fetchEntry(route.params.id)
+  if (!data) notFound.value = true
+  loading.value = false
 })
 
-const highlightedContent = computed(() => {
-  let text = entry.value.content
-  // Replace newlines with paragraph breaks
-  text = text.split('\n\n').map(p => `<p>${p}</p>`).join('')
-  // Highlight bias-related phrases
-  const highlights = [
-    { phrase: "dismissing Sarah's timeline concerns", label: 'Confirmation Bias' },
-    { phrase: 'so confident my estimate was right', label: 'Overconfidence' },
-    { phrase: "already decided the timeline was fine", label: 'Confirmation Bias' },
-    { phrase: 'find the evidence that matches what I already think', label: 'Confirmation Bias' },
-  ]
-  highlights.forEach(h => {
-    text = text.replace(h.phrase, `<mark class="bias-mark" title="${h.label}">${h.phrase}</mark>`)
+const entry = computed(() => journalStore.currentEntry)
+
+const formattedDate = computed(() => {
+  if (!entry.value?.created_at) return ''
+  return new Date(entry.value.created_at).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric'
   })
-  return text
 })
+
+const formattedTime = computed(() => {
+  if (!entry.value?.created_at) return ''
+  return new Date(entry.value.created_at).toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit'
+  })
+})
+
+// Normalise detected_biases array from the API
+const detectedBiases = computed(() => {
+  const raw = entry.value?.detected_biases || []
+  return raw.map(b => ({
+    id: b.bias_id || b.bias || '',
+    name: (b.bias_id || b.bias || '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase()),
+    score: Math.round((b.confidence ?? 0.5) * 10 * 10) / 10,
+    note: b.explanation || b.note || '',
+    slug: (b.bias_id || b.bias || '').replace(/_/g, '-'),
+  }))
+})
+
+const emotions = computed(() => entry.value?.themes || [])
+
+const formattedContent = computed(() => {
+  if (!entry.value?.content) return ''
+  return entry.value.content
+    .split('\n\n')
+    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+    .join('')
+})
+
+async function handleDelete() {
+  if (!confirm('Permanently delete this journal entry?')) return
+  deleting.value = true
+  const ok = await journalStore.deleteEntry(route.params.id)
+  if (ok) router.push('/journal')
+  else deleting.value = false
+}
 </script>
 
 <style scoped>
@@ -183,6 +245,17 @@ const highlightedContent = computed(() => {
 .divider { height: 1px; background: var(--lavender-soft); }
 
 .insight-section { display: flex; flex-direction: column; gap: 8px; }
-.insight-label { font-size: 13px; font-weight: 700; color: var(--plum); }
+.insight-label { font-size: 13px; font-weight: 700; color: var(--plum); display: flex; align-items: center; }
+.ai-sparkle { color: var(--lavender-deep); }
 .insight-text { font-size: 13px; color: var(--slate); line-height: 1.6; margin: 0; }
+
+.state-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 80px 0; color: var(--slate); font-size: 15px; }
+.spin-icon { animation: spin 1s linear infinite; color: var(--lavender-deep); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.theme-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.theme-tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--lavender-soft); color: var(--plum); }
+
+.no-analysis { font-size: 13px; color: var(--slate); background: var(--lavender-soft); border-radius: 10px; padding: 14px; line-height: 1.5; }
+.no-analysis p { margin: 0; }
 </style>

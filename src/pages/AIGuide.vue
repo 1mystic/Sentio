@@ -3,7 +3,7 @@
 
     <!-- Chat Header -->
     <div class="chat-header">
-      <div class="ai-avatar">✨</div>
+      <div class="ai-avatar"><Sparkles :size="18" /></div>
       <div class="chat-header-info">
         <div class="chat-title">Sentio AI Guide</div>
         <div class="chat-subtitle">Powered by Claude</div>
@@ -65,10 +65,10 @@
           ref="inputEl"
         ></textarea>
         <button class="send-btn btn btn-primary" :disabled="!input.trim() || loading" @click="sendMessage">
-          <span class="send-icon">↑</span>
+          <Send :size="16" />
         </button>
       </div>
-      <div class="safety-notice">Not a replacement for professional mental health support. <router-link to="/therapists" class="safety-link">Find a therapist →</router-link></div>
+      <div class="safety-notice">Not a replacement for professional mental health support. <router-link to="/therapists" class="safety-link">Find a therapist</router-link></div>
     </div>
 
   </div>
@@ -78,6 +78,7 @@
 import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import { Sparkles, Send } from 'lucide-vue-next'
 
 const router = useRouter()
 const auth = useAuthStore()

@@ -35,9 +35,12 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
-  if (!auth.user && to.meta.requiresAuth) {
-    return '/login'
-  }
+  // Wait for Supabase session to load before making any auth decisions.
+  // Without this, auth.user is always null on hard refresh / initial load.
+  await auth.ensureInitialized()
+
+  if (!auth.user && to.meta.requiresAuth) return '/login'
+  if (auth.user && (to.path === '/login' || to.path === '/signup')) return '/dashboard'
 })
 
 export default router

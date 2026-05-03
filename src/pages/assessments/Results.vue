@@ -3,7 +3,8 @@
 
     <!-- Celebration Header -->
     <div class="celebration-header">
-      <h1 class="celebration-title">Assessment Complete! 🎉</h1>
+      <Trophy :size="40" class="celebration-trophy" />
+      <h1 class="celebration-title">Assessment Complete!</h1>
       <p class="celebration-sub">Here's what we discovered about your thinking patterns</p>
     </div>
 
@@ -19,8 +20,8 @@
               stroke="url(#ringGradient)"
               stroke-width="12"
               stroke-linecap="round"
-              stroke-dasharray="364.4"
-              :stroke-dashoffset="364.4 - (364.4 * 0.72)"
+              :stroke-dasharray="circumference"
+              :stroke-dashoffset="dashOffset"
               transform="rotate(-90 70 70)"
             />
             <defs>
@@ -30,15 +31,15 @@
               </linearGradient>
             </defs>
           </svg>
-          <div class="score-number">72</div>
+          <div class="score-number">{{ overallScore }}</div>
         </div>
         <div class="score-info">
           <div class="score-label">Your Bias Susceptibility Score</div>
-          <div class="score-interpretation">Moderate Bias Awareness</div>
-          <p class="score-desc">You have a good foundation of self-awareness but show consistent patterns in certain bias categories. With targeted practice, you can significantly improve your critical thinking.</p>
+          <div class="score-interpretation">{{ interpretation }}</div>
+          <p class="score-desc">Your assessment reveals patterns across {{ categories.length }} dimension{{ categories.length !== 1 ? 's' : '' }}. Review your highest-scoring areas below and explore targeted resources to build self-awareness.</p>
           <div class="score-badges">
-            <span class="badge badge-lavender">72nd percentile</span>
-            <span class="badge badge-green">Above Average</span>
+            <span class="badge badge-lavender">{{ overallScore }}th percentile</span>
+            <span class="badge badge-green">{{ interpretation }}</span>
           </div>
         </div>
       </div>
@@ -47,7 +48,7 @@
     <!-- 4-Column Breakdown -->
     <div class="breakdown-grid">
       <div v-for="cat in categories" :key="cat.label" class="breakdown-card card">
-        <div class="breakdown-emoji">{{ cat.emoji }}</div>
+        <div class="breakdown-icon" :style="{ color: cat.color }"><component :is="cat.icon" :size="26" /></div>
         <div class="breakdown-label">{{ cat.label }}</div>
         <div class="breakdown-score" :style="{ color: cat.color }">{{ cat.score }}</div>
         <div class="breakdown-bar-track">
@@ -76,9 +77,9 @@
     <div class="card top-bias-card">
       <div class="top-bias-header">
         <span class="badge badge-plum">Top Pattern Detected</span>
-        <h3 class="top-bias-name">Confirmation Bias</h3>
+        <h3 class="top-bias-name">{{ topCategoryName }}</h3>
       </div>
-      <p class="top-bias-text">This is your strongest identified pattern. You tend to seek out and favor information that confirms your existing beliefs, while unconsciously dismissing contradictory evidence. This is particularly evident in your decision-making and social interactions.</p>
+      <p class="top-bias-text">This is your highest-scoring dimension from this assessment. Focused practice in this area will have the most impact on your cognitive self-awareness.</p>
       <div class="top-bias-indicators">
         <div class="indicator">
           <span class="indicator-dot"></span>
@@ -102,7 +103,7 @@
       </div>
       <div class="rec-grid">
         <div v-for="rec in recommendations" :key="rec.title" class="rec-card card">
-          <div class="rec-emoji">{{ rec.emoji }}</div>
+          <div class="rec-icon"><component :is="rec.icon" :size="28" /></div>
           <div class="rec-content">
             <h4 class="rec-title">{{ rec.title }}</h4>
             <p class="rec-desc">{{ rec.desc }}</p>
@@ -114,40 +115,91 @@
 
     <!-- Actions -->
     <div class="actions-bar">
-      <router-link to="/assessments/1" class="btn btn-ghost">↺ Retake</router-link>
-      <router-link to="/progress" class="btn btn-secondary">View in Progress</router-link>
-      <router-link to="/explore/confirmation-bias" class="btn btn-primary">Explore Top Bias →</router-link>
+      <router-link :to="`/assessments/${route.params.id}`" class="btn btn-ghost"><RotateCcw :size="14" /> Retake</router-link>
+      <router-link to="/progress" class="btn btn-secondary"><TrendingUp :size="14" /> View in Progress</router-link>
+      <router-link to="/explore" class="btn btn-primary">Explore Biases <ArrowRight :size="14" /></router-link>
     </div>
 
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Trophy, TrendingUp, RotateCcw, ArrowRight, Brain, BookMarked, Zap, Users, Scan, MessageSquare } from 'lucide-vue-next'
 
+const route = useRoute()
 const router = useRouter()
 
-const categories = ref([
-  { label: 'Decision', emoji: '⚡', score: 78, color: '#9b94e8' },
-  { label: 'Social', emoji: '👥', score: 65, color: '#e88fa0' },
-  { label: 'Memory', emoji: '📚', score: 82, color: '#88c9a0' },
-  { label: 'Self-Perception', emoji: '🪞', score: 58, color: '#e8c56a' },
-])
+// Results passed via router.push state from Take.vue
+const routeState = history.state || {}
+const scores = routeState.scores || {}  // { category: score }
 
-const biasBars = ref([
-  { name: 'Confirmation Bias', score: 84 },
-  { name: 'Anchoring', score: 71 },
-  { name: 'Halo Effect', score: 65 },
-  { name: 'Availability Heuristic', score: 58 },
-  { name: 'Overconfidence', score: 52 },
-  { name: 'Status Quo', score: 44 },
-])
+const CATEGORY_META = {
+  decision:        { label: 'Decision',        icon: Zap,      color: '#9b94e8' },
+  social:          { label: 'Social',           icon: Users,    color: '#e88fa0' },
+  memory:          { label: 'Memory',           icon: BookMarked, color: '#88c9a0' },
+  self_perception: { label: 'Self-Perception',  icon: Scan,     color: '#e8c56a' },
+  general:         { label: 'General',          icon: Brain,    color: '#9b94e8' },
+}
+
+const categories = computed(() => {
+  const cats = Object.entries(scores)
+  if (!cats.length) return [
+    { label: 'Decision', icon: Zap, score: 72, color: '#9b94e8' },
+    { label: 'Social', icon: Users, score: 65, color: '#e88fa0' },
+  ]
+  return cats.map(([k, v]) => {
+    const meta = CATEGORY_META[k] || { label: k, icon: Brain, color: '#9b94e8' }
+    return { label: meta.label, icon: meta.icon, score: v, color: meta.color }
+  })
+})
+
+const overallScore = computed(() => {
+  const vals = Object.values(scores)
+  if (!vals.length) return 72
+  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+})
+
+const topCategory = computed(() => {
+  const cats = Object.entries(scores)
+  if (!cats.length) return null
+  return cats.sort((a, b) => b[1] - a[1])[0]
+})
+
+const topCategoryName = computed(() =>
+  topCategory.value ? (CATEGORY_META[topCategory.value[0]]?.label || topCategory.value[0]) : 'General Bias Patterns'
+)
+
+const interpretation = computed(() => {
+  const s = overallScore.value
+  if (s >= 80) return 'High Bias Awareness'
+  if (s >= 60) return 'Moderate Bias Awareness'
+  if (s >= 40) return 'Developing Awareness'
+  return 'Early Stage Awareness'
+})
+
+const biasBars = computed(() => {
+  const cats = Object.entries(scores)
+  if (!cats.length) return [
+    { name: 'Confirmation Bias', score: 72 },
+    { name: 'Anchoring', score: 65 },
+  ]
+  return cats
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, v]) => ({
+      name: CATEGORY_META[k]?.label || k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      score: v,
+    }))
+})
+
+const circumference = 364.4
+const dashOffset = computed(() => circumference - (circumference * overallScore.value / 100))
 
 const recommendations = ref([
-  { emoji: '🧠', title: 'Deep Dive: Confirmation Bias', desc: 'Learn the science behind why we seek confirming evidence and practical strategies to overcome it.', link: '/explore/confirmation-bias' },
-  { emoji: '📔', title: 'Start a Reflection Journal', desc: 'Daily journaling is proven to surface hidden biases. Start with guided prompts.', link: '/journal/new' },
-  { emoji: '💬', title: 'Talk with Sentio AI', desc: 'Explore your specific patterns in a conversation with our AI guide.', link: '/ai-guide' },
+  { icon: Brain, title: 'Explore Your Top Pattern', desc: 'Learn the science and practical strategies for your highest-scoring bias.', link: '/explore' },
+  { icon: BookMarked, title: 'Start a Reflection Journal', desc: 'Daily journaling is proven to surface hidden biases.', link: '/journal/new' },
+  { icon: MessageSquare, title: 'Talk with Sentio AI', desc: 'Explore your specific patterns in a conversation with our AI guide.', link: '/ai-guide' },
 ])
 </script>
 
@@ -175,7 +227,8 @@ const recommendations = ref([
 .badge-plum { background: var(--plum); color: white; }
 
 /* Header */
-.celebration-header { text-align: center; padding: 20px 0; }
+.celebration-header { text-align: center; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.celebration-trophy { color: var(--lavender-deep); }
 .celebration-title { font-size: 32px; font-weight: 800; color: var(--plum); margin: 0 0 8px; }
 .celebration-sub { font-size: 16px; color: var(--slate); margin: 0; }
 
@@ -195,7 +248,7 @@ const recommendations = ref([
 .breakdown-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 @media (max-width: 700px) { .breakdown-grid { grid-template-columns: repeat(2, 1fr); } }
 .breakdown-card { text-align: center; padding: 20px 16px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
-.breakdown-emoji { font-size: 24px; }
+.breakdown-icon { display: flex; align-items: center; justify-content: center; }
 .breakdown-label { font-size: 13px; font-weight: 600; color: var(--slate); }
 .breakdown-score { font-size: 24px; font-weight: 800; }
 .breakdown-bar-track { width: 100%; height: 6px; background: var(--lavender-soft); border-radius: 99px; overflow: hidden; }
@@ -225,7 +278,7 @@ const recommendations = ref([
 .recommendations { display: flex; flex-direction: column; gap: 16px; }
 .rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .rec-card { display: flex; flex-direction: column; gap: 12px; }
-.rec-emoji { font-size: 28px; }
+.rec-icon { font-size: 28px; color: var(--lavender-deep); display: flex; align-items: center; }
 .rec-content { flex: 1; }
 .rec-title { font-size: 15px; font-weight: 700; color: var(--plum); margin: 0 0 6px; }
 .rec-desc { font-size: 13px; color: var(--slate); line-height: 1.5; margin: 0; }

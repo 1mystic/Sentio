@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { CheckCircle, PartyPopper, ArrowRight } from 'lucide-vue-next'
+import { usersApi } from '@/api/users.js'
 
 const router = useRouter()
 
@@ -20,6 +22,7 @@ const interestMap = {
 }
 
 const selectedInterests = ref([])
+const saving = ref(false)
 
 onMounted(() => {
   try {
@@ -28,14 +31,31 @@ onMounted(() => {
       const ids = JSON.parse(raw)
       selectedInterests.value = ids.map(id => interestMap[id]).filter(Boolean)
     }
-  } catch (e) {
-    // silently ignore
-  }
+  } catch (e) { /* ignore */ }
 })
 
-function enterSentio() {
-  sessionStorage.removeItem('sentio_interests')
-  router.push('/dashboard')
+async function enterSentio() {
+  saving.value = true
+  try {
+    const interestIds = JSON.parse(sessionStorage.getItem('sentio_interests') || '[]')
+    const baselineRaw = sessionStorage.getItem('sentio_baseline')
+    const baselineAnswers = baselineRaw ? JSON.parse(baselineRaw) : []
+
+    await usersApi.updateMe({
+      onboarding_completed: true,
+      cognitive_style: { baseline_answers: baselineAnswers },
+      preferences: {
+        interests: interestIds,
+        notifications: { daily: true, weekly: true, assessments: false },
+      },
+    })
+  } catch (e) {
+    console.warn('Onboarding save failed (non-blocking):', e.message)
+  } finally {
+    sessionStorage.removeItem('sentio_interests')
+    sessionStorage.removeItem('sentio_baseline')
+    router.push('/dashboard')
+  }
 }
 </script>
 
@@ -48,12 +68,12 @@ function enterSentio() {
 
     <!-- Checkmark -->
     <div class="check-circle">
-      <span class="check-mark">✓</span>
+      <CheckCircle :size="40" class="check-icon" />
     </div>
 
     <!-- Text -->
     <div class="text-center">
-      <h1 class="title">You're all set! 🎉</h1>
+      <h1 class="title">You're all set! <PartyPopper :size="28" class="title-icon" /></h1>
       <p class="subtitle">
         Your Sentio profile is ready. We've identified a personalized starting path
         for you based on your responses.
@@ -85,8 +105,9 @@ function enterSentio() {
     </div>
 
     <!-- CTA -->
-    <button class="btn btn-primary btn-xl enter-btn" @click="enterSentio">
-      Enter Sentio →
+    <button class="btn btn-primary btn-xl enter-btn" :disabled="saving" @click="enterSentio">
+      <span v-if="saving" class="btn-spinner" />
+      <template v-else>Enter Sentio <ArrowRight :size="18" /></template>
     </button>
   </div>
 </template>
@@ -161,11 +182,8 @@ function enterSentio() {
   animation: checkPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   margin-top: 40px;
 }
-.check-mark {
-  font-size: 32px;
+.check-icon {
   color: white;
-  font-weight: 900;
-  line-height: 1;
 }
 @keyframes checkPop {
   0%   { opacity: 0; transform: scale(0); }
@@ -174,7 +192,8 @@ function enterSentio() {
 
 /* Text */
 .text-center { max-width: 480px; }
-.title { font-size: 32px; font-weight: 800; color: var(--plum); margin-bottom: 10px; line-height: 1.2; }
+.title { font-size: 32px; font-weight: 800; color: var(--plum); margin-bottom: 10px; line-height: 1.2; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.title-icon { color: var(--lavender-deep); flex-shrink: 0; }
 .subtitle { font-size: 16px; color: var(--slate); line-height: 1.65; }
 
 /* Summary card */
@@ -242,4 +261,11 @@ function enterSentio() {
   letter-spacing: -0.2px;
   margin-top: 4px;
 }
+.enter-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none !important; }
+.btn-spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.4); border-top-color: white;
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

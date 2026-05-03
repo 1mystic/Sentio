@@ -15,6 +15,7 @@ const error = ref('')
 const loading = ref(false)
 const showPass = ref(false)
 const showConfirm = ref(false)
+const emailSent = ref(false)
 
 const passwordStrength = computed(() => {
   const pw = password.value
@@ -44,12 +45,19 @@ async function handleSignup() {
   if (password.value !== confirmPw.value) { error.value = 'Passwords do not match'; return }
   if (!agreed.value) { error.value = 'Please agree to the Terms of Service'; return }
   loading.value = true
-  const { error: err } = await auth.signUp(email.value, password.value, { full_name: name.value })
+  const { data, error: err } = await auth.signUp(email.value, password.value, {
+    full_name: name.value,
+    display_name: name.value
+  })
   loading.value = false
   if (err) {
     error.value = err.message || 'Sign up failed'
-  } else {
+  } else if (data?.session) {
+    // Email confirmation disabled — user is immediately signed in
     router.push('/onboarding')
+  } else {
+    // Email confirmation required — session is null until they click the link
+    emailSent.value = true
   }
 }
 
@@ -60,6 +68,20 @@ async function handleGoogle() {
 
 <template>
   <div class="signup-wrap">
+    <!-- Email confirmation sent state -->
+    <template v-if="emailSent">
+      <div class="page-head">
+        <div class="confirm-icon">✉️</div>
+        <h1 class="title">Check your email</h1>
+        <p class="subtitle">We sent a confirmation link to <strong>{{ email }}</strong>. Click it to activate your account, then sign in.</p>
+      </div>
+      <router-link to="/login" class="btn btn-primary btn-lg" style="justify-content:center;text-align:center;display:flex">
+        Go to sign in
+      </router-link>
+      <p class="footer-text">Didn't receive it? Check your spam folder or <button class="resend-btn" @click="emailSent = false">try again</button>.</p>
+    </template>
+
+    <template v-else>
     <div class="page-head">
       <h1 class="title">Create your account</h1>
       <p class="subtitle">Start understanding your mind today</p>
@@ -205,6 +227,7 @@ async function handleGoogle() {
       Already have an account?
       <router-link to="/login" class="footer-link">Sign in</router-link>
     </p>
+    </template><!-- end v-else -->
   </div>
 </template>
 
@@ -390,4 +413,12 @@ async function handleGoogle() {
 .footer-text { text-align: center; font-size: 13px; color: var(--slate); }
 .footer-link { font-weight: 700; color: var(--lavender-deep); text-decoration: none; }
 .footer-link:hover { color: var(--plum); }
+
+.confirm-icon { font-size: 40px; text-align: center; margin-bottom: 8px; }
+.resend-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--lavender-deep); font-weight: 600; font-size: 13px;
+  font-family: 'Urbanist', sans-serif; padding: 0;
+}
+.resend-btn:hover { color: var(--plum); text-decoration: underline; }
 </style>

@@ -46,7 +46,7 @@ export const useUserStore = defineStore('user', () => {
 
   async function savePreferences(prefs) {
     try {
-      await usersApi.preferences(prefs)
+      await usersApi.updateMe({ preferences: prefs })
       if (profile.value) {
         profile.value.preferences = { ...(profile.value.preferences || {}), ...prefs }
       }

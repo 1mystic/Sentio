@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import { AlertTriangle, Mail, Lock, Eye, EyeOff } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -44,7 +45,7 @@ async function handleGoogle() {
 
     <transition name="err-fade">
       <div v-if="error" class="error-box" role="alert">
-        <span class="err-icon">⚠</span> {{ error }}
+        <AlertTriangle :size="15" class="err-icon" /> {{ error }}
       </div>
     </transition>
 
@@ -52,7 +53,7 @@ async function handleGoogle() {
       <div class="form-group">
         <label class="form-label" for="email">Email</label>
         <div class="input-wrap">
-          <span class="input-icon">✉</span>
+          <Mail :size="15" class="input-icon" />
           <input
             id="email"
             v-model="email"
@@ -71,7 +72,7 @@ async function handleGoogle() {
           <router-link to="/forgot-password" class="forgot-link">Forgot password?</router-link>
         </div>
         <div class="input-wrap">
-          <span class="input-icon">🔒</span>
+          <Lock :size="15" class="input-icon" />
           <input
             id="password"
             v-model="password"
@@ -87,8 +88,8 @@ async function handleGoogle() {
             :title="showPass ? 'Hide password' : 'Show password'"
             @click="showPass = !showPass"
           >
-            <span v-if="showPass">🙈</span>
-            <span v-else>👁</span>
+            <EyeOff v-if="showPass" :size="15" />
+            <Eye v-else :size="15" />
           </button>
         </div>
       </div>

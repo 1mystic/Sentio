@@ -1,6 +1,15 @@
 <template>
   <div class="progress-page">
 
+    <!-- Skeleton while loading -->
+    <template v-if="journalStore.loading && !journalStore.entries.length">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading your progress…</p>
+      </div>
+    </template>
+
+    <template v-else>
     <!-- Page Header + Time Filter -->
     <div class="page-header">
       <h1 class="page-title">Your Progress</h1>
@@ -18,7 +27,7 @@
     <!-- Stat Cards Row -->
     <div class="stats-grid">
       <div v-for="stat in stats" :key="stat.label" class="stat-card card">
-        <div class="stat-icon">{{ stat.icon }}</div>
+        <div class="stat-icon"><component :is="stat.icon" :size="22" /></div>
         <div class="stat-value">{{ stat.value }}</div>
         <div class="stat-label">{{ stat.label }}</div>
         <div class="stat-change" :class="stat.changeType">{{ stat.change }}</div>
@@ -85,7 +94,7 @@
               <div v-if="i < milestones.length - 1" class="timeline-line"></div>
             </div>
             <div class="timeline-content">
-              <div class="timeline-title">{{ m.emoji }} {{ m.title }}</div>
+              <div class="timeline-title"><component :is="m.icon" :size="14" class="timeline-icon" /> {{ m.title }}</div>
               <div class="timeline-time">{{ m.time }}</div>
             </div>
           </div>
@@ -101,7 +110,7 @@
       </div>
       <div class="rec-grid">
         <div v-for="r in recommendations" :key="r.title" class="rec-card card">
-          <div class="rec-emoji">{{ r.emoji }}</div>
+          <div class="rec-icon"><component :is="r.icon" :size="28" /></div>
           <div class="rec-info">
             <div class="rec-title">{{ r.title }}</div>
             <div class="rec-desc">{{ r.desc }}</div>
@@ -111,59 +120,116 @@
       </div>
     </div>
 
+    </template><!-- end v-else -->
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useInsightsStore } from '@/stores/insights.js'
+import { useJournalStore } from '@/stores/journal.js'
+import { useAssessmentStore } from '@/stores/assessment.js'
+import { BookOpen, Brain, Search, Lightbulb, PartyPopper, Flame, MessageSquare, TrendingUp } from 'lucide-vue-next'
 
-const router = useRouter()
+const insightsStore = useInsightsStore()
+const journalStore  = useJournalStore()
+const assessStore   = useAssessmentStore()
+
 const activeTime = ref('Week')
 const timeTabs = ['Week', 'Month', 'All Time']
 
-const stats = ref([
-  { icon: '📝', value: '12', label: 'Total Entries', change: '+3 this week', changeType: 'up' },
-  { icon: '🧠', value: '3', label: 'Assessments Done', change: '+1 this month', changeType: 'up' },
-  { icon: '🔍', value: '7', label: 'Biases Identified', change: '+2 this week', changeType: 'up' },
-  { icon: '💡', value: '68/100', label: 'Insight Score', change: '+5 pts', changeType: 'up' },
-])
+onMounted(async () => {
+  await Promise.all([
+    journalStore.fetchEntries({ limit: 100 }),
+    insightsStore.fetchAll(),
+    assessStore.fetchList(),
+  ])
+})
 
-const activityData = ref([
-  { label: 'Mon', count: 1 },
-  { label: 'Tue', count: 3 },
-  { label: 'Wed', count: 2 },
-  { label: 'Thu', count: 4 },
-  { label: 'Fri', count: 2 },
-  { label: 'Sat', count: 1 },
-  { label: 'Sun', count: 3 },
-])
+// --- Helpers ---
+function entriesInWindow(entries, days) {
+  const cutoff = Date.now() - days * 86400000
+  return entries.filter(e => new Date(e.created_at).getTime() >= cutoff)
+}
 
-const maxCount = computed(() => Math.max(...activityData.value.map(d => d.count)))
-const yAxis = [5, 4, 3, 2, 1, 0]
+const windowDays = computed(() => activeTime.value === 'Week' ? 7 : activeTime.value === 'Month' ? 30 : 9999)
+const windowEntries = computed(() => entriesInWindow(journalStore.entries, windowDays.value))
 
-const biasFrequency = ref([
-  { name: 'Confirmation Bias', count: 8 },
-  { name: 'Overconfidence', count: 5 },
-  { name: 'Anchoring', count: 4 },
-  { name: 'Sunk Cost Fallacy', count: 3 },
-  { name: 'Attribution Error', count: 2 },
-  { name: 'Halo Effect', count: 2 },
-])
+// --- Stats ---
+const stats = computed(() => {
+  const biasScores = insightsStore.biasFingerprint?.bias_scores || {}
+  const biasCount  = Object.values(biasScores).filter(v => v > 0.2).length
+  const entryCount = windowEntries.value.length
+  const doneCount  = assessStore.assessments.filter(a => a.completed).length
 
-const maxFreq = computed(() => Math.max(...biasFrequency.value.map(b => b.count)))
+  return [
+    { icon: BookOpen,   value: entryCount || '0', label: 'Journal Entries',   change: activeTime.value, changeType: 'up' },
+    { icon: Brain,      value: doneCount  || '0', label: 'Assessments Done',  change: 'completed',      changeType: 'up' },
+    { icon: Search,     value: biasCount  || '0', label: 'Biases Identified', change: 'from journals',  changeType: 'up' },
+    { icon: Lightbulb,  value: insightsStore.weeklyInsights.length || '0', label: 'Weekly Insights', change: 'this week', changeType: 'up' },
+  ]
+})
 
-const milestones = ref([
-  { emoji: '🎉', title: 'Completed first assessment', time: 'Week 1', complete: true },
-  { emoji: '📝', title: '10th journal entry', time: 'Week 2', complete: true },
-  { emoji: '🧠', title: 'Identified 5 unique biases', time: 'Week 3', complete: true },
-  { emoji: '🔥', title: '7-day streak achieved', time: 'Week 4', complete: false },
-])
+// --- Activity bar chart (by day of week for Week view, by week for Month) ---
+const activityData = computed(() => {
+  if (activeTime.value === 'Week') {
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    const counts = Object.fromEntries(days.map(d => [d, 0]))
+    for (const e of windowEntries.value) {
+      const day = days[new Date(e.created_at).getDay()]
+      counts[day]++
+    }
+    return days.map(d => ({ label: d, count: counts[d] }))
+  }
+  // Month view: group by week number
+  const weeks = ['Wk1','Wk2','Wk3','Wk4']
+  const counts = { Wk1:0, Wk2:0, Wk3:0, Wk4:0 }
+  for (const e of windowEntries.value) {
+    const day = (Date.now() - new Date(e.created_at).getTime()) / 86400000
+    const wk = Math.min(3, Math.floor(day / 7))
+    counts[weeks[wk]]++
+  }
+  return weeks.map(w => ({ label: w, count: counts[w] }))
+})
+
+const maxCount = computed(() => Math.max(1, ...activityData.value.map(d => d.count)))
+const yAxis = computed(() => {
+  const m = maxCount.value
+  return [m, Math.ceil(m*0.75), Math.ceil(m*0.5), Math.ceil(m*0.25), 1, 0]
+})
+
+// --- Bias frequency from bias_scores ---
+const biasFrequency = computed(() => {
+  const scores = insightsStore.biasFingerprint?.bias_scores || {}
+  return Object.entries(scores)
+    .map(([k, v]) => ({
+      name: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      count: Math.round(v * 10),
+    }))
+    .filter(b => b.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6)
+})
+
+const maxFreq = computed(() => Math.max(1, ...biasFrequency.value.map(b => b.count)))
+
+// --- Milestones ---
+const milestones = computed(() => {
+  const entries  = journalStore.entries
+  const biasN    = Object.values(insightsStore.biasFingerprint?.bias_scores || {}).filter(v => v > 0.2).length
+  return [
+    { icon: BookOpen,   title: 'First journal entry',     time: entries.length >= 1  ? 'Completed' : 'Pending', complete: entries.length >= 1 },
+    { icon: Brain,      title: 'First assessment done',   time: assessStore.assessments.some(a => a.completed) ? 'Completed' : 'Pending', complete: assessStore.assessments.some(a => a.completed) },
+    { icon: Search,     title: '5 biases identified',     time: biasN >= 5  ? 'Completed' : `${biasN}/5`,       complete: biasN >= 5 },
+    { icon: BookOpen,   title: '10 journal entries',      time: entries.length >= 10 ? 'Completed' : `${entries.length}/10`, complete: entries.length >= 10 },
+    { icon: Flame,      title: '7-day streak',            time: 'Keep writing!', complete: false },
+  ]
+})
 
 const recommendations = ref([
-  { emoji: '📔', title: 'Write Today\'s Entry', desc: 'Keep your streak going — reflect on something that happened today.', link: '/journal/new', cta: 'Write Now' },
-  { emoji: '🧠', title: 'Take an Assessment', desc: 'You have 5 assessments waiting. Start with Decision Making Patterns.', link: '/assessments', cta: 'Start' },
-  { emoji: '💬', title: 'Explore with AI Guide', desc: 'Discuss your top bias pattern — Confirmation Bias — with Sentio AI.', link: '/ai-guide', cta: 'Open Chat' },
+  { icon: BookOpen,     title: "Write Today's Entry",      desc: 'Keep your streak going — reflect on something that happened today.', link: '/journal/new', cta: 'Write Now' },
+  { icon: Brain,        title: 'Take an Assessment',       desc: 'Discover your cognitive patterns with a validated assessment.',        link: '/assessments', cta: 'Start' },
+  { icon: MessageSquare,title: 'Explore with AI Guide',    desc: 'Discuss your top bias pattern with Sentio AI.',                       link: '/ai-guide',    cta: 'Open Chat' },
 ])
 </script>
 
@@ -194,7 +260,7 @@ const recommendations = ref([
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 @media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 .stat-card { display: flex; flex-direction: column; gap: 6px; padding: 20px; }
-.stat-icon { font-size: 22px; }
+.stat-icon { color: var(--lavender-deep); display: flex; align-items: center; }
 .stat-value { font-size: 24px; font-weight: 800; color: var(--plum); }
 .stat-label { font-size: 12px; color: var(--slate); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat-change { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; display: inline-flex; width: fit-content; }
@@ -237,15 +303,21 @@ const recommendations = ref([
 .timeline-dot.complete { background: var(--lavender-deep); border-color: var(--lavender-deep); }
 .timeline-line { width: 2px; flex: 1; background: var(--lavender-soft); min-height: 24px; margin: 4px 0; }
 .timeline-content { flex: 1; padding-bottom: 20px; }
-.timeline-title { font-size: 14px; font-weight: 600; color: var(--plum); }
+.timeline-title { font-size: 14px; font-weight: 600; color: var(--plum); display: flex; align-items: center; gap: 6px; }
+.timeline-icon { flex-shrink: 0; color: var(--lavender-deep); }
 .timeline-time { font-size: 12px; color: var(--slate); margin-top: 2px; }
 
 /* Rec Grid */
 .next-steps {}
 .rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .rec-card { display: flex; flex-direction: column; gap: 12px; }
-.rec-emoji { font-size: 28px; }
+.rec-icon { color: var(--lavender-deep); display: flex; align-items: center; }
 .rec-info { flex: 1; }
 .rec-title { font-size: 15px; font-weight: 700; color: var(--plum); margin-bottom: 4px; }
 .rec-desc { font-size: 13px; color: var(--slate); line-height: 1.5; }
+
+/* Loading */
+.loading-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 80px 0; color: var(--slate); }
+.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--lavender); border-top-color: var(--lavender-deep); animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

@@ -6,26 +6,41 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const isLoading = ref(false)
   const session = ref(null)
+  const initialized = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
 
-  async function initialize() {
+  let _initPromise = null
+  let _authSubscription = null
+
+  // Call this anywhere — safe to call multiple times, resolves once
+  function ensureInitialized() {
+    if (!_initPromise) _initPromise = _doInit()
+    return _initPromise
+  }
+
+  async function _doInit() {
     const { data: { session: s } } = await supabase.auth.getSession()
     session.value = s
     user.value = s?.user ?? null
+    initialized.value = true
 
-    supabase.auth.onAuthStateChange((_event, s) => {
+    // Unsubscribe any previous listener before registering a new one
+    _authSubscription?.unsubscribe()
+    const { data } = supabase.auth.onAuthStateChange((_event, s) => {
       session.value = s
       user.value = s?.user ?? null
     })
+    _authSubscription = data.subscription
   }
 
-  async function signUp(email, password, displayName) {
+  async function signUp(email, password, metadata = {}) {
     isLoading.value = true
     try {
       const { data, error } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { display_name: displayName } }
+        email,
+        password,
+        options: { data: metadata }
       })
       if (error) throw error
       return { data, error: null }
@@ -55,5 +70,8 @@ export const useAuthStore = defineStore('auth', () => {
     session.value = null
   }
 
-  return { user, session, isLoading, isAuthenticated, initialize, signUp, signIn, signOut }
+  return {
+    user, session, isLoading, isAuthenticated, initialized,
+    ensureInitialized, signUp, signIn, signOut
+  }
 })

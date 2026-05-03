@@ -42,14 +42,14 @@
         :style="{ borderTop: `4px solid ${a.color}` }"
       >
         <div class="card-top">
-          <span class="card-emoji">{{ a.emoji }}</span>
+          <span class="card-icon"><component :is="a.icon" :size="28" /></span>
           <span class="badge badge-lavender">{{ a.category }}</span>
         </div>
         <h3 class="card-title">{{ a.title }}</h3>
         <p class="card-desc">{{ a.description }}</p>
         <div class="card-stats">
-          <span class="stat-item">⏱ {{ a.time }} min</span>
-          <span class="stat-item">❓ {{ a.questions }} questions</span>
+          <span class="stat-item"><Clock :size="12" /> {{ a.time }} min</span>
+          <span class="stat-item"><HelpCircle :size="12" /> {{ a.questions }} questions</span>
         </div>
 
         <!-- Progress bar for in-progress -->
@@ -62,7 +62,7 @@
 
         <!-- Completed badge -->
         <div v-if="a.status === 'completed'" class="completed-row">
-          <span class="badge badge-green">✓ Completed</span>
+          <span class="badge badge-green"><CheckCircle :size="11" style="margin-right:3px;" /> Completed</span>
           <span class="score-label">Score: {{ a.score }}/100</span>
         </div>
 
@@ -93,6 +93,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAssessmentStore } from '@/stores/assessment.js'
+import { Clock, HelpCircle, CheckCircle, Brain, Zap, Users, BookMarked, DollarSign, Scan, Heart, Microscope } from 'lucide-vue-next'
 
 const router = useRouter()
 const assessmentStore = useAssessmentStore()
@@ -104,32 +105,41 @@ onMounted(() => {
   assessmentStore.fetchList()
 })
 
-const assessments = ref([
-  { id: 1, title: 'Cognitive Bias Inventory', emoji: '🧠', category: 'Core', status: 'available', time: 12, questions: 20, color: '#dad8f9', description: 'A comprehensive test covering 10 major cognitive biases. Establishes your baseline profile.' },
-  { id: 2, title: 'Decision Making Patterns', emoji: '⚡', category: 'Decision', status: 'in-progress', time: 8, questions: 15, progress: 60, color: '#d8edf9', description: 'Explore how you make decisions under uncertainty and time pressure.' },
-  { id: 3, title: 'Social Bias Audit', emoji: '👥', category: 'Social', status: 'completed', time: 10, questions: 18, score: 72, color: '#f9d8f0', description: 'How do your social biases affect relationships and group dynamics?' },
-  { id: 4, title: 'Memory Reliability Test', emoji: '📚', category: 'Memory', status: 'available', time: 7, questions: 12, color: '#d8f9e8', description: 'Test how reliable your memory is and discover recency and availability biases.' },
-  { id: 5, title: 'Financial Bias Scan', emoji: '💰', category: 'Money', status: 'available', time: 6, questions: 10, color: '#fef9c3', description: 'Uncover biases affecting your financial decisions and risk assessment.' },
-  { id: 6, title: 'Self-Perception Audit', emoji: '🪞', category: 'Self', status: 'available', time: 9, questions: 14, color: '#dad8f9', description: 'How accurate is your self-image? Explore overconfidence and imposter syndrome patterns.' },
-  { id: 7, title: 'Relationship Patterns', emoji: '❤️', category: 'Social', status: 'available', time: 11, questions: 16, color: '#f9d8f0', description: 'Discover how cognitive biases shape your romantic and platonic relationships.' },
-  { id: 8, title: 'Critical Thinking Challenge', emoji: '🔬', category: 'Logic', status: 'available', time: 15, questions: 25, color: '#d8edf9', description: 'A challenging test of logical reasoning and susceptibility to common fallacies.' },
-])
+// Display metadata keyed by slug (from seed_assessments.py)
+const ASSESSMENT_META = {
+  'cognitive-bias-inventory': { icon: Brain,      color: '#dad8f9', category: 'Core' },
+  'need-for-cognition':       { icon: Microscope, color: '#d8edf9', category: 'Thinking' },
+  'metacognitive-awareness':  { icon: Scan,       color: '#d8f9e8', category: 'Self' },
+}
+
+function enrichAssessment(a) {
+  const meta = ASSESSMENT_META[a.slug] || { icon: Brain, color: '#dad8f9', category: 'General' }
+  const qCount = Array.isArray(a.questions) ? a.questions.length : (a.question_count || '?')
+  return {
+    ...a,
+    icon: meta.icon,
+    color: meta.color,
+    category: a.category || meta.category,
+    time: a.estimated_minutes || 10,
+    questions: qCount,
+    status: a.completed ? 'completed' : 'available',
+  }
+}
+
+const enrichedAssessments = computed(() =>
+  assessmentStore.assessments.length > 0
+    ? assessmentStore.assessments.map(enrichAssessment)
+    : []
+)
 
 function countByStatus(tab) {
   const map = { 'Available': 'available', 'In Progress': 'in-progress', 'Completed': 'completed' }
-  const source = assessmentStore.assessments.length > 0 ? assessmentStore.assessments : assessments.value
-  return source.filter(a => a.status === map[tab]).length
+  return enrichedAssessments.value.filter(a => a.status === map[tab]).length
 }
-
-const filteredAssessments = computed(() => {
-  const map = { 'Available': 'available', 'In Progress': 'in-progress', 'Completed': 'completed' }
-  return assessments.value.filter(a => a.status === map[activeTab.value])
-})
 
 const displayAssessments = computed(() => {
   const map = { 'Available': 'available', 'In Progress': 'in-progress', 'Completed': 'completed' }
-  const source = assessmentStore.assessments.length > 0 ? assessmentStore.assessments : assessments.value
-  return source.filter(a => a.status === map[activeTab.value])
+  return enrichedAssessments.value.filter(a => a.status === map[activeTab.value])
 })
 </script>
 
@@ -176,11 +186,11 @@ const displayAssessments = computed(() => {
 .assessment-card:hover { box-shadow: 0 8px 32px rgba(53,43,56,0.10); transform: translateY(-2px); }
 
 .card-top { display: flex; align-items: center; justify-content: space-between; }
-.card-emoji { font-size: 28px; }
+.card-icon { color: var(--lavender-deep); display: flex; align-items: center; }
+.stat-item { font-size: 12px; color: var(--slate); font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
 .card-title { font-size: 16px; font-weight: 700; color: var(--plum); margin: 0; line-height: 1.3; }
 .card-desc { font-size: 13px; color: var(--slate); margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card-stats { display: flex; gap: 16px; }
-.stat-item { font-size: 12px; color: var(--slate); font-weight: 500; }
 
 /* Progress */
 .progress-wrap { display: flex; flex-direction: column; gap: 6px; }

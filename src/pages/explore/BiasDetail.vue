@@ -178,8 +178,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useBiasStore } from '@/stores/bias.js'
 import {
   Search, Brain, Anchor, TrendingDown, Star, Calendar,
   Lock, Users, BookMarked, Scan, Megaphone, HandHelping, Sparkles,
@@ -188,6 +189,7 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+const biasStore = useBiasStore()
 
 const activeTab = ref('overview')
 const tabs = ['Overview', 'Examples', 'In Your Life', 'How to Counter']
@@ -207,68 +209,56 @@ const biasIconMap = {
   'in-group-bias': Users,
 }
 
-function getBiasIcon(id) {
-  return biasIconMap[id] || Brain
-}
+function getBiasIcon(id) { return biasIconMap[id] || Brain }
 
-const bias = ref({
-  id: 'confirmation-bias',
-  name: 'Confirmation Bias',
-  category: 'Belief',
-  tagline: 'We see what we want to see',
-  prevalence: 85,
-  userScore: 7.2,
-  weeklyEncounters: 3,
-  definition: 'Confirmation bias is the tendency to search for, interpret, favor, and recall information in a way that confirms or supports one\'s prior beliefs or values. It is a type of cognitive bias that significantly affects how people process information. People display this bias when they gather or remember information selectively, or when they interpret it in a biased way. The effect is stronger for desired outcomes and for emotionally significant topics.',
-  whyItHappens: 'Our brains are wired for efficiency. Processing every piece of information objectively would be cognitively exhausting, so we developed mental shortcuts. Confirmation bias helps us navigate information quickly — but at the cost of accuracy. It is also tied to self-esteem: challenging our beliefs can feel like a personal threat, so our minds protect us by filtering for the familiar.',
+const FALLBACK_BIAS = {
+  id: 'confirmation-bias', name: 'Confirmation Bias', category: 'Belief',
+  tagline: 'We see what we want to see', prevalence: 85, userScore: 7.2, weeklyEncounters: 3,
+  definition: 'The tendency to search for, interpret, favor, and recall information that confirms prior beliefs.',
+  whyItHappens: 'Our brains evolved for efficiency. Processing every piece of information objectively is cognitively expensive, so we developed shortcuts that favor familiar patterns.',
   examples: [
-    {
-      title: 'Political News Consumption',
-      description: 'People tend to follow news sources that align with their political beliefs, reinforcing existing views while dismissing contradictory reporting as biased or inaccurate.',
-      insight: 'Notice how people rarely change their political views after reading news — even when faced with contradictory evidence. The brain flags confirming information as "truth" and dismissing evidence as "propaganda."'
-    },
-    {
-      title: 'Investment Decisions',
-      description: 'Investors often seek out information that supports their existing investment choices while glossing over warning signs, analyst downgrades, or bearish signals about a stock they hold.',
-      insight: 'This is why many investors hold losing stocks too long — they keep finding reasons to stay optimistic. Forums and financial media provide endless confirming voices for any position.'
-    },
-    {
-      title: 'Medical Self-Diagnosis',
-      description: 'When researching symptoms online, people often focus on the diagnosis they feared — or hoped — from the start, clicking on results that match their hypothesis.',
-      insight: 'Dr. Google is notorious for this. Users click on results that confirm their initial hypothesis and skip pages that suggest more benign (or more severe) explanations.'
-    },
+    { title: 'Political News', description: 'Following only sources that align with existing beliefs, reinforcing views while dismissing opposing reporting.', insight: 'The brain flags confirming information as truth and contradictions as propaganda.' },
+    { title: 'Investment Decisions', description: 'Seeking data that supports a current investment while ignoring warning signs or analyst downgrades.', insight: 'This is why investors hold losing positions too long — they keep finding reasons for optimism.' },
   ],
   strategies: [
-    {
-      name: 'Seek Disconfirming Evidence',
-      desc: 'Actively look for information that challenges your beliefs. Before making a decision, ask yourself: "What would change my mind?" Then genuinely look for it.'
-    },
-    {
-      name: 'Steel-man the Opposition',
-      desc: 'Before dismissing an opposing view, try to argue it as strongly as possible — stronger than any opponent would. Then reconsider your original position in light of the best counter-argument.'
-    },
-    {
-      name: 'Pre-mortem Analysis',
-      desc: 'Before making a decision, imagine it failed completely. Work backwards: what went wrong? This surfaces hidden weaknesses and assumptions that confirmation bias tends to suppress.'
-    },
-    {
-      name: 'Diverse Information Sources',
-      desc: 'Deliberately consume content from sources that disagree with your worldview at least weekly. Keep a "challenging reads" list and track how it shifts your thinking over time.'
-    },
-  ]
+    { name: 'Seek Disconfirming Evidence', desc: 'Before deciding, ask: "What would change my mind?" Then genuinely look for it.' },
+    { name: 'Steel-man the Opposition', desc: 'Argue the opposing view as strongly as possible before reconsidering your own position.' },
+    { name: 'Pre-mortem Analysis', desc: 'Imagine the decision failed — what went wrong? This surfaces assumptions confirmation bias hides.' },
+  ],
+}
+
+const bias = ref({ ...FALLBACK_BIAS })
+
+onMounted(async () => {
+  const slug = route.params.slug || route.params.id
+  if (!slug) return
+  const data = await biasStore.fetchBySlug(slug)
+  if (data) {
+    bias.value = {
+      ...data,
+      id: data.slug || data.id,
+      tagline: data.tagline || data.short_description || '',
+      userScore: data.userScore ?? null,
+      weeklyEncounters: data.weeklyEncounters ?? null,
+      examples: Array.isArray(data.examples) ? data.examples : FALLBACK_BIAS.examples,
+      strategies: Array.isArray(data.strategies) ? data.strategies : FALLBACK_BIAS.strategies,
+    }
+  }
 })
 
-const relatedBiases = [
-  { id: 'availability-heuristic', name: 'Availability Heuristic' },
-  { id: 'dunning-kruger', name: 'Dunning-Kruger Effect' },
-  { id: 'anchoring-bias', name: 'Anchoring Bias' },
-]
+const relatedBiases = computed(() => {
+  if (biasStore.biases.length === 0) return [
+    { id: 'availability-heuristic', name: 'Availability Heuristic' },
+    { id: 'anchoring-bias', name: 'Anchoring Bias' },
+  ]
+  return biasStore.biases
+    .filter(b => b.id !== bias.value.id && b.slug !== bias.value.id)
+    .slice(0, 3)
+    .map(b => ({ id: b.slug || b.id, name: b.name }))
+})
 
 const timelineItems = [
-  { date: 'Thursday', title: 'Project timeline review', desc: 'Sought only data that supported original deadline estimate; dismissed team\'s concerns.' },
-  { date: 'Tuesday', title: 'Research session', desc: 'Spent 45 min reading articles that confirmed your hypothesis; skipped 3 counterexamples.' },
-  { date: 'Last Sunday', title: 'Weekend planning', desc: 'Chose activity based on one positive review, ignored 4 negative ones.' },
-  { date: 'Last Friday', title: 'Budget discussion', desc: 'Focused on cost data that justified current spend; overlooked efficiency metrics.' },
+  { date: 'This week', title: 'Detected in recent entries', desc: 'Review your journal entries to see specific instances.' },
 ]
 </script>
 
