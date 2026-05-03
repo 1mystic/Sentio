@@ -3,7 +3,9 @@
 
     <!-- Back + Title -->
     <div class="page-top">
-      <router-link to="/journal" class="btn btn-ghost btn-sm">← Back to Journal</router-link>
+      <router-link to="/journal" class="btn btn-ghost btn-sm">
+        <ArrowLeft :size="14" /> Back to Journal
+      </router-link>
       <h1 class="page-title">New Journal Entry</h1>
     </div>
 
@@ -46,7 +48,8 @@
         <!-- Writing Prompts -->
         <div class="prompts-section">
           <button class="btn btn-ghost btn-sm prompts-toggle" @click="showPrompts = !showPrompts">
-            ✨ Need inspiration? <span class="toggle-arrow">{{ showPrompts ? '▲' : '▼' }}</span>
+            <Sparkles :size="14" /> Need inspiration?
+            <span class="toggle-arrow">{{ showPrompts ? '▲' : '▼' }}</span>
           </button>
           <div v-if="showPrompts" class="prompts-list">
             <button
@@ -76,7 +79,7 @@
         <!-- AI Analysis Pane -->
         <div class="card ai-card">
           <div class="ai-header">
-            <span class="ai-icon">✨</span>
+            <Sparkles :size="16" class="ai-icon" />
             <span class="ai-label">Real-time Analysis</span>
           </div>
           <div v-if="!content.trim()" class="ai-empty">
@@ -107,7 +110,7 @@
           <div class="tags-header">Tags</div>
           <div class="tags-wrap">
             <span v-for="tag in tags" :key="tag" class="tag-chip">
-              {{ tag }} <button class="tag-remove" @click="removeTag(tag)">×</button>
+              {{ tag }} <button class="tag-remove" @click="removeTag(tag)"><X :size="12" /></button>
             </span>
           </div>
           <div class="tag-input-wrap">
@@ -124,7 +127,9 @@
     </div>
 
     <!-- Toast -->
-    <div v-if="toastVisible" class="toast">✓ Entry saved!</div>
+    <div v-if="toastVisible" class="toast">
+      <Check :size="14" /> Entry saved!
+    </div>
 
   </div>
 </template>
@@ -133,6 +138,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useJournalStore } from '@/stores/journal.js'
+import { Sparkles, ArrowLeft, X, Check } from 'lucide-vue-next'
 
 const router = useRouter()
 const journalStore = useJournalStore()
@@ -282,7 +288,7 @@ async function saveEntry(publish) {
 /* AI Card */
 .ai-card { padding: 20px; }
 .ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-.ai-icon { font-size: 16px; }
+.ai-icon { color: var(--lavender-deep); }
 .ai-label { font-size: 13px; font-weight: 700; color: var(--plum); text-transform: uppercase; letter-spacing: 0.05em; }
 .ai-empty p { font-size: 13px; color: var(--slate); margin: 0; font-style: italic; }
 .ai-results { display: flex; flex-direction: column; gap: 10px; }
@@ -301,10 +307,12 @@ async function saveEntry(publish) {
 .tags-header { font-size: 13px; font-weight: 700; color: var(--plum); text-transform: uppercase; letter-spacing: 0.05em; }
 .tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; }
 .tag-chip { background: var(--lavender); color: var(--plum); font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; display: inline-flex; align-items: center; gap: 4px; }
-.tag-remove { border: none; background: none; cursor: pointer; font-size: 14px; color: var(--plum); line-height: 1; padding: 0; opacity: 0.6; }
+.tag-remove { border: none; background: none; cursor: pointer; color: var(--plum); line-height: 1; padding: 0; opacity: 0.6; display: inline-flex; align-items: center; }
 .tag-remove:hover { opacity: 1; }
 .tag-input { font-size: 13px; padding: 8px 12px; }
 
 /* Toast */
-.toast { position: fixed; bottom: 32px; right: 32px; background: var(--plum); color: white; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 32px rgba(53,43,56,0.18); z-index: 1000; }
+.toast { position: fixed; bottom: 32px; right: 32px; background: var(--plum); color: white; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 32px rgba(53,43,56,0.18); z-index: 1000; display: inline-flex; align-items: center; gap: 8px; }
+
+svg { display: block; }
 </style>
