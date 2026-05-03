@@ -54,11 +54,12 @@ FastAPI with 8 routers: auth, users, biases, assessments, journal, insights, the
 - RAG-ready: `knowledge_articles` table + pgvector extension (just needs seeding)
 - Claude SSE streaming on `/ai/chat` (full conversation history, system prompt with user context)
 
-### ML (`sentio-ml/`) — SCRIPTS WRITTEN, NOT RUN
-- `data/generate_training_data.py` — generates 750 Claude-powered journal examples (15 biases × 50)
-- `train_bias_classifier.py` — DistilBERT multi-label classifier for 15 bias classes
-- `spaces/bias-classifier/app.py` — Gradio HF Space serving classifier
-- `spaces/journal-nlp/app.py` — Gradio HF Space for GoEmotions + KeyBERT
+### ML (`sentio-ml/`) — SUPERSEDED
+**Bias classification now uses Claude Haiku directly** — `sentio-api/services/bias_classifier.py` was rewritten to call `claude-haiku-4-5-20251001` with the static bias taxonomy cached via prompt caching. No HuggingFace Space or DistilBERT training needed.
+
+- `data/generate_training_data.py` — kept for reference / future fine-tuning (do NOT run unless needed)
+- `train_bias_classifier.py` — kept for reference
+- `spaces/journal-nlp/app.py` — journal NLP (sentiment/themes) still uses keyword fallback; HF Space optional
 
 ---
 
@@ -129,31 +130,19 @@ http://localhost:8000/docs
 
 ## Next Phases
 
-### Phase 2 — ML Pipeline (do once schema is deployed)
+### Phase 2 — Seed Knowledge Base (for AI Guide RAG)
+
+**Bias classification is already live** — `bias_classifier.py` uses Claude Haiku directly. No training needed.
 
 ```bash
-# 1. Generate training data (~$2-3 Claude API cost, ~30 min)
-cd sentio-ml
-pip install -r requirements.txt
-python data/generate_training_data.py
-# Output: sentio-ml/data/training_data.jsonl
-
-# 2. Train classifier (~1 hour, GPU recommended)
-python train_bias_classifier.py
-# Output: sentio-ml/model/ + sentio_config.json
-
-# 3. Seed knowledge base (for AI Guide RAG)
+# Seed knowledge base for AI Guide RAG (~5 min, uses sentence-transformers locally)
 cd sentio-api
 pip install sentence-transformers
 python db/seed_knowledge.py
 # Fetches 45 Wikipedia psychology articles, chunks + embeds, inserts into knowledge_articles
-
-# 4. Deploy to HuggingFace Spaces
-# Upload sentio-ml/spaces/bias-classifier/ → set BIAS_CLASSIFIER_URL in backend .env
-# Upload sentio-ml/spaces/journal-nlp/ → set JOURNAL_NLP_URL in backend .env
 ```
 
-**After deploying Spaces:** The journal background task (`_process_entry` in `sentio-api/routers/journal.py`) will start returning real bias classifications instead of the stub response.
+After this, activate the RAG pipeline in Phase 3 below.
 
 ### Phase 3 — AI Guide RAG Activation
 

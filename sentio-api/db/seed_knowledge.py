@@ -82,7 +82,7 @@ ARTICLES = [
 ]
 
 
-def fetch_wikipedia(title: str) -> tuple[str, str] | None:
+def fetch_wikipedia(title: str, retries: int = 3) -> tuple[str, str] | None:
     params = {
         "action": "query",
         "prop": "extracts",
@@ -90,19 +90,30 @@ def fetch_wikipedia(title: str) -> tuple[str, str] | None:
         "titles": title,
         "format": "json",
     }
-    try:
-        r = requests.get(WIKI_API, params=params, timeout=15,
-                         headers={"User-Agent": "Sentio/1.0 seed_knowledge.py"})
-        r.raise_for_status()
-        pages = r.json()["query"]["pages"]
-        page = next(iter(pages.values()))
-        if "extract" not in page or not page["extract"].strip():
+    for attempt in range(retries):
+        try:
+            r = requests.get(WIKI_API, params=params, timeout=15,
+                             headers={"User-Agent": "Sentio/1.0 seed_knowledge.py"})
+            if r.status_code == 429:
+                wait = 5 * (attempt + 1)
+                print(f"  [rate-limit] {title}: waiting {wait}s before retry {attempt + 1}/{retries}")
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            pages = r.json()["query"]["pages"]
+            page = next(iter(pages.values()))
+            if "extract" not in page or not page["extract"].strip():
+                return None
+            url = f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
+            return page["extract"], url
+        except Exception as exc:
+            if attempt < retries - 1:
+                time.sleep(2)
+                continue
+            print(f"  [warn] {title}: {exc}")
             return None
-        url = f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
-        return page["extract"], url
-    except Exception as exc:
-        print(f"  [warn] {title}: {exc}")
-        return None
+    print(f"  [warn] {title}: exhausted retries")
+    return None
 
 
 def clean(text: str) -> str:
@@ -142,9 +153,20 @@ def main():
         ).execute()
         print("  Cleared.")
 
+    # Load already-inserted titles to avoid duplicates on re-runs
+    existing_resp = supabase.table("knowledge_articles").select("title").execute()
+    existing_titles: set[str] = set()
+    for row in (existing_resp.data or []):
+        # Strip chunk suffix like " (2/8)" to get the base title
+        base = re.sub(r"\s*\(\d+/\d+\)$", "", row["title"])
+        existing_titles.add(base)
+
     total, failed = 0, []
 
     for title, category in ARTICLES:
+        if title in existing_titles:
+            print(f"\n→ {title} [{category}] — already seeded, skipping")
+            continue
         print(f"\n→ {title} [{category}]")
         result = fetch_wikipedia(title)
         if result is None:
@@ -181,7 +203,7 @@ def main():
         supabase.table("knowledge_articles").insert(rows).execute()
         total += len(rows)
         print(f"  ✓ inserted {len(rows)} row(s)")
-        time.sleep(0.3)  # rate-limit courtesy to Wikipedia
+        time.sleep(1.5)  # Wikipedia rate-limit buffer
 
     print(f"\n{'='*50}")
     if args.dry_run:

@@ -23,15 +23,15 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 -- Auto-create profile on user signup
-CREATE OR REPLACE FUNCTION handle_new_user()
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO profiles (id, display_name)
+  INSERT INTO public.profiles (id, display_name)
   VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name')
-  ON CONFLICT DO NOTHING;
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -192,3 +192,35 @@ CREATE TABLE IF NOT EXISTS knowledge_articles (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_knowledge_category ON knowledge_articles(category);
+CREATE INDEX IF NOT EXISTS idx_knowledge_embedding ON knowledge_articles USING ivfflat (embedding vector_cosine_ops) WITH (lists = 50);
+
+-- RPC function for vector similarity search (used by rag_service.py)
+CREATE OR REPLACE FUNCTION match_knowledge(
+  query_embedding VECTOR(384),
+  match_threshold FLOAT DEFAULT 0.65,
+  match_count INT DEFAULT 10
+)
+RETURNS TABLE (
+  id UUID,
+  title TEXT,
+  content TEXT,
+  category TEXT,
+  source_url TEXT,
+  source_citation TEXT,
+  similarity FLOAT
+)
+LANGUAGE sql STABLE
+AS $$
+  SELECT
+    id,
+    title,
+    content,
+    category,
+    source_url,
+    source_citation,
+    1 - (embedding <=> query_embedding) AS similarity
+  FROM knowledge_articles
+  WHERE 1 - (embedding <=> query_embedding) > match_threshold
+  ORDER BY embedding <=> query_embedding
+  LIMIT match_count;
+$$;
