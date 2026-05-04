@@ -42,7 +42,7 @@
         <div class="card danger-card">
           <div class="danger-title">Danger Zone</div>
           <p class="danger-desc">Permanently delete your account and all associated data. This action cannot be undone.</p>
-          <button class="btn btn-danger btn-sm">🗑 Delete Account</button>
+          <button class="btn btn-danger btn-sm" @click="deleteAccount">🗑 Delete Account</button>
         </div>
 
       </div>
@@ -104,7 +104,9 @@
                 <div class="privacy-label">Export My Data</div>
                 <div class="privacy-sub">Download a copy of all your journal entries and assessments</div>
               </div>
-              <button class="btn btn-ghost btn-sm">Export</button>
+              <button class="btn btn-ghost btn-sm" :disabled="exporting" @click="exportData">
+                {{ exporting ? 'Exporting…' : 'Export' }}
+              </button>
             </div>
             <div class="privacy-row">
               <div class="privacy-info">
@@ -149,15 +151,19 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useUserStore } from '@/stores/user.js'
 import { useJournalStore } from '@/stores/journal.js'
 import { useAssessmentStore } from '@/stores/assessment.js'
+import apiClient from '@/api/client.js'
 
+const router = useRouter()
 const auth = useAuthStore()
 const userStore = useUserStore()
 const journalStore = useJournalStore()
 const assessmentStore = useAssessmentStore()
+const exporting = ref(false)
 
 const name = ref(auth.user?.user_metadata?.full_name || 'User')
 const email = ref(auth.user?.email || '')
@@ -223,6 +229,39 @@ const notifItems = [
 
 function toggleNotif(key) {
   notifications.value[key] = !notifications.value[key]
+}
+
+async function exportData() {
+  exporting.value = true
+  try {
+    const res = await apiClient.get('/users/me/export', { responseType: 'blob' })
+    const url = URL.createObjectURL(res.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'sentio-data-export.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    alert('Export failed. Please try again.')
+  } finally {
+    exporting.value = false
+  }
+}
+
+async function deleteAccount() {
+  const confirmed = window.confirm(
+    'Are you sure you want to permanently delete your account? This will erase all your journal entries, assessments, and bias data. This cannot be undone.'
+  )
+  if (!confirmed) return
+  const reconfirmed = window.confirm('Last chance — permanently delete everything?')
+  if (!reconfirmed) return
+  try {
+    await apiClient.delete('/users/me')
+    await auth.signOut()
+    router.push('/login')
+  } catch {
+    alert('Account deletion failed. Please try again or contact support.')
+  }
 }
 
 async function saveProfile() {

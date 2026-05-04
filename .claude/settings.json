@@ -8,7 +8,12 @@
       "Bash(.venv/Scripts/python.exe db/seed_biases.py)",
       "Bash(.venv/Scripts/python.exe db/seed_assessments.py)",
       "Bash(.venv/Scripts/python.exe db/seed_therapists.py)",
-      "Bash(.venv/Scripts/python.exe db/seed_knowledge.py)"
+      "Bash(.venv/Scripts/python.exe db/seed_knowledge.py)",
+      "Bash(Get-ChildItem -Path \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(npx vue-tsc *)",
+      "Bash(python -c \"from routers import admin; print\\('admin router OK'\\)\")",
+      "Bash(python -c ' *)"
     ]
   }
 }

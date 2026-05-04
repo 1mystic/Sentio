@@ -157,7 +157,7 @@ async function sendMessage() {
     }
   } catch (err) {
     // Fallback to simulated response if API not running
-    aiMsg.content = "I'm having trouble connecting to the server. Please make sure the API is running at " + API_BASE + "."
+    aiMsg.content = "I'm having trouble connecting to the server. Please check your connection and try again."
   } finally {
     aiMsg.streaming = false
     loading.value = false

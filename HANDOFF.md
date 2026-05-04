@@ -3,7 +3,7 @@
 **Project:** Sentio — cognitive bias self-awareness platform  
 **Stack:** Vue 3 + Vite (frontend) · FastAPI (backend) · Supabase (auth + DB) · Claude API  
 **Working dir:** `g:\synced-pc\1_Work\projects\Sentio`  
-**Last updated:** May 2026 (session 2)
+**Last updated:** May 2026 (session 3)
 
 ---
 
@@ -30,6 +30,12 @@ A mental-wellness app that helps users discover and track their cognitive biases
 
 ### Frontend (`src/`) — ✅ COMPLETE
 All pages wired to real API data. No hardcoded stubs remaining.
+
+**Session 3 fixes applied:**
+- `AIGuide.vue` — error message no longer leaks `API_BASE` URL
+- `BiasDetail.vue` — "In Your Life" tab: `null` userScore/weeklyEncounters now show `—`; hardcoded "Tuesday/Thursday" text replaced with actionable generic content
+- `Results.vue` — Top Bias Highlight now shows per-bias indicators (15 biases mapped) instead of hardcoded confirmation-bias text
+- `Profile.vue` — Export Data and Delete Account buttons now wired (call backend endpoints; export triggers JSON download; delete shows double-confirm)
 
 | Page | Status |
 |------|--------|
@@ -63,6 +69,20 @@ FastAPI with 8 routers: auth, users, biases, assessments, journal, insights, the
 - Safety gateway on journal create/update (crisis keyword detection)
 - JWT auth via `supabase.auth.get_user(token)` on every protected route
 - Claude SSE streaming on `/ai/chat` (full conversation history, user context, RAG)
+
+### Admin Dashboard — ✅ NEW (session 3)
+**Backend:** `sentio-api/routers/admin.py` — secured by `X-Admin-Key` header (value = `ADMIN_API_KEY` env var)
+- `GET /admin/stats` — overview: user counts, journal entries, bias detections, knowledge articles, 30-day time-series
+- `GET /admin/users` — paginated user list with journal/assessment counts, top bias, archetype
+- `GET /admin/ml/metrics` — classifier model name, processed/pending entries, detection rate, avg confidence, confidence histogram, class distribution
+- `GET /admin/ml/rag` — knowledge base chunk count by category, embedder/reranker status
+- `GET /admin/services/health` — live ping of Supabase, Anthropic, Cohere, sentence-transformers
+- `GET /admin/assessments/stats` — per-assessment completion rates and avg score distributions
+
+**Frontend:** `src/pages/Admin.vue` at `/admin`
+- Standalone page (no auth layout — uses its own key gate, persists key in sessionStorage)
+- 4 tabs: Overview (stat cards + bar charts), Users (table), ML & Algorithms (metrics + horizontal bar charts), Services (health status)
+- Admin key: `sentio-admin-local-dev` (dev) — set `ADMIN_API_KEY` in prod to a strong secret
 
 ### ML (`sentio-ml/`) — SUPERSEDED
 Bias classification uses Claude Haiku directly. DistilBERT pipeline not needed.

@@ -24,6 +24,7 @@ const routes = [
   { path: '/ai-guide', component: () => import('@/pages/AIGuide.vue'), meta: { requiresAuth: true } },
   { path: '/profile', component: () => import('@/pages/Profile.vue'), meta: { requiresAuth: true } },
   { path: '/progress', component: () => import('@/pages/Progress.vue'), meta: { requiresAuth: true } },
+  { path: '/admin', component: () => import('@/pages/Admin.vue'), meta: { layout: 'public' } },
   { path: '/:pathMatch(.*)*', component: () => import('@/pages/NotFound.vue'), meta: { layout: 'public' } },
 ]
 

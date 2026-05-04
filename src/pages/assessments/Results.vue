@@ -81,17 +81,9 @@
       </div>
       <p class="top-bias-text">This is your highest-scoring dimension from this assessment. Focused practice in this area will have the most impact on your cognitive self-awareness.</p>
       <div class="top-bias-indicators">
-        <div class="indicator">
+        <div v-for="(indicator, i) in topBiasIndicators" :key="i" class="indicator">
           <span class="indicator-dot"></span>
-          <span>Dismissing contradictory data in meetings</span>
-        </div>
-        <div class="indicator">
-          <span class="indicator-dot"></span>
-          <span>Seeking validation rather than critique</span>
-        </div>
-        <div class="indicator">
-          <span class="indicator-dot"></span>
-          <span>Filtering news and information selectively</span>
+          <span>{{ indicator }}</span>
         </div>
       </div>
     </div>
@@ -205,6 +197,27 @@ const biasBars = computed(() => {
 
 const circumference = 364.4
 const dashOffset = computed(() => circumference - (circumference * overallScore.value / 100))
+
+const BIAS_INDICATORS = {
+  confirmation_bias:  ['Dismissing contradictory data in discussions', 'Seeking validation rather than critique', 'Filtering news and information selectively'],
+  anchoring_bias:     ['Over-relying on the first number heard in negotiations', 'Initial estimates dominating final decisions', 'Struggling to adjust away from early reference points'],
+  availability_bias:  ['Overweighting recent events when assessing risk', 'Judging frequency by how easily examples come to mind', 'Vivid stories influencing decisions more than statistics'],
+  overconfidence:     ['Underestimating time needed for projects', 'Overestimating accuracy of own predictions', 'Taking on tasks beyond current skill level without noticing'],
+  social_conformity:  ['Changing opinions when outnumbered in a group', 'Avoiding dissent to maintain social harmony', 'Going along with crowd decisions without critical evaluation'],
+  attribution_error:  ['Blaming personality when others make mistakes', 'Crediting circumstances when you make the same mistake', 'Judging people harshly without considering their context'],
+  sunk_cost_fallacy:  ['Continuing projects only because of past investment', 'Finishing books/films you dislike to not "waste" them', 'Holding losing positions longer than rational analysis warrants'],
+  dunning_kruger:     ['Overestimating competence in unfamiliar domains', 'Undervaluing expert advice in areas you recently learned', 'Feeling less confident after gaining deeper expertise'],
+  decision:           ['Rushing important choices to reduce discomfort', 'Preferring familiar options even when alternatives are better', 'Over-analysing low-stakes decisions while under-analysing high-stakes ones'],
+  social:             ['Adjusting your views to match perceived group consensus', 'Feeling pressure to agree in group settings', 'Attributing others\' behaviour to personality rather than situation'],
+  memory:             ['Recalling vivid recent events as more common than they are', 'Trusting first impressions more than updated information', 'Forgetting disconfirming evidence more easily than confirming evidence'],
+  self_perception:    ['Overestimating skill in areas where knowledge is limited', 'Underestimating your own performance after gaining expertise', 'Setting expectations based on initial, not updated, self-image'],
+  general:            ['Noticing patterns that confirm existing beliefs', 'Discounting evidence that challenges current assumptions', 'Making decisions based on feelings rather than data'],
+}
+
+const topBiasIndicators = computed(() => {
+  if (!topCategory.value) return BIAS_INDICATORS.general
+  return BIAS_INDICATORS[topCategory.value[0]] || BIAS_INDICATORS.general
+})
 
 const recommendations = ref([
   { icon: Brain, title: 'Explore Your Top Pattern', desc: 'Learn the science and practical strategies for your highest-scoring bias.', link: '/explore' },

@@ -43,12 +43,18 @@
         <div class="hero-stat-divider"></div>
         <div class="hero-stat-mini">
           <div class="hsm-label">Your Score</div>
-          <div class="hsm-value">{{ bias.userScore }}<span class="hsm-unit">/10</span></div>
+          <div class="hsm-value">
+            <template v-if="bias.userScore != null">{{ bias.userScore }}<span class="hsm-unit">/10</span></template>
+            <template v-else><span class="hsm-unit">—</span></template>
+          </div>
         </div>
         <div class="hero-stat-divider"></div>
         <div class="hero-stat-mini">
           <div class="hsm-label">This week</div>
-          <div class="hsm-value">{{ bias.weeklyEncounters }}<span class="hsm-unit"> times</span></div>
+          <div class="hsm-value">
+            <template v-if="bias.weeklyEncounters != null">{{ bias.weeklyEncounters }}<span class="hsm-unit"> times</span></template>
+            <template v-else><span class="hsm-unit">—</span></template>
+          </div>
         </div>
       </div>
     </div>
@@ -128,24 +134,45 @@
           <div class="ai-label"><Sparkles :size="11" /> Personalized Analysis</div>
           <div class="ai-prompt">How {{ bias.name }} shows up in your life</div>
           <div class="ai-response">
-            Based on your recent journal entries, you've encountered this bias {{ bias.weeklyEncounters }} times this week alone.
-            Your entries from Tuesday and Thursday show a clear pattern — particularly when evaluating new information related to ongoing projects.
-            You scored <strong>{{ bias.userScore }}/10</strong> on this bias in your last assessment, placing you in the top 30% for awareness.
+            <template v-if="bias.userScore != null">
+              You scored <strong>{{ bias.userScore }}/10</strong> on this bias in your last assessment.
+              Keep journaling to build a clearer picture of how it shows up in your daily thinking.
+            </template>
+            <template v-else>
+              You haven't taken an assessment covering this bias yet.
+              Start journaling or take an assessment to see personalized insights here.
+            </template>
           </div>
         </div>
 
         <div class="card">
           <div class="section-header">
-            <span class="section-title">Recent Encounters</span>
-            <span class="section-tag">TIMELINE</span>
+            <span class="section-title">How to Track It</span>
+            <span class="section-tag">TIPS</span>
           </div>
           <div class="timeline">
-            <div v-for="(item, i) in timelineItems" :key="i" class="timeline-item">
+            <div class="timeline-item">
               <div class="timeline-dot"></div>
               <div class="timeline-body">
-                <div class="timeline-date">{{ item.date }}</div>
-                <div class="timeline-title">{{ item.title }}</div>
-                <div class="timeline-desc">{{ item.desc }}</div>
+                <div class="timeline-date">Journal</div>
+                <div class="timeline-title">Write about it</div>
+                <div class="timeline-desc">Use the journal to capture moments when you notice this bias affecting your thinking. The AI will detect it automatically.</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-body">
+                <div class="timeline-date">Assess</div>
+                <div class="timeline-title">Take an assessment</div>
+                <div class="timeline-desc">Structured assessments give you a quantified score for this bias and track changes over time on your Progress page.</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-body">
+                <div class="timeline-date">Reflect</div>
+                <div class="timeline-title">Ask the AI Guide</div>
+                <div class="timeline-desc">Chat with Sentio AI and ask specifically about {{ bias.name }} — it will draw on your journal history to give you personalised insights.</div>
               </div>
             </div>
           </div>

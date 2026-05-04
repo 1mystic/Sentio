@@ -7,7 +7,7 @@ import os
 
 load_dotenv()
 
-from routers import auth, users, biases, assessments, journal, insights, therapists, ai
+from routers import auth, users, biases, assessments, journal, insights, therapists, ai, admin
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,6 +41,7 @@ app.include_router(journal.router, prefix="/journal", tags=["journal"])
 app.include_router(insights.router, prefix="/insights", tags=["insights"])
 app.include_router(therapists.router, prefix="/therapists", tags=["therapists"])
 app.include_router(ai.router, prefix="/ai", tags=["ai"])
+app.include_router(admin.router, prefix="/admin", tags=["admin"])
 
 
 @app.get("/health")
