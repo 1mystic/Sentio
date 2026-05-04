@@ -1,6 +1,19 @@
 <template>
   <div class="bias-detail">
 
+    <!-- Loading state -->
+    <div v-if="loading" class="loading-wrap">
+      <div class="sk-line sk-w60"></div>
+      <div class="sk-block"></div>
+    </div>
+
+    <!-- Not found -->
+    <div v-else-if="!bias" class="not-found">
+      <p>Bias not found. <button class="btn btn-ghost btn-sm" @click="router.push('/explore')">Back to Explorer</button></p>
+    </div>
+
+    <template v-else>
+
     <!-- Breadcrumb -->
     <div class="breadcrumb">
       <span class="breadcrumb-link" @click="router.push('/explore')">Bias Explorer</span>
@@ -174,6 +187,7 @@
       </div>
     </div>
 
+    </template><!-- end v-else -->
   </div>
 </template>
 
@@ -211,48 +225,64 @@ const biasIconMap = {
 
 function getBiasIcon(id) { return biasIconMap[id] || Brain }
 
-const FALLBACK_BIAS = {
-  id: 'confirmation-bias', name: 'Confirmation Bias', category: 'Belief',
-  tagline: 'We see what we want to see', prevalence: 85, userScore: 7.2, weeklyEncounters: 3,
-  definition: 'The tendency to search for, interpret, favor, and recall information that confirms prior beliefs.',
-  whyItHappens: 'Our brains evolved for efficiency. Processing every piece of information objectively is cognitively expensive, so we developed shortcuts that favor familiar patterns.',
-  examples: [
-    { title: 'Political News', description: 'Following only sources that align with existing beliefs, reinforcing views while dismissing opposing reporting.', insight: 'The brain flags confirming information as truth and contradictions as propaganda.' },
-    { title: 'Investment Decisions', description: 'Seeking data that supports a current investment while ignoring warning signs or analyst downgrades.', insight: 'This is why investors hold losing positions too long — they keep finding reasons for optimism.' },
-  ],
-  strategies: [
-    { name: 'Seek Disconfirming Evidence', desc: 'Before deciding, ask: "What would change my mind?" Then genuinely look for it.' },
-    { name: 'Steel-man the Opposition', desc: 'Argue the opposing view as strongly as possible before reconsidering your own position.' },
-    { name: 'Pre-mortem Analysis', desc: 'Imagine the decision failed — what went wrong? This surfaces assumptions confirmation bias hides.' },
-  ],
-}
+const bias = ref(null)
+const loading = ref(true)
 
-const bias = ref({ ...FALLBACK_BIAS })
+function mapBias(data) {
+  // Map DB fields (description, example TEXT, detection_signals JSONB, prevalence_pct)
+  // to the shape the template expects
+  const examples = data.example
+    ? [{ title: 'Real-world Example', description: data.example, insight: data.research_summary ? 'Research note: ' + data.research_summary.slice(0, 120) + '…' : '' }]
+    : []
+
+  const signals = Array.isArray(data.detection_signals) ? data.detection_signals : []
+  const strategies = signals.length
+    ? signals.map(s => ({ name: 'Watch for this pattern', desc: s }))
+    : [
+        { name: 'Notice it happening', desc: 'When you catch yourself very certain about something, pause and ask: what evidence would change my mind?' },
+        { name: 'Seek the opposite', desc: 'Deliberately look for information that contradicts your current view before making a decision.' },
+        { name: 'Name it out loud', desc: 'Simply labeling a bias when you notice it ("I might be doing X right now") reduces its influence on your judgment.' },
+      ]
+
+  return {
+    id: data.slug || data.id,
+    name: data.name,
+    category: data.category,
+    tagline: data.short_description || '',
+    prevalence: data.prevalence_pct ?? 50,
+    userScore: null,
+    weeklyEncounters: null,
+    definition: data.description,
+    whyItHappens: data.research_summary || 'This bias emerges from cognitive shortcuts our brains use to process information quickly and efficiently.',
+    examples,
+    strategies,
+    related_bias_slugs: data.related_bias_slugs || [],
+  }
+}
 
 onMounted(async () => {
   const slug = route.params.slug || route.params.id
-  if (!slug) return
+  if (!slug) { loading.value = false; return }
   const data = await biasStore.fetchBySlug(slug)
-  if (data) {
-    bias.value = {
-      ...data,
-      id: data.slug || data.id,
-      tagline: data.tagline || data.short_description || '',
-      userScore: data.userScore ?? null,
-      weeklyEncounters: data.weeklyEncounters ?? null,
-      examples: Array.isArray(data.examples) ? data.examples : FALLBACK_BIAS.examples,
-      strategies: Array.isArray(data.strategies) ? data.strategies : FALLBACK_BIAS.strategies,
-    }
-  }
+  bias.value = data ? mapBias(data) : null
+  loading.value = false
 })
 
 const relatedBiases = computed(() => {
+  const currentId = bias.value?.id
   if (biasStore.biases.length === 0) return [
     { id: 'availability-heuristic', name: 'Availability Heuristic' },
     { id: 'anchoring-bias', name: 'Anchoring Bias' },
   ]
+  // Prefer explicitly related biases from the DB if stored
+  const relatedSlugs = bias.value?.related_bias_slugs || []
+  const fromSlugs = biasStore.biases
+    .filter(b => relatedSlugs.includes(b.slug))
+    .map(b => ({ id: b.slug || b.id, name: b.name }))
+  if (fromSlugs.length >= 2) return fromSlugs.slice(0, 3)
+
   return biasStore.biases
-    .filter(b => b.id !== bias.value.id && b.slug !== bias.value.id)
+    .filter(b => (b.slug || b.id) !== currentId)
     .slice(0, 3)
     .map(b => ({ id: b.slug || b.id, name: b.name }))
 })
@@ -268,6 +298,12 @@ const timelineItems = [
 * { font-family: 'Urbanist', sans-serif; box-sizing: border-box; }
 
 .bias-detail { display: flex; flex-direction: column; gap: 24px; }
+.loading-wrap { display: flex; flex-direction: column; gap: 16px; padding: 24px 0; }
+.sk-line { height: 20px; border-radius: 6px; background: var(--lavender-soft); animation: sk-pulse 1.4s ease-in-out infinite; }
+.sk-w60 { width: 60%; }
+.sk-block { height: 180px; border-radius: 16px; background: var(--lavender-soft); animation: sk-pulse 1.4s ease-in-out infinite; }
+@keyframes sk-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.not-found { padding: 48px 0; text-align: center; color: var(--slate); }
 
 /* ── Breadcrumb ── */
 .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; }

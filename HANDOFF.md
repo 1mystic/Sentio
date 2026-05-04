@@ -24,7 +24,8 @@ A mental-wellness app that helps users discover and track their cognitive biases
 ### Infrastructure — ✅ LIVE
 - Supabase project `wfgriwlzgxgnlsbwotkp` — **schema deployed**
 - `handle_new_user` trigger **fixed** (`SET search_path = public`) — signup works
-- 73 knowledge chunks live in `knowledge_articles` (12/45 articles seeded so far)
+- 30 biases, 3 assessments, 20 therapists seeded
+- ~100 knowledge chunks live in `knowledge_articles` (36/45 articles; 9 Wikipedia-rate-limited)
 - `match_knowledge` pgvector RPC function — **needs to be created** (SQL below)
 
 ### Frontend (`src/`) — ✅ COMPLETE
@@ -34,16 +35,16 @@ All pages wired to real API data. No hardcoded stubs remaining.
 |------|--------|
 | Auth (Login/Signup) | ✅ Lucide icons, email-confirm UX handled |
 | Onboarding (5 steps) | ✅ Lucide icons, saves to Supabase via `PATCH /users/me` |
-| Dashboard | ✅ Radar chart fixed (`scores.value.map`), real bias stats |
+| Dashboard | ✅ Radar chart fixed (`scores.value.map`), real bias stats; updates after assessments |
 | Journal Index | ✅ API-fetched, search/tab/sort working |
 | Journal New | ✅ Saves to API, navigates to new entry |
 | Journal Entry | ✅ Loads from API, bias analysis sidebar |
 | Assessments Index | ✅ Tabs by status, slug-based metadata |
-| Assessments Take | ✅ Real questions, score computation |
-| Assessments Results | ✅ Ring chart, bias bars, recommendations |
+| Assessments Take | ✅ Real questions; scores keyed by `bias_signal` (confirmation_bias, anchoring_bias, etc.) |
+| Assessments Results | ✅ Ring chart, bias bars with real bias labels; CATEGORY_META covers all bias signals |
 | Progress | ✅ Activity chart, milestones, real stats |
 | Explore (Bias list) | ✅ Fallback to hardcoded if API empty |
-| Explore (BiasDetail) | ✅ Loads by slug, fallback content |
+| Explore (BiasDetail) | ✅ Loads real data; DB fields mapped correctly (description→definition, example→examples[], detection_signals→strategies[]) |
 | AI Guide | ✅ SSE streaming + RAG context via `/ai/chat` |
 | Therapists | ✅ API fetch with normalised fallback |
 | Profile | ✅ Loads/saves real user data, live stats |
@@ -58,6 +59,7 @@ FastAPI with 8 routers: auth, users, biases, assessments, journal, insights, the
 - **Bias classification** — `services/bias_classifier.py` rewritten to use `claude-haiku-4-5-20251001` directly. Caches 15-bias taxonomy with prompt caching. No HuggingFace Space needed. ~$0.0002/entry.
 - **RAG pipeline** — fully wired in `ai.py` → `rag_service.py`. Embeds query with `all-MiniLM-L6-v2`, pgvector similarity via `match_knowledge()` RPC, Cohere reranking, injects top-3 chunks into Claude context.
 - Background task pipeline: `_process_entry()` → bias classifier → NLP → updates journal row + bias profile
+- **Assessment submit** updates `user_bias_profiles.bias_scores` by mapping raw scores → `bias_signal` per question, normalizing to 0–1, blending with existing journal-derived scores (60/40 weighting)
 - Safety gateway on journal create/update (crisis keyword detection)
 - JWT auth via `supabase.auth.get_user(token)` on every protected route
 - Claude SSE streaming on `/ai/chat` (full conversation history, user context, RAG)
@@ -69,36 +71,7 @@ Bias classification uses Claude Haiku directly. DistilBERT pipeline not needed.
 
 ---
 
-## ⚠️ One-Time Setup Remaining
-
-### 1. Create the pgvector search function in Supabase
-**Required for AI Guide RAG to work.** Run in [Supabase SQL editor](https://supabase.com/dashboard/project/wfgriwlzgxgnlsbwotkp/sql/new):
-
-```sql
-DROP FUNCTION IF EXISTS match_knowledge(vector, double precision, integer);
-
-CREATE INDEX IF NOT EXISTS idx_knowledge_embedding
-  ON knowledge_articles USING ivfflat (embedding vector_cosine_ops)
-  WITH (lists = 50);
-
-CREATE OR REPLACE FUNCTION match_knowledge(
-  query_embedding vector(384),
-  match_threshold float DEFAULT 0.65,
-  match_count int DEFAULT 10
-)
-RETURNS TABLE (
-  id uuid, title text, content text, category text,
-  source_url text, source_citation text, similarity float
-)
-LANGUAGE sql STABLE AS $$
-  SELECT id, title, content, category, source_url, source_citation,
-    1 - (embedding <=> query_embedding) AS similarity
-  FROM knowledge_articles
-  WHERE 1 - (embedding <=> query_embedding) > match_threshold
-  ORDER BY embedding <=> query_embedding
-  LIMIT match_count;
-$$;
-```
+### 1 match_kniowledge in supabase sql ecitor run i think is done 
 
 ### 2. Run seed scripts (if not done yet)
 ```bash
@@ -167,13 +140,26 @@ http://localhost:8000/docs
 ```bash
 npm run build
 # Deploy dist/ to Vercel
-# Set env vars: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_BASE_URL (Railway URL)
+# Set env vars: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_BASE_URL (backend URL)
 ```
 
-**Backend → Railway or Render:**
+**Backend → Koyeb (recommended) or Oracle Cloud Free Tier (student):**
+
+*Option A — Koyeb (easiest, generous free tier):*
+- Push `sentio-api/` to a GitHub repo (or use Koyeb CLI)
+- Set root dir to `sentio-api/`, run command: `uvicorn main:app --host 0.0.0.0 --port 8000`
+- Set all env vars in Koyeb dashboard
+- No sleep on free tier (unlike Render)
+
+*Option B — Oracle Cloud Free Tier (always-free VM, best for students):*
+- Provision an Always Free ARM VM (Ampere A1, 4 OCPU / 24 GB free)
+- SSH in, install Python 3.11+, clone repo, set up systemd or `screen` for `uvicorn`
+- Use Nginx as reverse proxy + Certbot for HTTPS
+- No cold starts, no usage limits, but requires more manual setup
+
 ```
-Root: sentio-api/
-Start: uvicorn main:app --host 0.0.0.0 --port $PORT
+# Both options — start command:
+uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 After deploy, set `ALLOWED_ORIGINS=https://your-vercel-app.vercel.app` in backend env.
 
@@ -252,17 +238,16 @@ Sentio/
 
 ## What a Next Session Should Do
 
-**Priority 1 — Complete setup (if not done):**
-1. Run the `match_knowledge` SQL (see above) in Supabase
-2. Run `seed_biases.py`, `seed_assessments.py`, `seed_therapists.py`
-3. Run `seed_knowledge.py` to complete the 33 missing articles
-4. Test full signup → onboarding → dashboard flow
-5. Test journal entry creation → verify bias detection fires after ~3 seconds
+**Priority 1 — Complete setup (one thing left):**
+1. Run the `match_knowledge` SQL function in Supabase (see above) — unblocks AI Guide RAG
+2. Test full signup → onboarding → dashboard flow
+3. Test taking an assessment → verify dashboard radar updates after submit
+4. Test journal entry creation → verify bias detection fires after ~3 seconds
 
 **Priority 2 — Deploy:**
 1. `npm run build` → deploy to Vercel, set env vars
-2. Deploy `sentio-api/` to Railway → set all env vars + `ALLOWED_ORIGINS`
-3. Update `VITE_API_BASE_URL` in Vercel to point to Railway URL
+2. Deploy `sentio-api/` to Koyeb (easiest) or Oracle Cloud Free VM (students, no limits) — set all env vars + `ALLOWED_ORIGINS`
+3. Update `VITE_API_BASE_URL` in Vercel to point to backend URL
 4. Enable Google OAuth with Vercel callback URL
 
 **Priority 3 — Archetype model (optional):**

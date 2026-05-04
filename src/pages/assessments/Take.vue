@@ -115,11 +115,11 @@ function computeScores() {
   questions.value.forEach((q, i) => {
     const selectedLabel = answers.value[i]
     const optObj = typeof q.options[0] === 'string'
-      ? { score: q.options.indexOf(selectedLabel) + 1, category: q.category || 'general' }
-      : q.options.find(o => o.text === selectedLabel) || { score: 1, category: 'general' }
+      ? { score: q.options.indexOf(selectedLabel) + 1 }
+      : q.options.find(o => o.text === selectedLabel) || { score: 1 }
 
     raw[q.id || `q${i}`] = optObj.score
-    const cat = optObj.category || q.category || 'general'
+    const cat = q.bias_signal || optObj.category || q.category || 'general'
     categoryTotals[cat] = (categoryTotals[cat] || 0) + optObj.score
     categoryCounts[cat] = (categoryCounts[cat] || 0) + 1
   })

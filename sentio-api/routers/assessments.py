@@ -80,6 +80,53 @@ async def submit_assessment(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to save assessment results",
         )
+
+    # Update user_bias_profiles from assessment results
+    try:
+        assessment_resp = supabase.table("assessments").select("questions").eq(
+            "id", assessment_id
+        ).single().execute()
+        questions = (assessment_resp.data or {}).get("questions", [])
+
+        # Build question_id → bias_signal map
+        signal_map = {str(q.get("id", "")): q["bias_signal"]
+                      for q in questions if q.get("bias_signal") and q.get("id")}
+
+        # Accumulate raw scores per bias_signal (likert 1–5)
+        totals: dict[str, float] = {}
+        counts: dict[str, int] = {}
+        for q_id, score in data.raw_scores.items():
+            signal = signal_map.get(str(q_id))
+            if signal:
+                totals[signal] = totals.get(signal, 0.0) + float(score)
+                counts[signal] = counts.get(signal, 0) + 1
+
+        # Normalize to 0–1  (likert5: 1=min, 5=max → (score-1)/4)
+        new_scores = {sig: round((totals[sig] / counts[sig] - 1) / 4, 3) for sig in totals}
+
+        if new_scores:
+            existing = supabase.table("user_bias_profiles").select(
+                "bias_scores"
+            ).eq("user_id", user_id).execute()
+            current = (existing.data[0]["bias_scores"] or {}) if existing.data else {}
+
+            merged = dict(current)
+            for bias_id, score in new_scores.items():
+                prev = current.get(bias_id, 0.0)
+                # Blend: existing journal score (60%) + assessment (40%); or just assessment if new
+                merged[bias_id] = round(prev * 0.6 + score * 0.4, 3) if prev else score
+
+            if existing.data:
+                supabase.table("user_bias_profiles").update(
+                    {"bias_scores": merged}
+                ).eq("user_id", user_id).execute()
+            else:
+                supabase.table("user_bias_profiles").insert(
+                    {"user_id": user_id, "bias_scores": merged}
+                ).execute()
+    except Exception as e:
+        logger.warning(f"Bias profile update after assessment failed (non-blocking): {e}")
+
     return result.data[0]
 
 

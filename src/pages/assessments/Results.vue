@@ -126,7 +126,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Trophy, TrendingUp, RotateCcw, ArrowRight, Brain, BookMarked, Zap, Users, Scan, MessageSquare } from 'lucide-vue-next'
+import { Trophy, TrendingUp, RotateCcw, ArrowRight, Brain, BookMarked, Zap, Users, Scan, MessageSquare, Shield, Eye, Anchor, Activity } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -136,11 +136,21 @@ const routeState = history.state || {}
 const scores = routeState.scores || {}  // { category: score }
 
 const CATEGORY_META = {
-  decision:        { label: 'Decision',        icon: Zap,      color: '#9b94e8' },
-  social:          { label: 'Social',           icon: Users,    color: '#e88fa0' },
-  memory:          { label: 'Memory',           icon: BookMarked, color: '#88c9a0' },
-  self_perception: { label: 'Self-Perception',  icon: Scan,     color: '#e8c56a' },
-  general:         { label: 'General',          icon: Brain,    color: '#9b94e8' },
+  // Assessment categories
+  decision:           { label: 'Decision',          icon: Zap,        color: '#9b94e8' },
+  social:             { label: 'Social',             icon: Users,      color: '#e88fa0' },
+  memory:             { label: 'Memory',             icon: BookMarked, color: '#88c9a0' },
+  self_perception:    { label: 'Self-Perception',    icon: Scan,       color: '#e8c56a' },
+  general:            { label: 'General',            icon: Brain,      color: '#9b94e8' },
+  // Bias signal keys from CBI/NCS/MAI questions
+  confirmation_bias:  { label: 'Confirmation Bias',  icon: Shield,     color: '#9b94e8' },
+  anchoring_bias:     { label: 'Anchoring Bias',     icon: Anchor,     color: '#e88fa0' },
+  availability_bias:  { label: 'Availability Bias',  icon: Eye,        color: '#88c9a0' },
+  overconfidence:     { label: 'Overconfidence',     icon: TrendingUp, color: '#e8c56a' },
+  social_conformity:  { label: 'Social Conformity',  icon: Users,      color: '#94c9e8' },
+  attribution_error:  { label: 'Attribution Error',  icon: Brain,      color: '#e8b994' },
+  sunk_cost_fallacy:  { label: 'Sunk Cost',          icon: Activity,   color: '#c9e894' },
+  dunning_kruger:     { label: 'Dunning-Kruger',     icon: TrendingUp, color: '#e8d494' },
 }
 
 const categories = computed(() => {
