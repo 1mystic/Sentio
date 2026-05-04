@@ -129,12 +129,12 @@
             </div>
 
             <!-- Assessment Pipeline Table -->
-            <div class="card pipeline-card">
+            <div class="card pipeline-card fill-card">
               <div class="card-header-row">
                 <h3 class="card-title">Assessment Pipeline</h3>
                 <span class="card-meta">{{ assessmentStats.total_submissions ?? 0 }} total submissions across {{ assessmentStats.total_users ?? 0 }} users</span>
               </div>
-              <div class="pipeline-table-wrap">
+              <div class="pipeline-table-wrap scroll-fill">
                 <table class="pipeline-table">
                   <thead>
                     <tr>
@@ -185,12 +185,12 @@
 
           <!-- ── USERS TAB ── -->
           <div v-if="activeTab === 'users'" class="tab-pane">
-            <div class="card">
+            <div class="card fill-card">
               <div class="card-header-row">
                 <h3 class="card-title">Users <span class="count-badge">{{ userList.total }}</span></h3>
                 <span class="card-meta">{{ stats.users?.active_last_7d ?? 0 }} active in last 7 days</span>
               </div>
-              <div class="table-scroll">
+              <div class="table-scroll scroll-fill">
                 <table class="data-table">
                   <thead>
                     <tr>
@@ -555,7 +555,8 @@ function statusPillClass(s) {
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 .admin-root {
-  height: 100vh;
+  zoom: 1.35;
+  height: calc(100vh / 1.35);
   overflow: hidden;
   font-family: 'Urbanist', sans-serif;
   background: #edeaf4;
@@ -565,7 +566,7 @@ function statusPillClass(s) {
 /* ── Login ── */
 .login-wrap {
   display: flex; align-items: center; justify-content: center;
-  min-height: 100vh;
+  height: 100%;
   background: linear-gradient(160deg, #f4f3f8 0%, #edeaf4 35%, #e4e1f5 65%, #dbd6f5 100%);
 }
 .login-card {
@@ -607,7 +608,7 @@ function statusPillClass(s) {
 
 /* ── Shell layout ── */
 .shell {
-  display: flex; height: 100vh; overflow: hidden;
+  display: flex; height: 100%; overflow: hidden;
 }
 
 /* ── Icon Sidebar ── */
@@ -616,7 +617,7 @@ function statusPillClass(s) {
   background: #352b38;
   display: flex; flex-direction: column; align-items: center;
   padding: 20px 0;
-  position: sticky; top: 0; height: 100vh;
+  height: 100%;
   gap: 4px;
 }
 .sidebar-logo-mark {
@@ -672,14 +673,38 @@ function statusPillClass(s) {
 .health-degraded, .health-unknown { background: #fef9c3; color: #92400e; border-color: #fcd34d; }
 
 /* ── Page Content ── */
-.page-content { padding: 24px 28px; display: flex; flex-direction: column; gap: 0; flex: 1; min-height: 0; overflow-y: auto; }
+/* overflow: hidden here — scrolling is handled per-tab inside .tab-pane */
+.page-content {
+  padding: 20px 24px;
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
+  overflow: hidden;
+}
 
-/* Tab pane fills parent height and owns its own gap */
-.tab-pane { display: flex; flex-direction: column; gap: 16px; flex: 1; min-height: 0; }
+/* Tab pane: constrained to page-content height, scrolls for taller tabs (ML, Services) */
+.tab-pane {
+  display: flex; flex-direction: column; gap: 14px;
+  flex: 1; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+}
+/* Scrollbar styling for tab-pane */
+.tab-pane::-webkit-scrollbar { width: 4px; }
+.tab-pane::-webkit-scrollbar-track { background: transparent; }
+.tab-pane::-webkit-scrollbar-thumb { background: rgba(155,148,232,0.3); border-radius: 99px; }
+
+/* Fill cards: Overview pipeline + Users table grow to fill remaining tab space */
+.fill-card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fill-card .card-header-row { flex-shrink: 0; margin-bottom: 14px; }
+/* Scrollable content region inside fill-card */
+.scroll-fill { flex: 1; min-height: 0; overflow: auto; }
 
 /* ── Stat Cards ── */
 .stat-cards-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; flex-shrink: 0; }
-.stat-card { border-radius: 16px; padding: 22px 20px 16px; box-shadow: 0 4px 24px rgba(53,43,56,0.07); display: flex; flex-direction: column; gap: 10px; min-height: 190px; }
+.stat-card {
+  border-radius: 16px; padding: 20px; box-shadow: 0 4px 24px rgba(53,43,56,0.07);
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 180px;
+}
 .stat-card-lavender { background: linear-gradient(135deg, #dad8f9 0%, #eceaf9 100%); }
 .stat-card-pink     { background: linear-gradient(135deg, #f9d8f0 0%, #fde8f9 100%); }
 .stat-card-blue     { background: linear-gradient(135deg, #d8edf9 0%, #e8f4fd 100%); }
@@ -700,18 +725,17 @@ function statusPillClass(s) {
 .mini-bar-pink { background: rgba(157,23,77,0.2); }
 .mini-bar-blue { background: rgba(29,78,216,0.18); }
 
-/* ── Pipeline Table ── */
-.pipeline-card { }
+/* ── Cards ── */
 .card {
   background: white; border-radius: 16px;
-  padding: 24px; box-shadow: 0 4px 24px rgba(53,43,56,0.07);
+  padding: 20px 24px; box-shadow: 0 4px 24px rgba(53,43,56,0.07);
 }
-.card-header-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
+.card-header-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
 .card-title { font-size: 16px; font-weight: 700; color: #352b38; }
 .card-meta  { font-size: 12px; color: #7e808c; }
 .count-badge { font-size: 11px; font-weight: 700; background: #eceaf9; color: #352b38; padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
 
-.pipeline-table-wrap { overflow-x: auto; }
+.pipeline-table-wrap { overflow-x: auto; overflow-y: auto; }
 .pipeline-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 .pipeline-table th {
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
@@ -764,12 +788,12 @@ function statusPillClass(s) {
 .pill-gray  { font-size: 10px; font-weight: 700; background: #eceaf9; color: #7e808c; padding: 3px 10px; border-radius: 99px; }
 
 /* ── ML Tab ── */
-.metric-cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.metric-mini-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 24px rgba(53,43,56,0.07); text-align: center; }
-.mmc-val   { font-size: 20px; font-weight: 800; color: #352b38; word-break: break-all; }
+.metric-cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; flex-shrink: 0; }
+.metric-mini-card { background: white; border-radius: 12px; padding: 14px 12px; box-shadow: 0 4px 24px rgba(53,43,56,0.07); text-align: center; }
+.mmc-val   { font-size: 18px; font-weight: 800; color: #352b38; word-break: break-all; }
 .mmc-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #7e808c; margin-top: 4px; }
 
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex-shrink: 0; }
 .hbar-list { display: flex; flex-direction: column; gap: 12px; }
 .hbar-row  { display: flex; align-items: center; gap: 10px; }
 .hbar-row-sm { gap: 6px; }
@@ -788,7 +812,7 @@ function statusPillClass(s) {
 .note-pill { font-size: 12px; color: #7e808c; background: #fef9c3; border-radius: 8px; padding: 8px 14px; margin-top: 16px; line-height: 1.5; }
 
 /* ── Services Tab ── */
-.services-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.services-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; flex-shrink: 0; }
 .service-card { display: flex; flex-direction: column; gap: 12px; }
 .svc-card-top { display: flex; align-items: center; gap: 14px; }
 .svc-logo-circle {
@@ -808,12 +832,16 @@ function statusPillClass(s) {
 .right-panel {
   width: 260px; flex-shrink: 0;
   background: #edeaf4;
-  padding: 28px 20px 28px 0;
-  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px 16px 20px 0;
+  display: flex; flex-direction: column; gap: 12px;
   overflow-y: auto;
+  /* stretches to full shell height automatically as a flex child */
 }
-.rp-card { padding: 18px; }
-.rp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.right-panel::-webkit-scrollbar { width: 4px; }
+.right-panel::-webkit-scrollbar-track { background: transparent; }
+.right-panel::-webkit-scrollbar-thumb { background: rgba(155,148,232,0.3); border-radius: 99px; }
+.rp-card { padding: 14px 16px; }
+.rp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .rp-title { font-size: 13px; font-weight: 700; color: #352b38; }
 .rp-count { font-size: 11px; font-weight: 700; background: #eceaf9; color: #352b38; padding: 2px 8px; border-radius: 99px; }
 
@@ -855,7 +883,11 @@ function statusPillClass(s) {
 .bias-chip { font-size: 9px; font-weight: 700; background: #dad8f9; color: #352b38; padding: 2px 7px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; text-transform: capitalize; }
 
 /* ── Loading ── */
-.loading-center { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 80px; color: #7e808c; }
+.loading-center {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; color: #7e808c;
+}
 .spinner { width: 32px; height: 32px; border: 3px solid #eceaf9; border-top-color: #9b94e8; border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
