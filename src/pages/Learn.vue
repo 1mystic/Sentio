@@ -432,7 +432,7 @@ function closeExercise() {
 </script>
 
 <style scoped>
-.learn-page { padding: 32px; max-width: 1000px; }
+.learn-page { padding: 32px 40px; max-width: 1200px; width: 100%; box-sizing: border-box; }
 
 .page-header { margin-bottom: 24px; }
 .page-title { font-size: 28px; font-weight: 800; color: var(--plum); margin: 0 0 6px; }
@@ -476,7 +476,7 @@ function closeExercise() {
 .article-meta .meta-tag.level.advanced { background: #fce7f3; color: #be185d; }
 
 /* Grid */
-.articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 48px; }
+.articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 48px; width: 100%; }
 
 .article-card {
   background: white; border-radius: 14px; padding: 20px;
@@ -500,7 +500,7 @@ function closeExercise() {
 .section-title { font-size: 22px; font-weight: 800; color: var(--plum); margin: 0 0 4px; }
 .section-sub { font-size: 14px; color: var(--text-muted); margin: 0; }
 
-.exercises-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+.exercises-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; width: 100%; }
 .exercise-card {
   background: white; border-radius: 14px; padding: 20px 24px;
   border: 1.5px solid var(--lavender-soft); display: flex; gap: 20px; align-items: flex-start;
