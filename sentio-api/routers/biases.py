@@ -40,11 +40,9 @@ async def list_categories():
 async def get_bias(slug: str):
     """Return a single bias by its URL slug."""
     supabase = get_supabase()
-    result = (
-        supabase.table("biases").select("*").eq("slug", slug).single().execute()
-    )
+    result = supabase.table("biases").select("*").eq("slug", slug).execute()
     if not result.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Bias not found"
         )
-    return result.data
+    return result.data[0]

@@ -62,17 +62,37 @@
             </div>
             <div class="form-group">
               <label class="form-label">Email</label>
-              <input v-model="email" class="input" type="email" placeholder="your@email.com" />
+              <input :value="email" class="input" type="email" disabled style="opacity:0.6;cursor:not-allowed;" />
             </div>
             <div class="form-group">
               <label class="form-label">Bio</label>
               <textarea v-model="bio" class="input bio-textarea" placeholder="Tell us a bit about yourself..." rows="3"></textarea>
             </div>
             <div v-if="saveError" style="font-size:12px;color:#dc2626;">{{ saveError }}</div>
-            <button type="submit" class="btn btn-primary btn-sm" :disabled="userStore.saving">
-              {{ userStore.saving ? 'Saving…' : 'Save Changes' }}
-            </button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+              <button type="submit" class="btn btn-primary btn-sm" :disabled="userStore.saving">
+                {{ userStore.saving ? 'Saving…' : 'Save Changes' }}
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" @click="showPasswordForm = !showPasswordForm">
+                {{ showPasswordForm ? 'Cancel' : 'Change Password' }}
+              </button>
+            </div>
           </form>
+
+          <!-- Password Change Form -->
+          <div v-if="showPasswordForm" class="password-form">
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input v-model="newPassword" class="input" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm Password</label>
+              <input v-model="confirmPassword" class="input" type="password" placeholder="Repeat new password" autocomplete="new-password" />
+            </div>
+            <div v-if="passwordError" style="font-size:12px;color:#dc2626;">{{ passwordError }}</div>
+            <div v-if="passwordSuccess" style="font-size:12px;color:#059669;">Password updated successfully!</div>
+            <button class="btn btn-primary btn-sm" @click="changePassword">Update Password</button>
+          </div>
         </div>
 
         <!-- Notifications -->
@@ -144,7 +164,7 @@
     </div>
 
     <!-- Toast -->
-    <div v-if="toastVisible" class="toast">✓ Profile saved!</div>
+    <div v-if="toastVisible" class="toast">✓ {{ toastMsg }}</div>
 
   </div>
 </template>
@@ -155,14 +175,14 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useUserStore } from '@/stores/user.js'
 import { useJournalStore } from '@/stores/journal.js'
-import { useAssessmentStore } from '@/stores/assessment.js'
+import { assessmentsApi } from '@/api/assessments.js'
+import { supabase } from '@/composables/useSupabase.js'
 import apiClient from '@/api/client.js'
 
 const router = useRouter()
 const auth = useAuthStore()
 const userStore = useUserStore()
 const journalStore = useJournalStore()
-const assessmentStore = useAssessmentStore()
 const exporting = ref(false)
 
 const name = ref(auth.user?.user_metadata?.full_name || 'User')
@@ -170,20 +190,36 @@ const email = ref(auth.user?.email || '')
 const bio = ref('')
 const notifications = ref({ daily: true, weekly: true, assessments: false, ai: true })
 const toastVisible = ref(false)
+const toastMsg = ref('Profile saved!')
 const saveError = ref('')
+
+// Password change
+const showPasswordForm = ref(false)
+const newPassword = ref('')
+const confirmPassword = ref('')
+const passwordError = ref('')
+const passwordSuccess = ref(false)
+
+// Accurate assessment completion count
+const userResultsMap = ref({})
 
 onMounted(async () => {
   const profile = await userStore.fetchProfile()
   if (profile) {
     name.value = profile.display_name || profile.full_name || name.value
-    email.value = profile.email || email.value
+    email.value = profile.email || auth.user?.email || email.value
     bio.value = profile.bio || ''
     if (profile.preferences?.notifications) {
       Object.assign(notifications.value, profile.preferences.notifications)
     }
   }
   journalStore.fetchEntries({ limit: 100 })
-  assessmentStore.fetchList()
+  try {
+    const res = await assessmentsApi.userResults()
+    const map = {}
+    for (const r of (res.data || [])) map[r.assessment_id] = r
+    userResultsMap.value = map
+  } catch {}
 })
 
 const initials = computed(() => {
@@ -197,10 +233,7 @@ const memberSince = computed(() => {
 })
 
 const entryCount = computed(() => journalStore.entries.length)
-
-const assessmentCount = computed(() =>
-  assessmentStore.assessments.filter(a => a.completed).length
-)
+const assessmentCount = computed(() => Object.keys(userResultsMap.value).length)
 
 const streak = computed(() => {
   const entries = [...journalStore.entries]
@@ -274,9 +307,38 @@ async function saveProfile() {
   if (error) {
     saveError.value = 'Failed to save. Please try again.'
   } else {
-    toastVisible.value = true
-    setTimeout(() => { toastVisible.value = false }, 2000)
+    showToast('Profile saved!')
   }
+}
+
+async function changePassword() {
+  passwordError.value = ''
+  passwordSuccess.value = false
+  if (!newPassword.value || newPassword.value.length < 8) {
+    passwordError.value = 'Password must be at least 8 characters.'
+    return
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = 'Passwords do not match.'
+    return
+  }
+  try {
+    const { error } = await supabase.auth.updateUser({ password: newPassword.value })
+    if (error) throw error
+    passwordSuccess.value = true
+    newPassword.value = ''
+    confirmPassword.value = ''
+    showToast('Password updated!')
+    setTimeout(() => { showPasswordForm.value = false; passwordSuccess.value = false }, 1500)
+  } catch (err) {
+    passwordError.value = err.message || 'Failed to update password.'
+  }
+}
+
+function showToast(msg) {
+  toastMsg.value = msg
+  toastVisible.value = true
+  setTimeout(() => { toastVisible.value = false }, 2500)
 }
 </script>
 
@@ -339,6 +401,7 @@ async function saveProfile() {
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-label { font-size: 13px; font-weight: 600; color: var(--plum); }
 .bio-textarea { resize: vertical; min-height: 80px; }
+.password-form { margin-top: 16px; padding-top: 16px; border-top: 1.5px solid var(--lavender-soft); display: flex; flex-direction: column; gap: 14px; }
 
 /* Notifications */
 .notif-list { display: flex; flex-direction: column; gap: 0; }

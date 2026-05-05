@@ -93,6 +93,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAssessmentStore } from '@/stores/assessment.js'
+import { assessmentsApi } from '@/api/assessments.js'
 import { Clock, HelpCircle, CheckCircle, Brain, Zap, Users, BookMarked, DollarSign, Scan, Heart, Microscope } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -101,8 +102,21 @@ const assessmentStore = useAssessmentStore()
 const activeTab = ref('Available')
 const tabs = ['Available', 'In Progress', 'Completed']
 
-onMounted(() => {
+// Map of assessment_id → most recent completed result
+const userResults = ref({})
+
+onMounted(async () => {
   assessmentStore.fetchList()
+  try {
+    const res = await assessmentsApi.userResults()
+    const map = {}
+    for (const r of (res.data || [])) {
+      map[r.assessment_id] = r
+    }
+    userResults.value = map
+  } catch {
+    // not logged in or no results yet — silently ignore
+  }
 })
 
 // Display metadata keyed by slug (from seed_assessments.py)
@@ -115,6 +129,10 @@ const ASSESSMENT_META = {
 function enrichAssessment(a) {
   const meta = ASSESSMENT_META[a.slug] || { icon: Brain, color: '#dad8f9', category: 'General' }
   const qCount = Array.isArray(a.questions) ? a.questions.length : (a.question_count || '?')
+  const result = userResults.value[a.id]
+  const completed = !!result
+  const scores = completed ? Object.values(result.computed_scores || {}) : []
+  const avgScore = scores.length ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length) : null
   return {
     ...a,
     icon: meta.icon,
@@ -122,7 +140,8 @@ function enrichAssessment(a) {
     category: a.category || meta.category,
     time: a.estimated_minutes || 10,
     questions: qCount,
-    status: a.completed ? 'completed' : 'available',
+    status: completed ? 'completed' : 'available',
+    score: avgScore,
   }
 }
 

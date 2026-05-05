@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,6 +9,7 @@ import os
 load_dotenv()
 
 from routers import auth, users, biases, assessments, journal, insights, therapists, ai, admin
+from services.scheduler import start_scheduler, scheduler
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,12 +17,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
+        logger.info("[Scheduler] Shut down")
+
+
 app = FastAPI(
     title="Sentio API",
     description="Cognitive bias self-awareness platform backend",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")

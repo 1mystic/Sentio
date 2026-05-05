@@ -2,6 +2,7 @@ from fastapi import APIRouter, Header, HTTPException, status
 from pydantic import BaseModel
 from services.supabase_client import get_supabase
 from routers._auth_helpers import get_user_id
+from routers.journal import _compute_archetype
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,26 @@ async def list_assessments():
         "id,slug,title,description,estimated_minutes,validated_tool"
     ).execute()
     return result.data or []
+
+
+@router.get("/user/results")
+async def user_assessment_results(authorization: str | None = Header(None)):
+    """Return the most recent result per assessment for the current user."""
+    user_id = get_user_id(authorization)
+    supabase = get_supabase()
+    result = (
+        supabase.table("assessment_results")
+        .select("assessment_id, computed_scores, completed_at")
+        .eq("user_id", user_id)
+        .order("completed_at", desc=True)
+        .execute()
+    )
+    seen: dict = {}
+    for row in (result.data or []):
+        aid = row["assessment_id"]
+        if aid not in seen:
+            seen[aid] = row
+    return list(seen.values())
 
 
 @router.get("/{assessment_id}")
@@ -116,13 +137,14 @@ async def submit_assessment(
                 # Blend: existing journal score (60%) + assessment (40%); or just assessment if new
                 merged[bias_id] = round(prev * 0.6 + score * 0.4, 3) if prev else score
 
+            archetype = _compute_archetype(merged)
             if existing.data:
                 supabase.table("user_bias_profiles").update(
-                    {"bias_scores": merged}
+                    {"bias_scores": merged, "archetype": archetype}
                 ).eq("user_id", user_id).execute()
             else:
                 supabase.table("user_bias_profiles").insert(
-                    {"user_id": user_id, "bias_scores": merged}
+                    {"user_id": user_id, "bias_scores": merged, "archetype": archetype}
                 ).execute()
     except Exception as e:
         logger.warning(f"Bias profile update after assessment failed (non-blocking): {e}")

@@ -25,7 +25,7 @@
     <div class="hero-card">
       <div class="hero-left">
         <div class="hero-icon-circle">
-          <component :is="getBiasIcon(bias.id)" :size="38" />
+          <component :is="getBiasIcon(bias.slug || bias.id)" :size="38" />
         </div>
         <div class="hero-text">
           <div class="hero-meta">
@@ -99,9 +99,9 @@
               v-for="rel in relatedBiases"
               :key="rel.id"
               class="related-card"
-              @click="router.push('/explore/' + rel.id)"
+              @click="router.push('/explore/' + (rel.slug || rel.id))"
             >
-              <component :is="getBiasIcon(rel.id)" :size="18" class="related-icon" />
+              <component :is="getBiasIcon(rel.slug || rel.id)" :size="18" class="related-icon" />
               <span class="related-name">{{ rel.name }}</span>
               <ArrowRight :size="12" class="related-arrow" />
             </div>

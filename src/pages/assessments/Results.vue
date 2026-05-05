@@ -1,6 +1,14 @@
 <template>
   <div class="results-page">
 
+    <!-- Loading -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading your results…</p>
+    </div>
+
+    <template v-else>
+
     <!-- Celebration Header -->
     <div class="celebration-header">
       <Trophy :size="40" class="celebration-trophy" />
@@ -112,20 +120,41 @@
       <router-link to="/explore" class="btn btn-primary">Explore Biases <ArrowRight :size="14" /></router-link>
     </div>
 
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trophy, TrendingUp, RotateCcw, ArrowRight, Brain, BookMarked, Zap, Users, Scan, MessageSquare, Shield, Eye, Anchor, Activity } from 'lucide-vue-next'
+import { assessmentsApi } from '@/api/assessments.js'
 
 const route = useRoute()
 const router = useRouter()
 
-// Results passed via router.push state from Take.vue
+// Results passed via router.push state from Take.vue; fetch from API when navigating directly
 const routeState = history.state || {}
-const scores = routeState.scores || {}  // { category: score }
+const scores = ref(routeState.scores || {})
+const loading = ref(Object.keys(routeState.scores || {}).length === 0)
+
+onMounted(async () => {
+  if (Object.keys(scores.value).length === 0) {
+    try {
+      const res = await assessmentsApi.history(route.params.id)
+      const latest = (res.data || [])[0]
+      if (latest?.computed_scores) {
+        scores.value = latest.computed_scores
+      }
+    } catch {
+      // leave scores empty
+    } finally {
+      loading.value = false
+    }
+  } else {
+    loading.value = false
+  }
+})
 
 const CATEGORY_META = {
   // Assessment categories
@@ -146,11 +175,8 @@ const CATEGORY_META = {
 }
 
 const categories = computed(() => {
-  const cats = Object.entries(scores)
-  if (!cats.length) return [
-    { label: 'Decision', icon: Zap, score: 72, color: '#9b94e8' },
-    { label: 'Social', icon: Users, score: 65, color: '#e88fa0' },
-  ]
+  const cats = Object.entries(scores.value)
+  if (!cats.length) return []
   return cats.map(([k, v]) => {
     const meta = CATEGORY_META[k] || { label: k, icon: Brain, color: '#9b94e8' }
     return { label: meta.label, icon: meta.icon, score: v, color: meta.color }
@@ -158,13 +184,13 @@ const categories = computed(() => {
 })
 
 const overallScore = computed(() => {
-  const vals = Object.values(scores)
-  if (!vals.length) return 72
+  const vals = Object.values(scores.value)
+  if (!vals.length) return 0
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
 })
 
 const topCategory = computed(() => {
-  const cats = Object.entries(scores)
+  const cats = Object.entries(scores.value)
   if (!cats.length) return null
   return cats.sort((a, b) => b[1] - a[1])[0]
 })
@@ -182,11 +208,8 @@ const interpretation = computed(() => {
 })
 
 const biasBars = computed(() => {
-  const cats = Object.entries(scores)
-  if (!cats.length) return [
-    { name: 'Confirmation Bias', score: 72 },
-    { name: 'Anchoring', score: 65 },
-  ]
+  const cats = Object.entries(scores.value)
+  if (!cats.length) return []
   return cats
     .sort((a, b) => b[1] - a[1])
     .map(([k, v]) => ({
@@ -232,6 +255,9 @@ const recommendations = ref([
 * { font-family: 'Urbanist', sans-serif; box-sizing: border-box; }
 
 .results-page { display: flex; flex-direction: column; gap: 28px; }
+.loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; gap: 16px; color: var(--slate); }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--lavender); border-top-color: var(--lavender-deep); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Buttons */
 .btn { display: inline-flex; align-items: center; gap: 6px; font-family: 'Urbanist'; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; outline: none; text-decoration: none; }

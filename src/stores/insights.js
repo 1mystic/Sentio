@@ -19,14 +19,14 @@ export const useInsightsStore = defineStore('insights', () => {
     if (!force && !isStale()) return
     loading.value = true
     try {
-      const [fp, weekly, recs] = await Promise.all([
+      const [fp, weekly, recs] = await Promise.allSettled([
         insightsApi.biasFingerprint(),
         insightsApi.weekly(),
         insightsApi.recommendations(),
       ])
-      biasFingerprint.value = fp.data
-      weeklyInsights.value = weekly.data
-      recommendations.value = recs.data
+      if (fp.status === 'fulfilled') biasFingerprint.value = fp.value.data
+      if (weekly.status === 'fulfilled') weeklyInsights.value = weekly.value.data
+      if (recs.status === 'fulfilled') recommendations.value = recs.value.data
       lastFetched.value = Date.now()
     } catch (err) {
       console.warn('Insights fetch error:', err.message)

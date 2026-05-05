@@ -485,3 +485,277 @@ Prepare Sentio for portfolio presentation.
 4. **For ML prompts**: Run in Google Colab (free T4 GPU) — don't train locally unless you have GPU
 5. **For HuggingFace deployment**: Create a free account at huggingface.co, create a Space with Gradio SDK
 6. **Supabase**: Enable pgvector extension in Supabase SQL editor: `CREATE EXTENSION IF NOT EXISTS vector;`
+
+---
+
+## PHASE 6: Community, Gamification & Notifications — Full Plan
+
+_Written: 2026-05-05. All dates below are absolute._
+
+---
+
+### 6A — Email & Scheduled Notifications (DONE ✅)
+
+**Already implemented:**
+- `sentio-api/services/email_service.py` — Resend-based transactional email (free tier: 3 000/month, 100/day). Functions: `send_daily_reminder`, `send_weekly_digest`, `send_assessment_complete`. Stub mode when `RESEND_API_KEY` absent.
+- `sentio-api/services/scheduler.py` — APScheduler `AsyncIOScheduler` (no Redis/Celery needed). Jobs: daily journal nudge (19:00 UTC), weekly digest (Mon 08:00 UTC).
+- `sentio-api/main.py` — Scheduler wired into FastAPI `lifespan` context manager; shuts down gracefully on exit.
+- `sentio-api/requirements.txt` — `apscheduler>=3.10.0` added.
+- `sentio-api/.env.example` — `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `APP_URL` documented.
+- `src/pages/Learn.vue` — Educational resources page at `/learn` with 8 articles + 4 exercises.
+
+**Remaining email task:**
+- In `routers/assessments.py` submit endpoint, after saving result, call `await send_assessment_complete(email, name, assessment_title, score, archetype)`.
+
+---
+
+### 6B — Community Section Architecture
+
+#### Overview
+A lightweight async discussion board embedded in Sentio. No separate service — backed by Supabase tables. Designed to feel like a private, thoughtful space (not Reddit/Twitter).
+
+#### Database tables (add to `db/schema.sql`)
+
+```sql
+-- Topics are the top-level categories (created by admins)
+CREATE TABLE community_topics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  icon TEXT,           -- lucide icon name
+  color TEXT,          -- hex accent color
+  thread_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Threads are user-created discussions within a topic
+CREATE TABLE community_threads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  topic_id UUID REFERENCES community_topics(id) ON DELETE CASCADE,
+  author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  upvotes INT DEFAULT 0,
+  reply_count INT DEFAULT 0,
+  is_pinned BOOLEAN DEFAULT false,
+  is_locked BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Replies to threads
+CREATE TABLE community_replies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  thread_id UUID REFERENCES community_threads(id) ON DELETE CASCADE,
+  author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  upvotes INT DEFAULT 0,
+  parent_reply_id UUID REFERENCES community_replies(id),  -- for nested replies (1 level)
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Upvote tracking (1 per user per item)
+CREATE TABLE community_upvotes (
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  target_type TEXT NOT NULL,   -- 'thread' | 'reply'
+  target_id UUID NOT NULL,
+  PRIMARY KEY (user_id, target_type, target_id)
+);
+
+-- User badges
+CREATE TABLE user_badges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  badge_id TEXT NOT NULL,      -- matches BADGE_DEFINITIONS key
+  awarded_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, badge_id)
+);
+```
+
+#### RLS policies
+- `community_threads`: anyone can read; only author can update/delete their own.
+- `community_replies`: same pattern.
+- `community_upvotes`: user can only insert/delete their own row.
+- `user_badges`: read-only for all authenticated users; insert/delete via service role only.
+
+---
+
+### 6C — Badge System
+
+#### Badge definitions (hardcoded in `services/badge_engine.py`)
+
+| Badge ID | Name | Icon | Description | Trigger |
+|---|---|---|---|---|
+| `first_journal` | First Reflection | 📝 | Wrote your first journal entry | `journal_entries` count = 1 |
+| `streak_7` | Week of Clarity | 🔥 | 7-day journaling streak | Streak = 7 |
+| `streak_30` | Month of Mindfulness | 🌙 | 30-day journaling streak | Streak = 30 |
+| `bias_3` | Pattern Spotter | 🔍 | 3 unique biases identified across journal entries | Unique detected_biases ≥ 3 |
+| `bias_10` | Bias Hunter | 🎯 | 10 unique biases identified | Unique detected_biases ≥ 10 |
+| `no_bias` | Clean Slate | ✨ | 5 journal entries with no dominant bias detected | 5 consecutive low-signal entries |
+| `assessment_1` | Self-Examiner | 📊 | Completed first assessment | assessment_results count = 1 |
+| `assessment_all` | Full Spectrum | 🌈 | Completed all available assessments | completed = total |
+| `ai_convo` | Deep Thinker | 🧠 | First AI Guide conversation | ai_conversations count = 1 |
+| `community_first` | Contributor | 💬 | First community thread or reply | community_threads or replies = 1 |
+| `community_10` | Voice of Reason | 🎙️ | 10 community contributions | threads + replies ≥ 10 |
+| `archetype_set` | Self-Aware | 🪞 | Archetype computed | user_bias_profiles has archetype |
+
+#### Badge engine (`services/badge_engine.py`)
+
+```python
+async def check_and_award_badges(user_id: str, supabase) -> list[str]:
+    """Check all badge conditions for user, award new ones, return newly awarded badge IDs."""
+    awarded = {r['badge_id'] for r in supabase.table('user_badges').select('badge_id').eq('user_id', user_id).execute().data or []}
+    newly_awarded = []
+
+    def award(badge_id: str):
+        if badge_id not in awarded:
+            supabase.table('user_badges').insert({'user_id': user_id, 'badge_id': badge_id}).execute()
+            newly_awarded.append(badge_id)
+
+    # Journal entries
+    entries = supabase.table('journal_entries').select('id,created_at,detected_biases').eq('user_id', user_id).execute().data or []
+    if len(entries) >= 1: award('first_journal')
+    streak = _compute_streak(entries)
+    if streak >= 7: award('streak_7')
+    if streak >= 30: award('streak_30')
+
+    # Unique biases
+    all_biases = set()
+    for e in entries:
+        for b in (e.get('detected_biases') or []):
+            all_biases.add(b.get('bias_id') or b.get('label') or '')
+    all_biases.discard('')
+    if len(all_biases) >= 3: award('bias_3')
+    if len(all_biases) >= 10: award('bias_10')
+
+    # Assessments
+    results = supabase.table('assessment_results').select('assessment_id').eq('user_id', user_id).execute().data or []
+    total_assessments = supabase.table('assessments').select('id', count='exact').execute().count or 0
+    if len(results) >= 1: award('assessment_1')
+    if len(results) >= total_assessments and total_assessments > 0: award('assessment_all')
+
+    # AI
+    ai_convos = supabase.table('ai_conversations').select('id', count='exact').eq('user_id', user_id).execute().count or 0
+    if ai_convos >= 1: award('ai_convo')
+
+    # Archetype
+    bp = supabase.table('user_bias_profiles').select('archetype').eq('user_id', user_id).execute().data or []
+    if bp and bp[0].get('archetype'): award('archetype_set')
+
+    return newly_awarded
+```
+
+Call `check_and_award_badges` after: journal submit, assessment submit, AI conversation save.
+
+---
+
+### 6D — Community Frontend Pages
+
+#### Routes to add in `router/index.js`
+```js
+{ path: '/community', component: () => import('@/pages/community/Index.vue'), meta: { requiresAuth: true } },
+{ path: '/community/:topicSlug', component: () => import('@/pages/community/Topic.vue'), meta: { requiresAuth: true } },
+{ path: '/community/:topicSlug/:threadId', component: () => import('@/pages/community/Thread.vue'), meta: { requiresAuth: true } },
+```
+
+#### `src/pages/community/Index.vue`
+- Header: "Community" + subtitle "A space to share patterns, ask questions, and support each other."
+- Grid of topic cards (fetched from `GET /community/topics`)
+- Each card: icon, title, description, thread count, accent color border
+- Link to create new thread within any topic
+
+#### `src/pages/community/Topic.vue`
+- Topic header with description
+- "New Thread" button (opens inline form or modal)
+- Thread list: title, author avatar + name, reply count, upvote count, time ago
+- Pinned threads shown first
+- Pagination (20 threads per page)
+
+#### `src/pages/community/Thread.vue`
+- Full thread view: original post + reply chain
+- Upvote button on thread + each reply
+- Reply textarea (authenticated users only)
+- Author badge display: small icons under username
+- Nested replies (1 level): "Reply to X" shows indented
+
+#### Sidebar addition in `DefaultLayout.vue`
+```js
+{ path: '/community', icon: MessageCircle, label: 'Community' },
+```
+
+---
+
+### 6E — Community Backend (`routers/community.py`)
+
+```
+GET  /community/topics                    → list all topics
+GET  /community/topics/:slug              → topic detail + thread list (paginated)
+POST /community/topics/:slug/threads      → create thread (auth required)
+GET  /community/threads/:id               → thread + replies
+POST /community/threads/:id/replies       → add reply (auth required)
+POST /community/threads/:id/upvote        → toggle upvote (auth required)
+POST /community/replies/:id/upvote        → toggle reply upvote (auth required)
+DELETE /community/threads/:id             → delete own thread
+DELETE /community/replies/:id             → delete own reply
+GET  /community/users/:id/badges          → user's badge list
+GET  /users/me/badges                     → current user's badges
+```
+
+Content moderation: run all user-submitted text through `services/safety.py` crisis keyword check before saving.
+
+---
+
+### 6F — Profile Page: Badge Display
+
+In `src/pages/Profile.vue`, add a "Badges" section:
+- `GET /users/me/badges` on mount
+- Display each badge as a pill: icon + name
+- Tooltip on hover: badge description
+- Locked badges shown as greyed-out with "How to earn" tooltip
+- Progress bar for streak badges (current/target)
+
+---
+
+### 6G — Seeding Default Community Topics
+
+```python
+# Run once via: python sentio-api/db/seed_community.py
+TOPICS = [
+  { "title": "Bias Spotting", "slug": "bias-spotting", "description": "Share examples of biases you've caught in your own thinking this week.", "icon": "Eye", "color": "#9b94e8" },
+  { "title": "Decision Help", "slug": "decision-help", "description": "Get perspective from the community on decisions you're wrestling with.", "icon": "Scale", "color": "#f59e0b" },
+  { "title": "Journal Prompts", "slug": "journal-prompts", "description": "Share prompts that sparked meaningful reflection for you.", "icon": "BookOpen", "color": "#10b981" },
+  { "title": "Wins & Breakthroughs", "slug": "wins", "description": "Celebrate moments when you caught a bias before it affected a decision.", "icon": "Zap", "color": "#ec4899" },
+  { "title": "Questions & Confusion", "slug": "questions", "description": "Ask anything about cognitive biases, psychology, or how Sentio works.", "icon": "HelpCircle", "color": "#6366f1" },
+]
+```
+
+---
+
+### 6H — Implementation Priority Order
+
+1. **Email on assessment complete** — 30 min, high impact, already wired up everywhere else
+2. **Badge engine** — 2–3 hours; call from journal, assessment, AI endpoints
+3. **Profile badge display** — 1–2 hours; purely frontend
+4. **Community DB + backend routes** — 3–4 hours
+5. **Community Index + Topic pages** — 3–4 hours
+6. **Thread page + reply/upvote** — 3 hours
+7. **Sidebar addition + route guards** — 30 min
+
+Total estimated: ~1.5–2 working days for full community feature.
+
+---
+
+### 6I — Free Tool Stack Summary (2026)
+
+| Need | Tool | Free Tier |
+|---|---|---|
+| Transactional email | Resend | 3 000/month, 100/day |
+| In-process cron | APScheduler | Open source, no limits |
+| Database | Supabase | 500 MB, unlimited API calls |
+| Hosting | Render (API) + Vercel (frontend) | Free hobby plans |
+| AI | Anthropic API | Pay-per-use (no free tier — budget ~$5/month for dev) |
+| Auth | Supabase Auth | Free |
+| Realtime (community) | Supabase Realtime | 200 concurrent connections free |
+
+For community real-time updates (new replies appearing live), use Supabase Realtime channel subscriptions in the Thread view — no separate WebSocket server needed.

@@ -13,7 +13,8 @@
       "Bash(Select-Object FullName)",
       "Bash(npx vue-tsc *)",
       "Bash(python -c \"from routers import admin; print\\('admin router OK'\\)\")",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(.venv\\\\Scripts\\\\pip install *)"
     ]
   }
 }

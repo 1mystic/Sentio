@@ -53,17 +53,18 @@ async def recommend_bias_to_explore(user_id: str) -> dict | None:
         bias_scores: dict = profile.data[0]["bias_scores"]
         top_bias_id = max(bias_scores, key=lambda k: bias_scores[k])
 
+        # Bias score keys are signal names (confirmation_bias) — convert to slug (confirmation-bias)
+        slug_guess = top_bias_id.replace('_', '-')
         top_bias_resp = (
             supabase.table("biases")
             .select("id,slug,name,category")
-            .eq("id", top_bias_id)
-            .single()
+            .eq("slug", slug_guess)
             .execute()
         )
         if not top_bias_resp.data:
             return None
 
-        top = top_bias_resp.data
+        top = top_bias_resp.data[0]
         adjacent_categories = CATEGORY_ADJACENCY.get(top["category"], ["belief"])
 
         adjacent_resp = (

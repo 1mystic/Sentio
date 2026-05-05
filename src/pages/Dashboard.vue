@@ -170,7 +170,7 @@
           <div class="insight-title">{{ insight.title }}</div>
           <div class="insight-desc">{{ insight.desc }}</div>
           <div class="card-footer" style="margin-top: 14px;">
-            <button class="btn btn-ghost btn-sm">
+            <button class="btn btn-ghost btn-sm" @click="router.push(insight.link || '/journal')">
               Explore <ArrowRight :size="13" />
             </button>
           </div>
@@ -286,22 +286,40 @@ const stats = computed(() => {
 
 // --- Archetype ---
 const archetype = computed(() => insightsStore.biasFingerprint?.archetype || null)
-const traits = ref(['Analytical', 'Detail-oriented', 'Logic-driven', 'Skeptical'])
+
+const ARCHETYPE_TRAITS = {
+  'The Conviction Keeper': ['Tenacious', 'Pattern-seeking', 'Committed', 'Selective listener'],
+  'The Anchor':            ['Methodical', 'Reference-reliant', 'Structured', 'Slow to revise'],
+  'The Storyteller':       ['Vivid thinker', 'Experience-driven', 'Memorable', 'Availability-led'],
+  'The Visionary':         ['Confident', 'Bold', 'Ambitious', 'Occasionally overestimates'],
+  'The Harmonizer':        ['Empathetic', 'Group-minded', 'Agreeable', 'Consensus-seeking'],
+  'The Judge':             ['Decisive', 'Person-focused', 'Direct', 'Attribution-prone'],
+  'The Investor':          ['Persistent', 'Committed', 'Long-term focused', 'Loss-averse'],
+  'The Explorer':          ['Curious', 'Confident learner', 'Self-assessing', 'Growth-oriented'],
+  'The Traditionalist':    ['Stable', 'Risk-averse', 'Reliable', 'Change-resistant'],
+  'The Idealist':          ['Optimistic', 'First-impression driven', 'Enthusiastic', 'Halo-prone'],
+  'The Thinker':           ['Analytical', 'Detail-oriented', 'Logic-driven', 'Reflective'],
+}
+
+const traits = computed(() => {
+  if (!archetype.value) return []
+  return ARCHETYPE_TRAITS[archetype.value] || ARCHETYPE_TRAITS['The Thinker']
+})
 
 // --- Weekly insights ---
 const INSIGHT_TYPE_META = {
-  journal:   { label: 'ACTIVITY',  color: 'lavender' },
-  themes:    { label: 'THEMES',    color: 'blue' },
-  sentiment: { label: 'MOOD',      color: 'yellow' },
-  empty:     { label: 'TIP',       color: 'green' },
+  journal:   { label: 'ACTIVITY', color: 'lavender', link: '/journal' },
+  themes:    { label: 'THEMES',   color: 'blue',     link: '/progress?tab=themes' },
+  sentiment: { label: 'MOOD',     color: 'yellow',   link: '/progress?tab=mood' },
+  empty:     { label: 'TIP',      color: 'green',    link: '/journal/new' },
 }
 const insights = computed(() => {
   if (!insightsStore.weeklyInsights.length) return [
-    { badgeLabel: 'TIP', badgeColor: 'green', title: 'Start Journaling', desc: 'Write your first journal entry to unlock personalised weekly insights.' },
+    { badgeLabel: 'TIP', badgeColor: 'green', title: 'Start Journaling', desc: 'Write your first journal entry to unlock personalised weekly insights.', link: '/journal/new' },
   ]
   return insightsStore.weeklyInsights.slice(0, 3).map(i => {
-    const meta = INSIGHT_TYPE_META[i.type] || { label: 'INSIGHT', color: 'lavender' }
-    return { badgeLabel: meta.label, badgeColor: meta.color, title: i.text.slice(0, 60), desc: i.text }
+    const meta = INSIGHT_TYPE_META[i.type] || { label: 'INSIGHT', color: 'lavender', link: '/journal' }
+    return { badgeLabel: meta.label, badgeColor: meta.color, title: i.text.slice(0, 60), desc: i.text, link: meta.link }
   })
 })
 

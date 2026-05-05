@@ -67,11 +67,11 @@
         v-for="bias in displayBiases"
         :key="bias.id"
         class="bias-card"
-        @click="router.push('/explore/' + bias.id)"
+        @click="router.push('/explore/' + (bias.slug || bias.id))"
       >
         <div class="bias-card-top">
           <div class="bias-icon-circle">
-            <component :is="getBiasIcon(bias.id)" :size="16" />
+            <component :is="getBiasIcon(bias.slug || bias.id)" :size="16" />
           </div>
           <span class="badge" :class="badgeClass(bias.categoryColor)">{{ bias.category }}</span>
           <ArrowRight :size="16" class="bias-card-arrow" />
@@ -142,8 +142,21 @@ const biasIconMap = {
   'in-group-bias': Users,
 }
 
-function getBiasIcon(id) {
-  return biasIconMap[id] || Brain
+const CATEGORY_COLOR_MAP = {
+  memory: 'blue', social: 'lavender', decision: 'pink',
+  self: 'yellow', belief: 'green', reasoning: 'blue',
+}
+
+function getBiasIcon(slug) {
+  return biasIconMap[slug] || Brain
+}
+
+function normalizeBias(b) {
+  return {
+    ...b,
+    prevalence: b.prevalence_pct ?? b.prevalence ?? 65,
+    categoryColor: b.categoryColor || CATEGORY_COLOR_MAP[b.category?.toLowerCase()] || 'lavender',
+  }
 }
 
 const biases = ref([
@@ -161,24 +174,11 @@ const biases = ref([
   { id: 'in-group-bias', name: 'In-Group Bias', category: 'Social', categoryColor: 'lavender', description: 'Favoring members of your own group over those in other groups.', prevalence: 80 },
 ])
 
-const filteredBiases = computed(() => {
-  let result = biases.value.filter(b =>
-    (selectedCategory.value === 'All' || b.category === selectedCategory.value) &&
-    b.name.toLowerCase().includes(search.value.toLowerCase())
-  )
-  if (sortBy.value === 'prevalence-desc') {
-    result = [...result].sort((a, b) => b.prevalence - a.prevalence)
-  } else if (sortBy.value === 'name') {
-    result = [...result].sort((a, b) => a.name.localeCompare(b.name))
-  }
-  return result
-})
-
 // When store loads biases, use them; otherwise keep hardcoded ones
 const displayBiases = computed(() => {
-  const source = biasStore.biases.length > 0 ? biasStore.biases : biases.value
+  const source = (biasStore.biases.length > 0 ? biasStore.biases : biases.value).map(normalizeBias)
   let result = source.filter(b =>
-    (selectedCategory.value === 'All' || b.category === selectedCategory.value) &&
+    (selectedCategory.value === 'All' || b.category?.toLowerCase() === selectedCategory.value.toLowerCase() || b.category === selectedCategory.value) &&
     b.name.toLowerCase().includes(search.value.toLowerCase())
   )
   if (sortBy.value === 'prevalence-desc') {

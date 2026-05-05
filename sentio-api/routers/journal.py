@@ -48,6 +48,28 @@ async def _process_entry(entry_id: str, content: str, user_id: str) -> None:
         logger.error(f"Background entry processing error (entry={entry_id}): {e}")
 
 
+_ARCHETYPE_MAP = {
+    'confirmation_bias':  'The Conviction Keeper',
+    'anchoring_bias':     'The Anchor',
+    'availability_bias':  'The Storyteller',
+    'overconfidence':     'The Visionary',
+    'social_conformity':  'The Harmonizer',
+    'attribution_error':  'The Judge',
+    'sunk_cost_fallacy':  'The Investor',
+    'dunning_kruger':     'The Explorer',
+    'status_quo_bias':    'The Traditionalist',
+    'halo_effect':        'The Idealist',
+    'bandwagon_effect':   'The Follower',
+    'recency_bias':       'The Moment-Chaser',
+}
+
+def _compute_archetype(bias_scores: dict) -> str | None:
+    if not bias_scores:
+        return None
+    top = max(bias_scores, key=lambda k: bias_scores[k])
+    return _ARCHETYPE_MAP.get(top, 'The Thinker')
+
+
 def _update_bias_profile(user_id: str, biases: list[dict]) -> None:
     """Incrementally update the user's bias_scores in user_bias_profiles."""
     supabase = get_supabase()
@@ -65,8 +87,9 @@ def _update_bias_profile(user_id: str, biases: list[dict]) -> None:
             delta = b.get("confidence", 0.5) * 0.1
             scores[bias_id] = min(1.0, scores.get(bias_id, 0.0) + delta)
 
+    archetype = _compute_archetype(scores)
     supabase.table("user_bias_profiles").upsert(
-        {"user_id": user_id, "bias_scores": scores}
+        {"user_id": user_id, "bias_scores": scores, "archetype": archetype}
     ).execute()
 
 
