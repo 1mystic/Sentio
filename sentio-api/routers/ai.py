@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Header, HTTPException, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from services.safety import safety
 from services.claude_service import stream_response
@@ -38,8 +38,11 @@ async def chat(data: ChatRequest, authorization: str | None = Header(None)):
     # Safety gate
     safety_result = safety.check_input(data.message)
     if safety_result.action == "REDIRECT":
-        # Return a plain JSON response (not streaming) for crisis redirection
-        return {"response": safety_result.message, "type": "crisis"}
+        # 422 so the frontend's !res.ok branch handles it as a crisis redirect
+        return JSONResponse(
+            status_code=422,
+            content={"response": safety_result.message, "type": "crisis"},
+        )
 
     user_id = get_user_id(authorization)
     supabase = get_supabase()

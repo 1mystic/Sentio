@@ -15,7 +15,8 @@
       "Bash(python -c \"from routers import admin; print\\('admin router OK'\\)\")",
       "Bash(python -c ' *)",
       "Bash(.venv\\\\Scripts\\\\pip install *)",
-      "Bash(dir \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\")"
+      "Bash(dir \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\")",
+      "Bash(Test-Path \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\\\\sentio-api\\\\Dockerfile\")"
     ]
   }
 }

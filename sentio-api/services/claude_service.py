@@ -1,7 +1,10 @@
-"""Claude API wrapper with prompt caching and streaming."""
+"""Claude API wrapper with streaming."""
 import os
 import anthropic
 from typing import AsyncGenerator
+
+# Override with CLAUDE_MODEL env var; default is a widely-available, cost-effective model
+_CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
 
 # The system prompt is large and static — mark it for caching.
 # Anthropic caches up to 4 content blocks per request.
@@ -27,21 +30,12 @@ Always be warm, intellectually curious, grounded in evidence. Keep responses con
 IMPORTANT: You are an educational tool, not a therapist. Make this clear if users start treating you as one."""
 
 
-def _build_system_blocks(
+def _build_system(
     rag_context: str = "",
     bias_fingerprint: dict | None = None,
     journal_themes: list | None = None,
-) -> list[dict]:
-    """Build system message as content blocks with cache_control on the static part."""
-    blocks: list[dict] = [
-        {
-            "type": "text",
-            "text": SYSTEM_PROMPT_TEXT,
-            "cache_control": {"type": "ephemeral"},  # Cache the large static prompt
-        }
-    ]
-
-    # Dynamic context injected as a second (non-cached) block
+) -> str:
+    """Build the system prompt string, injecting dynamic user context."""
     context_parts: list[str] = []
     if bias_fingerprint:
         context_parts.append(f"User's bias profile: {bias_fingerprint}")
@@ -51,12 +45,8 @@ def _build_system_blocks(
         context_parts.append(f"Relevant knowledge articles:\n{rag_context}")
 
     if context_parts:
-        blocks.append({
-            "type": "text",
-            "text": "Context for this conversation:\n" + "\n\n".join(context_parts),
-        })
-
-    return blocks
+        return SYSTEM_PROMPT_TEXT + "\n\nContext for this conversation:\n" + "\n\n".join(context_parts)
+    return SYSTEM_PROMPT_TEXT
 
 
 async def stream_response(
@@ -70,14 +60,13 @@ async def stream_response(
     Yields plain text chunks. The caller is responsible for safety-checking.
     """
     client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-    system_blocks = _build_system_blocks(rag_context, bias_fingerprint, journal_themes)
+    system = _build_system(rag_context, bias_fingerprint, journal_themes)
 
     async with client.messages.stream(
-        model="claude-sonnet-4-6",
+        model=_CLAUDE_MODEL,
         max_tokens=1024,
-        system=system_blocks,
+        system=system,
         messages=[{"role": "user", "content": user_message}],
-        betas=["prompt-caching-2024-07-31"],
     ) as stream:
         async for text in stream.text_stream:
             yield text
@@ -115,15 +104,10 @@ Return ONLY the 3 questions, one per line, no numbering, no preamble."""
 
     try:
         response = await client.messages.create(
-            model="claude-sonnet-4-6",
+            model=_CLAUDE_MODEL,
             max_tokens=300,
-            system=[{
-                "type": "text",
-                "text": "You are a reflective journaling coach. Generate precise, grounded reflection questions.",
-                "cache_control": {"type": "ephemeral"},
-            }],
+            system="You are a reflective journaling coach. Generate precise, grounded reflection questions.",
             messages=[{"role": "user", "content": prompt}],
-            betas=["prompt-caching-2024-07-31"],
         )
         lines = [l.strip() for l in response.content[0].text.strip().split('\n') if l.strip()]
         return lines[:3] if lines else _fallback_questions(bias_names)
