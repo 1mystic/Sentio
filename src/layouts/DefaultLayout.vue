@@ -427,7 +427,6 @@ const toolsNav = [
   display: flex; align-items: center; gap: 12px;
   padding: 0 32px; height: 64px;
   background: white;
-  border-bottom: 1px solid var(--lavender-soft);
 }
 .topbar-search {
   flex: 1; display: flex; align-items: center; gap: 8px;
@@ -451,7 +450,11 @@ const toolsNav = [
 }
 .btn-icon:hover { background: var(--lavender-soft); color: var(--plum); }
 
-.page-body { flex: 1; overflow-y: auto; padding: 32px; display: flex; flex-direction: column; gap: 32px; }
+.page-body { flex: 1; overflow-y: auto; 
+  border-top-left-radius: 1rem !important;
+    background: var(--bg);
+  padding: 32px; display: flex; 
+  flex-direction: column; gap: 32px; }
 
 /* Search dropdown */
 .topbar-search { position: relative; }
