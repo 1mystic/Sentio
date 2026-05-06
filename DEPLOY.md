@@ -45,26 +45,27 @@ https://huggingface.co/spaces/YOUR_USERNAME/sentio-api
 
 ### 1.2 Push only the backend folder
 
-HuggingFace Spaces expects the **root of the repo** to contain the `Dockerfile` and `README.md`. Our `Dockerfile` and `README.md` are inside `sentio-api/`, so we push that subfolder as the root.
+HuggingFace Spaces expects the **root of the repo** to contain the `Dockerfile` and `README.md`. Our files are inside `sentio-api/`, so we use `git subtree push` — this pushes just that subfolder as the root of the HF Space repo, without creating a nested `.git` or breaking your main project tracking.
 
 ```bash
-# From the project root
-cd sentio-api
+# Run everything from the PROJECT ROOT (not inside sentio-api)
 
-git init
-git add .
-git commit -m "initial backend deploy"
+# 1. Add the HF Space as a remote (one time only)
+git remote add hf-space https://huggingface.co/spaces/mozoj4/sentio-backend
 
-# Add the HF Space as a remote
-git remote add space https://huggingface.co/spaces/YOUR_USERNAME/sentio-api
-
-# Push
-git push space main
+# 2. Push the sentio-api/ subfolder as the root of the HF Space
+git subtree push --prefix=sentio-api hf-space main
 ```
 
-> **Tip:** HuggingFace will ask for your credentials.
-> Use your HF username and a HF **Access Token** (not your password).
-> Create one at: Profile → Settings → Access Tokens → New token (write permission).
+> **Credentials:** HuggingFace will ask for your username and password.
+> Use your HF username and a HF **Access Token** (not your account password).
+> Create one at: huggingface.co → Profile → Settings → Access Tokens → New token (select **write** permission).
+
+> **If `git subtree push` is rejected** (HF Space already has commits that differ from yours):
+> ```bash
+> git subtree push --prefix=sentio-api hf-space main --force
+> ```
+> This is safe — it only affects the HF remote, not your local repo.
 
 The Space will start building. You can watch the build logs by clicking **Logs** in the Space page. The first build takes **5–10 minutes** because it installs ML packages and downloads the embedding model.
 
@@ -212,10 +213,12 @@ If the AI Guide returns an error, check the HF Space **Logs** tab — the most c
 
 ### Backend update
 ```bash
-cd sentio-api
-git add .
-git commit -m "update"
-git push space main
+# From the project root — commit your changes normally first
+git add sentio-api/
+git commit -m "update backend"
+
+# Then push the subfolder to HF Spaces
+git subtree push --prefix=sentio-api hf-space main
 ```
 HuggingFace rebuilds automatically on push.
 

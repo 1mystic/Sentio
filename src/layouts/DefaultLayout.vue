@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ collapsed }">
       <div class="sidebar-logo">
         <div class="logo-mark">S</div>
         <span class="logo-text">Sentio</span>
@@ -15,6 +15,7 @@
           :to="item.path"
           class="nav-item"
           :class="{ active: $route.path.startsWith(item.path) }"
+          :title="collapsed ? item.label : ''"
         >
           <component :is="item.icon" :size="18" class="nav-icon" />
           <span class="nav-label">{{ item.label }}</span>
@@ -27,14 +28,21 @@
           :to="item.path"
           class="nav-item"
           :class="{ active: $route.path.startsWith(item.path) }"
+          :title="collapsed ? item.label : ''"
         >
           <component :is="item.icon" :size="18" class="nav-icon" />
           <span class="nav-label">{{ item.label }}</span>
         </router-link>
       </nav>
 
+      <!-- Collapse toggle -->
+      <button class="collapse-btn" @click="collapsed = !collapsed" :title="collapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+        <ChevronLeft v-if="!collapsed" :size="15" />
+        <ChevronRight v-else :size="15" />
+      </button>
+
       <div class="sidebar-footer">
-        <router-link to="/profile" class="nav-item user-row">
+        <router-link to="/profile" class="nav-item user-row" :title="collapsed ? userName : ''">
           <div class="user-avatar">{{ userInitial }}</div>
           <div class="user-info">
             <div class="user-name">{{ userName }}</div>
@@ -132,20 +140,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useUserStore } from '@/stores/user.js'
 import { useBiasStore } from '@/stores/bias.js'
 import { useJournalStore } from '@/stores/journal.js'
 import { useAssessmentStore } from '@/stores/assessment.js'
-import { assessmentsApi } from '@/api/assessments.js'
 import client from '@/api/client.js'
 import {
   LayoutDashboard, Brain, BookOpen, ClipboardList,
   MessageSquare, UserCheck, TrendingUp, GraduationCap,
   Search, Bell, Sparkles, LogOut,
-  CheckCircle, Lightbulb, Flame, Info, Users
+  CheckCircle, Lightbulb, Flame, Info, Users,
+  ChevronLeft, ChevronRight
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -154,6 +162,13 @@ const biasStore = useBiasStore()
 const journalStore = useJournalStore()
 const assessStore = useAssessmentStore()
 const router = useRouter()
+
+// ── Sidebar collapse ──────────────────────────────────────
+const collapsed = ref(window.innerWidth < 768)
+
+function onResize() {
+  if (window.innerWidth < 768) collapsed.value = true
+}
 
 onMounted(async () => {
   // Wait for the Supabase session to be resolved before firing any authenticated requests.
@@ -168,10 +183,12 @@ onMounted(async () => {
   if (!assessStore.assessments.length) assessStore.fetchList().catch(() => {})
   await loadNotifications()
   document.addEventListener('click', handleOutsideClick)
+  window.addEventListener('resize', onResize)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleOutsideClick)
+  window.removeEventListener('resize', onResize)
 })
 
 const userName = computed(() => userStore.profile?.display_name || userStore.profile?.full_name || auth.user?.user_metadata?.full_name || auth.user?.email?.split('@')[0] || 'User')
@@ -329,7 +346,23 @@ const toolsNav = [
   width: 220px; flex-shrink: 0;
   background: white; border-right: 1px solid var(--lavender-soft);
   display: flex; flex-direction: column; height: 100vh; overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.22s ease;
 }
+.sidebar.collapsed { width: 56px; }
+
+/* hide text labels when collapsed */
+.sidebar.collapsed .logo-text,
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .nav-section-label,
+.sidebar.collapsed .user-info,
+.sidebar.collapsed .signout-btn { display: none; }
+
+.sidebar.collapsed .sidebar-logo { justify-content: center; padding: 20px 0; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 9px 0; }
+.sidebar.collapsed .nav-icon { opacity: 1; }
+.sidebar.collapsed .user-row { justify-content: center; }
+.sidebar.collapsed .sidebar-footer { justify-content: center; }
 
 .sidebar-logo {
   display: flex; align-items: center; gap: 10px;
@@ -362,6 +395,17 @@ const toolsNav = [
 .nav-item.active .nav-icon { opacity: 1; }
 .nav-label { font-size: 14px; }
 
+/* Collapse toggle button */
+.collapse-btn {
+  display: flex; align-items: center; justify-content: center;
+  margin: 4px 8px; padding: 7px; border-radius: 8px;
+  background: transparent; border: 1px solid var(--lavender);
+  color: var(--slate); cursor: pointer; transition: all 0.15s;
+  flex-shrink: 0;
+}
+.collapse-btn:hover { background: var(--lavender); color: var(--plum); }
+.sidebar.collapsed .collapse-btn { margin: 4px auto; width: 36px; }
+
 .sidebar-footer { padding: 12px 8px; border-top: 1px solid var(--lavender-soft); display: flex; align-items: center; gap: 4px; }
 .user-row { flex: 1; min-width: 0; }
 .signout-btn { background: none; border: none; cursor: pointer; color: var(--slate); padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
@@ -382,7 +426,7 @@ const toolsNav = [
   position: sticky; top: 0; z-index: 90;
   display: flex; align-items: center; gap: 12px;
   padding: 0 32px; height: 64px;
-  background: rgba(244,243,248,0.85); backdrop-filter: blur(12px);
+  background: white;
   border-bottom: 1px solid var(--lavender-soft);
 }
 .topbar-search {
