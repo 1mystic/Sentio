@@ -344,7 +344,7 @@ const toolsNav = [
 
 .sidebar {
   width: 220px; flex-shrink: 0;
-  background: white; border-right: 1px solid var(--lavender-soft);
+  background: white;
   display: flex; flex-direction: column; height: 100vh; overflow-y: auto;
   overflow-x: hidden;
   transition: width 0.22s ease;
@@ -366,7 +366,7 @@ const toolsNav = [
 
 .sidebar-logo {
   display: flex; align-items: center; gap: 10px;
-  padding: 20px 20px 20px; border-bottom: 1px solid var(--lavender-soft);
+  padding: 20px 20px 20px;
   margin-bottom: 12px;
 }
 .logo-mark {
@@ -406,7 +406,7 @@ const toolsNav = [
 .collapse-btn:hover { background: var(--lavender); color: var(--plum); }
 .sidebar.collapsed .collapse-btn { margin: 4px auto; width: 36px; }
 
-.sidebar-footer { padding: 12px 8px; border-top: 1px solid var(--lavender-soft); display: flex; align-items: center; gap: 4px; }
+.sidebar-footer { padding: 12px 8px; display: flex; align-items: center; gap: 4px; }
 .user-row { flex: 1; min-width: 0; }
 .signout-btn { background: none; border: none; cursor: pointer; color: var(--slate); padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
 .signout-btn:hover { background: #fee2e2; color: #dc2626; }

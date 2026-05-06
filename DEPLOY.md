@@ -4,6 +4,23 @@ Backend → HuggingFace Spaces · Frontend → Vercel
 
 ---
 
+## Quixk HF deploy commands 
+
+```
+git subtree split --prefix=sentio-api --branch hf-deploy && \
+git push hf-space hf-deploy:main --force && \
+git branch -D hf-deploy
+```
+For auto-trigger deployment on every push to your main repo, add a git alias:
+
+```
+git config --global alias.deploy-hf '!git subtree split --prefix=sentio-api --branch hf-deploy && git push hf-space hf-deploy:m
+```
+
+Then deploy anytime with:
+
+`git deploy-hf`
+
 ## Before you start
 
 You need accounts on three services:
