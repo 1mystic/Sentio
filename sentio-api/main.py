@@ -21,6 +21,16 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     start_scheduler()
+    # Pre-warm the sentence-transformer embedder in a thread so the first
+    # /ai/chat request doesn't block waiting for model load.
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        from services.rag_service import _get_embedder
+        await loop.run_in_executor(None, _get_embedder)
+        logger.info("[Startup] RAG embedder ready")
+    except Exception as e:
+        logger.warning(f"[Startup] RAG embedder pre-warm skipped: {e}")
     yield
     if scheduler.running:
         scheduler.shutdown(wait=False)

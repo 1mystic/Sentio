@@ -8,10 +8,50 @@ from services.supabase_client import get_supabase
 from services.badge_engine import check_and_award_badges
 from routers._auth_helpers import get_user_id
 import json
+import time
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# In-memory TTL cache for per-user personalisation context (bias profile + journal themes).
+# Avoids 2 extra DB round-trips on every chat message. TTL = 5 minutes.
+_USER_CTX_CACHE: dict[str, tuple[float, dict, list]] = {}
+_USER_CTX_TTL = 300  # seconds
+
+
+def _get_user_context(user_id: str, supabase) -> tuple[dict, list[str]]:
+    cached = _USER_CTX_CACHE.get(user_id)
+    if cached and time.monotonic() - cached[0] < _USER_CTX_TTL:
+        return cached[1], cached[2]
+
+    profile = (
+        supabase.table("user_bias_profiles")
+        .select("bias_scores,archetype,dominant_category")
+        .eq("user_id", user_id)
+        .execute()
+    )
+    bias_fingerprint: dict = profile.data[0] if profile.data else {}
+
+    journal_rows = (
+        supabase.table("journal_entries")
+        .select("themes")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(5)
+        .execute()
+    )
+    seen: set = set()
+    journal_themes: list[str] = []
+    for row in journal_rows.data or []:
+        for t in (row.get("themes") or []):
+            if t not in seen:
+                seen.add(t)
+                journal_themes.append(t)
+    journal_themes = journal_themes[:5]
+
+    _USER_CTX_CACHE[user_id] = (time.monotonic(), bias_fingerprint, journal_themes)
+    return bias_fingerprint, journal_themes
 
 
 class ChatRequest(BaseModel):
@@ -22,14 +62,6 @@ class ChatRequest(BaseModel):
 @router.post("/chat")
 async def chat(data: ChatRequest, authorization: str | None = Header(None)):
     """Stream an AI Guide response via Server-Sent Events.
-
-    The endpoint:
-    1. Checks the user's message for crisis signals.
-    2. Loads the user's bias fingerprint for personalised context.
-    3. Runs RAG retrieval to inject relevant knowledge articles.
-    4. Streams Claude's response token-by-token as SSE chunks.
-    5. Emits a sources event after the stream if RAG returned citations.
-    6. Persists the conversation to ai_conversations after completion.
 
     Each SSE chunk is:  data: {"chunk": "..."}\n\n
     Sources event:      data: {"sources": [...]}\n\n
@@ -47,35 +79,8 @@ async def chat(data: ChatRequest, authorization: str | None = Header(None)):
     user_id = get_user_id(authorization)
     supabase = get_supabase()
 
-    # Load user context for personalisation
-    profile = (
-        supabase.table("user_bias_profiles")
-        .select("bias_scores,archetype,dominant_category")
-        .eq("user_id", user_id)
-        .execute()
-    )
-    bias_fingerprint: dict = profile.data[0] if profile.data else {}
-
-    # Fetch recent journal themes
-    journal_rows = (
-        supabase.table("journal_entries")
-        .select("themes")
-        .eq("user_id", user_id)
-        .order("created_at", desc=True)
-        .limit(5)
-        .execute()
-    )
-    journal_themes: list[str] = []
-    for row in journal_rows.data or []:
-        journal_themes.extend(row.get("themes") or [])
-    # Deduplicate while preserving order
-    seen: set = set()
-    deduped_themes: list[str] = []
-    for t in journal_themes:
-        if t not in seen:
-            seen.add(t)
-            deduped_themes.append(t)
-    journal_themes = deduped_themes[:5]
+    # User context — cached per user for 5 min to avoid repeated DB calls
+    bias_fingerprint, journal_themes = _get_user_context(user_id, supabase)
 
     # RAG retrieval — get relevant knowledge articles
     rag_context, sources = await rag_query(data.message)

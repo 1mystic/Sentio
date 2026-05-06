@@ -156,6 +156,12 @@ const assessStore = useAssessmentStore()
 const router = useRouter()
 
 onMounted(async () => {
+  // Wait for the Supabase session to be resolved before firing any authenticated requests.
+  // Without this, onMounted fires before the router's beforeEach guard completes on
+  // initial app mount, producing 401s because the token hasn't been attached yet.
+  await auth.ensureInitialized()
+  if (!auth.user) return  // router will redirect to /login
+
   if (!userStore.profile) userStore.fetchProfile()
   if (!biasStore.biases.length) biasStore.fetchAll().catch(() => {})
   if (!journalStore.entries.length) journalStore.fetchEntries({ limit: 30 }).catch(() => {})

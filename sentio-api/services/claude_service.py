@@ -3,8 +3,9 @@ import os
 import anthropic
 from typing import AsyncGenerator
 
-# Override with CLAUDE_MODEL env var; default is a widely-available, cost-effective model
-_CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
+# Override with CLAUDE_MODEL env var
+# Defaults to claude-haiku-4-5 (fast, cheap); set to claude-sonnet-4-6 for higher quality
+_CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
 
 # The system prompt is large and static — mark it for caching.
 # Anthropic caches up to 4 content blocks per request.
