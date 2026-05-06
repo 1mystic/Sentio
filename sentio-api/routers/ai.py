@@ -5,6 +5,7 @@ from services.safety import safety
 from services.claude_service import stream_response
 from services.rag_service import rag_query
 from services.supabase_client import get_supabase
+from services.badge_engine import check_and_award_badges
 from routers._auth_helpers import get_user_id
 import json
 import logging
@@ -108,6 +109,7 @@ async def chat(data: ChatRequest, authorization: str | None = Header(None)):
                         ],
                     }
                 ).execute()
+                await check_and_award_badges(user_id, supabase)
             except Exception as e:
                 logger.error(f"Failed to persist conversation: {e}")
             yield "data: [DONE]\n\n"

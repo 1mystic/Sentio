@@ -14,7 +14,8 @@
       "Bash(npx vue-tsc *)",
       "Bash(python -c \"from routers import admin; print\\('admin router OK'\\)\")",
       "Bash(python -c ' *)",
-      "Bash(.venv\\\\Scripts\\\\pip install *)"
+      "Bash(.venv\\\\Scripts\\\\pip install *)",
+      "Bash(dir \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\")"
     ]
   }
 }

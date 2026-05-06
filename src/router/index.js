@@ -25,6 +25,9 @@ const routes = [
   { path: '/profile', component: () => import('@/pages/Profile.vue'), meta: { requiresAuth: true } },
   { path: '/progress', component: () => import('@/pages/Progress.vue'), meta: { requiresAuth: true } },
   { path: '/learn', component: () => import('@/pages/Learn.vue'), meta: { requiresAuth: true } },
+  { path: '/community', component: () => import('@/pages/community/Index.vue'), meta: { requiresAuth: true } },
+  { path: '/community/:topicSlug', component: () => import('@/pages/community/Topic.vue'), meta: { requiresAuth: true } },
+  { path: '/community/:topicSlug/:threadId', component: () => import('@/pages/community/Thread.vue'), meta: { requiresAuth: true } },
   { path: '/admin', component: () => import('@/pages/Admin.vue'), meta: { layout: 'public' } },
   { path: '/:pathMatch(.*)*', component: () => import('@/pages/NotFound.vue'), meta: { layout: 'public' } },
 ]

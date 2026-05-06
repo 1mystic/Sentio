@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 
-from routers import auth, users, biases, assessments, journal, insights, therapists, ai, admin
+from routers import auth, users, biases, assessments, journal, insights, therapists, ai, admin, community
 from services.scheduler import start_scheduler, scheduler
 
 logging.basicConfig(
@@ -55,6 +55,7 @@ app.include_router(insights.router, prefix="/insights", tags=["insights"])
 app.include_router(therapists.router, prefix="/therapists", tags=["therapists"])
 app.include_router(ai.router, prefix="/ai", tags=["ai"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
+app.include_router(community.router, prefix="/community", tags=["community"])
 
 
 @app.get("/health")
@@ -74,9 +75,17 @@ async def root():
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    # Starlette's ServerErrorMiddleware fires before CORSMiddleware can add headers
+    # for 500s, so we add them manually here to prevent browser CORS blocks.
+    origin = request.headers.get("origin", "")
+    cors_headers = {}
+    if origin and (origin in origins or "*" in origins):
+        cors_headers["Access-Control-Allow-Origin"] = origin
+        cors_headers["Access-Control-Allow-Credentials"] = "true"
     return JSONResponse(
         status_code=500,
         content={"error": "Internal server error", "detail": "An unexpected error occurred."},
+        headers=cors_headers,
     )
 
 

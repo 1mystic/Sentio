@@ -67,6 +67,25 @@ async def get_bias_profile(authorization: str | None = Header(None)):
     return result.data[0] if result.data else {"bias_scores": {}, "archetype": None}
 
 
+@router.get("/me/badges")
+async def get_my_badges(authorization: str | None = Header(None)):
+    """Return all badges earned by the authenticated user."""
+    from services.badge_engine import BADGE_DEFINITIONS
+    user_id = get_user_id(authorization)
+    supabase = get_supabase()
+    result = supabase.table("user_badges").select("badge_id,awarded_at").eq("user_id", user_id).execute()
+    earned = {r["badge_id"]: r["awarded_at"] for r in (result.data or [])}
+    badges = []
+    for badge_id, definition in BADGE_DEFINITIONS.items():
+        badges.append({
+            "badge_id": badge_id,
+            **definition,
+            "earned": badge_id in earned,
+            "awarded_at": earned.get(badge_id),
+        })
+    return badges
+
+
 @router.get("/me/export")
 async def export_user_data(authorization: str | None = Header(None)):
     """Export all data for the authenticated user as a JSON download."""

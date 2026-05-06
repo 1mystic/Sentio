@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel
 from services.supabase_client import get_supabase
+from services.email_service import send_assessment_complete
+from services.badge_engine import check_and_award_badges
 from routers._auth_helpers import get_user_id
 from routers.journal import _compute_archetype
 import logging
@@ -67,16 +69,17 @@ async def get_assessment(assessment_id: str):
 async def submit_assessment(
     assessment_id: str,
     data: SubmitRequest,
+    background_tasks: BackgroundTasks,
     authorization: str | None = Header(None),
 ):
     """Submit assessment results and store them for the authenticated user."""
     user_id = get_user_id(authorization)
     supabase = get_supabase()
 
-    # Verify the assessment exists
+    # Verify the assessment exists (also fetch title for the completion email)
     check = (
         supabase.table("assessments")
-        .select("id")
+        .select("id,title")
         .eq("id", assessment_id)
         .single()
         .execute()
@@ -148,6 +151,28 @@ async def submit_assessment(
                 ).execute()
     except Exception as e:
         logger.warning(f"Bias profile update after assessment failed (non-blocking): {e}")
+
+    # Fire-and-forget: email confirmation + badge check
+    async def _post_submit_tasks():
+        try:
+            profile_row = supabase.table("profiles").select("email,display_name,full_name").eq("id", user_id).single().execute()
+            profile = profile_row.data or {}
+            email = profile.get("email", "")
+            user_name = profile.get("display_name") or profile.get("full_name") or "there"
+            assessment_title = check.data.get("title", "Assessment") if check.data else "Assessment"
+            overall_score = round(sum(float(v) for v in data.computed_scores.values()) / len(data.computed_scores)) if data.computed_scores else 0
+            archetype_row = supabase.table("user_bias_profiles").select("archetype").eq("user_id", user_id).execute()
+            archetype = (archetype_row.data[0].get("archetype") if archetype_row.data else None)
+            if email:
+                await send_assessment_complete(email, user_name, assessment_title, overall_score, archetype)
+        except Exception as e:
+            logger.warning(f"Post-submit email failed (non-blocking): {e}")
+        try:
+            await check_and_award_badges(user_id, supabase)
+        except Exception as e:
+            logger.warning(f"Badge check after assessment failed (non-blocking): {e}")
+
+    background_tasks.add_task(_post_submit_tasks)
 
     return result.data[0]
 

@@ -65,7 +65,11 @@
             </div>
 
             <!-- Biases detected -->
-            <div v-if="detectedBiases.length" class="bias-list">
+            <div v-if="analysisProcessing" class="no-analysis pending">
+              <Loader :size="14" class="spin-icon-sm" />
+              <p>Analysis is processing… check back shortly.</p>
+            </div>
+            <div v-else-if="detectedBiases.length" class="bias-list">
               <div v-for="bias in detectedBiases" :key="bias.id" class="bias-row">
                 <div class="bias-row-top">
                   <span class="badge badge-lavender">{{ bias.name }}</span>
@@ -77,9 +81,8 @@
                 </router-link>
               </div>
             </div>
-
             <div v-else class="no-analysis">
-              <p>Analysis is processing… check back in a moment.</p>
+              <p>No strong bias patterns detected in this entry.</p>
             </div>
 
             <div class="divider"></div>
@@ -91,8 +94,12 @@
               </div>
               <p class="insight-text">
                 <template v-if="entry.sentiment_score != null">
-                  {{ entry.sentiment_score > 0.2 ? 'Positive' : entry.sentiment_score < -0.2 ? 'Challenging' : 'Neutral' }} tone
-                  ({{ entry.sentiment_score > 0 ? '+' : '' }}{{ (entry.sentiment_score * 100).toFixed(0) }})
+                  <template v-if="entry.sentiment_score > 0.2">Positive tone</template>
+                  <template v-else-if="entry.sentiment_score < -0.2">Challenging tone</template>
+                  <template v-else>Neutral tone</template>
+                  <span v-if="Math.abs(entry.sentiment_score) > 0.05" class="sentiment-val">
+                    ({{ entry.sentiment_score > 0 ? '+' : '' }}{{ (entry.sentiment_score * 100).toFixed(0) }})
+                  </span>
                 </template>
                 <template v-else>Sentiment analysis pending.</template>
               </p>
@@ -140,6 +147,9 @@ const formattedTime = computed(() => {
     hour: 'numeric', minute: '2-digit'
   })
 })
+
+// null → background task hasn't completed; [] → completed, no biases found
+const analysisProcessing = computed(() => entry.value?.detected_biases == null)
 
 // Normalise detected_biases array from the API
 const detectedBiases = computed(() => {
@@ -258,4 +268,7 @@ async function handleDelete() {
 
 .no-analysis { font-size: 13px; color: var(--slate); background: var(--lavender-soft); border-radius: 10px; padding: 14px; line-height: 1.5; }
 .no-analysis p { margin: 0; }
+.no-analysis.pending { display: flex; align-items: center; gap: 8px; }
+.spin-icon-sm { animation: spin 1s linear infinite; color: var(--lavender-deep); flex-shrink: 0; }
+.sentiment-val { opacity: 0.7; font-size: 11px; margin-left: 4px; }
 </style>

@@ -4,6 +4,7 @@ from services.supabase_client import get_supabase
 from services.bias_classifier import classify_biases
 from services.journal_nlp import analyze_journal
 from services.safety import safety
+from services.badge_engine import check_and_award_badges
 from routers._auth_helpers import get_user_id
 import logging
 
@@ -30,7 +31,7 @@ class JournalUpdate(BaseModel):
 # ---------------------------------------------------------------------------
 
 async def _process_entry(entry_id: str, content: str, user_id: str) -> None:
-    """Background task: run bias classification + NLP, persist results."""
+    """Background task: run bias classification + NLP, persist results, check badges."""
     try:
         biases, nlp = await classify_biases(content), await analyze_journal(content)
         supabase = get_supabase()
@@ -44,6 +45,8 @@ async def _process_entry(entry_id: str, content: str, user_id: str) -> None:
 
         if biases:
             _update_bias_profile(user_id, biases)
+
+        await check_and_award_badges(user_id, supabase)
     except Exception as e:
         logger.error(f"Background entry processing error (entry={entry_id}): {e}")
 

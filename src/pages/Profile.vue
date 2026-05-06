@@ -113,6 +113,28 @@
           </div>
         </div>
 
+        <!-- Badges -->
+        <div class="card settings-card">
+          <div class="section-header">
+            <span class="section-title">Badges</span>
+          </div>
+          <div v-if="badgesLoading" class="badges-loading">Loading badges…</div>
+          <div v-else class="badges-grid">
+            <div
+              v-for="badge in allBadges"
+              :key="badge.badge_id"
+              class="badge-pill"
+              :class="{ locked: !badge.earned }"
+              :title="badge.earned ? badge.description : 'How to earn: ' + badge.description"
+            >
+              <span class="badge-icon">{{ badge.icon }}</span>
+              <span class="badge-name">{{ badge.name }}</span>
+              <span v-if="badge.earned" class="badge-tick">✓</span>
+            </div>
+          </div>
+          <p v-if="!badgesLoading && !allBadges.length" style="font-size:13px;color:var(--slate);">Complete activities to earn badges.</p>
+        </div>
+
         <!-- Privacy & Data -->
         <div class="card settings-card">
           <div class="section-header">
@@ -203,6 +225,10 @@ const passwordSuccess = ref(false)
 // Accurate assessment completion count
 const userResultsMap = ref({})
 
+// Badges
+const allBadges = ref([])
+const badgesLoading = ref(true)
+
 onMounted(async () => {
   const profile = await userStore.fetchProfile()
   if (profile) {
@@ -220,6 +246,15 @@ onMounted(async () => {
     for (const r of (res.data || [])) map[r.assessment_id] = r
     userResultsMap.value = map
   } catch {}
+  // Load badges
+  try {
+    const res = await apiClient.get('/users/me/badges')
+    allBadges.value = res.data || []
+  } catch {
+    allBadges.value = []
+  } finally {
+    badgesLoading.value = false
+  }
 })
 
 const initials = computed(() => {
@@ -435,4 +470,20 @@ function showToast(msg) {
 
 /* Toast */
 .toast { position: fixed; bottom: 32px; right: 32px; background: var(--plum); color: white; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 32px rgba(53,43,56,0.18); z-index: 1000; }
+
+/* Badges */
+.badges-loading { font-size: 13px; color: var(--slate); }
+.badges-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 99px;
+  background: var(--lavender); color: var(--plum);
+  font-size: 13px; font-weight: 600; cursor: default;
+  transition: transform 0.12s;
+}
+.badge-pill:hover { transform: translateY(-1px); }
+.badge-pill.locked { background: var(--lavender-soft); color: var(--slate); opacity: 0.6; }
+.badge-icon { font-size: 15px; line-height: 1; }
+.badge-name { font-size: 12px; }
+.badge-tick { font-size: 11px; color: #059669; font-weight: 700; }
 </style>

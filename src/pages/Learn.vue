@@ -432,7 +432,7 @@ function closeExercise() {
 </script>
 
 <style scoped>
-.learn-page { padding: 32px 40px; max-width: 1200px; width: 100%; box-sizing: border-box; }
+.learn-page { width: 100%; box-sizing: border-box; }
 
 .page-header { margin-bottom: 24px; }
 .page-title { font-size: 28px; font-weight: 800; color: var(--plum); margin: 0 0 6px; }
