@@ -32,7 +32,8 @@
       "PowerShell(Set-Location \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\"; Get-ChildItem node_modules\\\\.bin\\\\ | Where-Object { $_.Name -match \"tsc\" } | Select-Object -First 5)",
       "Bash(python -m py_compile sentio-api/routers/socratic.py)",
       "Bash(node --input-type=module --eval ' *)",
-      "Bash(node -e \"import\\('marked'\\).then\\(m => console.log\\('marked OK, version:', m.marked.defaults\\)\\)\")"
+      "Bash(node -e \"import\\('marked'\\).then\\(m => console.log\\('marked OK, version:', m.marked.defaults\\)\\)\")",
+      "Read(//g/Users/athar/.claude/projects/g--synced-pc-1-Work-projects-Sentio/memory/**)"
     ]
   }
 }
