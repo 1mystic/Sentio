@@ -66,7 +66,7 @@
 
         <div class="entry-body">
           <h3 class="entry-title">{{ entry.title }}</h3>
-          <p class="entry-excerpt">{{ entry.content.slice(0, 100) }}{{ entry.content.length > 100 ? '…' : '' }}</p>
+          <p class="entry-excerpt">{{ stripMd(entry.content, 110) }}</p>
         </div>
 
         <div class="entry-footer">
@@ -115,6 +115,18 @@ const tabs = ['All', 'This Week', 'This Month']
 onMounted(() => {
   journalStore.fetchEntries({ limit: 50 })
 })
+
+function stripMd(text, maxLen = 110) {
+  const plain = text
+    .replace(/#{1,6}\s*/g, '')       // headings
+    .replace(/\*\*(.+?)\*\*/g, '$1') // bold
+    .replace(/_(.+?)_/g, '$1')       // italic
+    .replace(/`{1,3}[^`]*`{1,3}/g, '') // code
+    .replace(/^\s*[-*>]\s*/gm, '')   // bullets / blockquotes
+    .replace(/\n+/g, ' ')
+    .trim()
+  return plain.length > maxLen ? plain.slice(0, maxLen) + '…' : plain
+}
 
 const BIAS_NAMES = {
   confirmation_bias: 'Confirmation Bias',

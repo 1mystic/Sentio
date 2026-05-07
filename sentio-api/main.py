@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 
-from routers import auth, users, biases, assessments, journal, insights, therapists, ai, admin, community
+from routers import auth, users, biases, assessments, journal, insights, therapists, ai, admin, community, socratic
 from services.scheduler import start_scheduler, scheduler
 
 logging.basicConfig(
@@ -66,6 +66,7 @@ app.include_router(therapists.router, prefix="/therapists", tags=["therapists"])
 app.include_router(ai.router, prefix="/ai", tags=["ai"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
 app.include_router(community.router, prefix="/community", tags=["community"])
+app.include_router(socratic.router, prefix="/socratic", tags=["socratic"])
 
 
 @app.get("/health")

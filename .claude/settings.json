@@ -21,7 +21,18 @@
       "Bash(Out-Null)",
       "Bash(Write-Output \"ok\")",
       "Bash(python3 -c \"import json; data=json.load\\(open\\('g:/synced-pc/1_Work/projects/Sentio/sentio-api/scripts/therapists_themindclan.json'\\)\\); print\\(f'{len\\(data\\)} entries'\\); print\\(json.dumps\\(data[:2], indent=2, ensure_ascii=False\\)\\)\")",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(Get-ChildItem -Path \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\" -Directory)",
+      "Bash(python -c \"from routers.socratic import router; print\\('socratic router OK'\\)\")",
+      "Bash(python -m py_compile routers/socratic.py)",
+      "Bash(python -m py_compile sentio-api/services/claude_service.py)",
+      "Bash(python -m py_compile sentio-api/main.py)",
+      "Bash(npx tsc *)",
+      "Bash(node_modules/.bin/vue-tsc --noEmit)",
+      "PowerShell(Set-Location \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\"; Get-ChildItem node_modules\\\\.bin\\\\ | Where-Object { $_.Name -match \"tsc\" } | Select-Object -First 5)",
+      "Bash(python -m py_compile sentio-api/routers/socratic.py)",
+      "Bash(node --input-type=module --eval ' *)",
+      "Bash(node -e \"import\\('marked'\\).then\\(m => console.log\\('marked OK, version:', m.marked.defaults\\)\\)\")"
     ]
   }
 }

@@ -5,6 +5,16 @@
       <p class="page-sub">Deepen your understanding of cognitive biases with curated guides and exercises.</p>
     </div>
 
+    <!-- Socratic mode quick link -->
+    <router-link to="/ai-guide?mode=socratic" class="socratic-banner">
+      <div class="socratic-banner-icon">🧠</div>
+      <div class="socratic-banner-body">
+        <div class="socratic-banner-title">Try Socratic learning mode</div>
+        <div class="socratic-banner-sub">Build genuine understanding through guided Socratic dialogue — not just answers.</div>
+      </div>
+      <div class="socratic-banner-cta">Start session →</div>
+    </router-link>
+
     <!-- Category filter -->
     <div class="filter-row">
       <button
@@ -437,6 +447,21 @@ function closeExercise() {
 .page-header { margin-bottom: 24px; }
 .page-title { font-size: 28px; font-weight: 800; color: var(--plum); margin: 0 0 6px; }
 .page-sub { font-size: 15px; color: var(--text-muted); margin: 0; }
+
+/* Socratic banner */
+.socratic-banner {
+  display: flex; align-items: center; gap: 16px;
+  background: linear-gradient(135deg, #352b38 0%, #4a3550 100%);
+  border-radius: 16px; padding: 18px 20px;
+  text-decoration: none; margin-bottom: 28px;
+  transition: all 0.2s;
+}
+.socratic-banner:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(53,43,56,0.24); }
+.socratic-banner-icon { font-size: 28px; flex-shrink: 0; }
+.socratic-banner-body { flex: 1; min-width: 0; }
+.socratic-banner-title { font-size: 15px; font-weight: 700; color: white; margin-bottom: 3px; }
+.socratic-banner-sub { font-size: 13px; color: rgba(218,216,249,0.8); line-height: 1.4; }
+.socratic-banner-cta { font-size: 13px; font-weight: 700; color: var(--lavender); white-space: nowrap; flex-shrink: 0; }
 
 /* Filters */
 .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }

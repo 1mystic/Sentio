@@ -117,6 +117,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useJournalStore } from '@/stores/journal.js'
 import { Sparkles, ArrowLeft, ArrowRight, Trash2, Lightbulb, Loader } from 'lucide-vue-next'
+import { marked } from 'marked'
+
+marked.setOptions({ breaks: true, gfm: true })
 
 const route = useRoute()
 const router = useRouter()
@@ -169,10 +172,7 @@ const emotions = computed(() => entry.value?.themes || [])
 
 const formattedContent = computed(() => {
   if (!entry.value?.content) return ''
-  return entry.value.content
-    .split('\n\n')
-    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-    .join('')
+  return marked.parse(entry.value.content)
 })
 
 async function handleDelete() {
@@ -232,8 +232,21 @@ async function handleDelete() {
 /* Content */
 .content-card { padding: 32px; }
 .entry-content { font-size: 15px; line-height: 1.8; color: var(--plum); }
-.entry-content :deep(p) { margin: 0 0 16px; }
+.entry-content :deep(p) { margin: 0 0 14px; }
 .entry-content :deep(p:last-child) { margin-bottom: 0; }
+.entry-content :deep(h1) { font-size: 22px; font-weight: 800; margin: 0 0 14px; color: var(--plum); }
+.entry-content :deep(h2) { font-size: 18px; font-weight: 700; margin: 24px 0 10px; color: var(--plum); border-bottom: 1px solid var(--lavender-soft); padding-bottom: 6px; }
+.entry-content :deep(h3) { font-size: 15px; font-weight: 700; margin: 18px 0 8px; color: var(--plum); }
+.entry-content :deep(strong) { font-weight: 700; }
+.entry-content :deep(em) { font-style: italic; }
+.entry-content :deep(ul), .entry-content :deep(ol) { padding-left: 22px; margin: 0 0 14px; }
+.entry-content :deep(li) { margin-bottom: 4px; }
+.entry-content :deep(blockquote) { border-left: 3px solid var(--lavender-deep); padding: 4px 16px; margin: 12px 0; color: var(--slate); font-style: italic; background: var(--lavender-soft); border-radius: 0 8px 8px 0; }
+.entry-content :deep(code) { font-family: 'Courier New', monospace; font-size: 13px; background: var(--lavender-soft); color: var(--plum); padding: 2px 6px; border-radius: 4px; }
+.entry-content :deep(pre) { background: #2d2b3a; border-radius: 10px; padding: 18px; overflow-x: auto; margin: 14px 0; }
+.entry-content :deep(pre code) { background: none; color: #e2e0ff; padding: 0; font-size: 13px; line-height: 1.6; }
+.entry-content :deep(hr) { border: none; border-top: 1px solid var(--lavender); margin: 24px 0; }
+.entry-content :deep(a) { color: var(--lavender-deep); text-decoration: underline; }
 .entry-content :deep(.bias-mark) { background: var(--lavender); color: var(--plum); padding: 2px 4px; border-radius: 4px; font-style: normal; cursor: help; border-bottom: 2px solid var(--lavender-deep); }
 
 /* Action Bar */

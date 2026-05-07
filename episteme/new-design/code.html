@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Episteme - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#674bb5",
+                        "secondary": "#006c4b",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary-fixed": "#400010",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-tertiary-container": "#6e0022",
+                        "on-secondary-fixed": "#002114",
+                        "on-surface-variant": "#494552",
+                        "on-surface": "#0b1c30",
+                        "primary": "#674bb5",
+                        "secondary-container": "#64f9bc",
+                        "on-tertiary-fixed-variant": "#891933",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#ffb2b9",
+                        "surface-container-high": "#dce9ff",
+                        "secondary-fixed": "#68fcbf",
+                        "primary-fixed": "#e8ddff",
+                        "inverse-primary": "#cebdff",
+                        "background": "#f8f9ff",
+                        "on-secondary-container": "#00714e",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-dim": "#cbdbf5",
+                        "on-background": "#0b1c30",
+                        "on-primary-fixed": "#21005e",
+                        "on-tertiary": "#ffffff",
+                        "outline": "#7a7583",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "tertiary-container": "#fa7084",
+                        "surface-variant": "#d3e4fe",
+                        "outline-variant": "#cac4d4",
+                        "tertiary-fixed": "#ffdadc",
+                        "primary-container": "#a78bfa",
+                        "on-primary-fixed-variant": "#4f319c",
+                        "surface": "#f8f9ff",
+                        "surface-bright": "#f8f9ff",
+                        "secondary-fixed-dim": "#45dfa4",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#cebdff",
+                        "on-primary-container": "#3c1989",
+                        "tertiary": "#a93349"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "24px",
+                        "xl": "80px",
+                        "xs": "4px",
+                        "lg": "48px",
+                        "container-padding": "32px",
+                        "gutter": "24px",
+                        "sm": "12px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-lg": ["14px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex overflow-hidden">
+<!-- SideNavBar Component -->
+<nav class="fixed left-0 top-0 w-72 flex flex-col py-8 gap-2 bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-r-[48px] h-[calc(100vh-32px)] my-4 ml-4 shadow-2xl shadow-violet-500/10 z-40 hidden md:flex">
+<!-- Header -->
+<div class="px-8 mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl shadow-md shadow-primary/30">
+                    E
+                </div>
+<div>
+<h1 class="text-xl font-bold text-violet-600 dark:text-violet-300">Episteme</h1>
+<p class="font-label-sm text-label-sm text-slate-500">Statistics Gallery</p>
+</div>
+</div>
+</div>
+<!-- CTA Button -->
+<div class="px-6 mb-8">
+<button class="w-full bg-primary text-on-primary font-label-lg text-label-lg py-3 px-6 rounded-full shadow-lg shadow-primary/20 hover:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                New Session
+            </button>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-2">
+<!-- Active Tab: Dashboard -->
+<a class="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-100 rounded-full mx-4 py-3 px-6 font-semibold flex items-center gap-3 font-['Plus_Jakarta_Sans'] text-base scale-98 duration-200 ease-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">space_dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="text-slate-500 dark:text-slate-400 mx-4 py-3 px-6 flex items-center gap-3 font-['Plus_Jakarta_Sans'] text-base hover:bg-violet-50 dark:hover:bg-violet-800/30 rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Knowledge Map</span>
+</a>
+<a class="text-slate-500 dark:text-slate-400 mx-4 py-3 px-6 flex items-center gap-3 font-['Plus_Jakarta_Sans'] text-base hover:bg-violet-50 dark:hover:bg-violet-800/30 rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">auto_graph</span>
+<span>Clarity Score</span>
+</a>
+<a class="text-slate-500 dark:text-slate-400 mx-4 py-3 px-6 flex items-center gap-3 font-['Plus_Jakarta_Sans'] text-base hover:bg-violet-50 dark:hover:bg-violet-800/30 rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">school</span>
+<span>Practice</span>
+</a>
+</div>
+<!-- Side Panel Widgets -->
+<div class="px-6 mt-auto flex flex-col gap-6">
+<!-- Clarity Score Gauge -->
+<div class="bg-white/60 rounded-lg p-6 flex flex-col items-center justify-center relative overflow-hidden group hover:bg-white/80 transition-colors cursor-pointer">
+<div class="absolute inset-0 bg-gradient-to-br from-primary-fixed to-secondary-container opacity-20 group-hover:opacity-30 transition-opacity"></div>
+<h3 class="font-label-sm text-label-sm text-on-surface-variant mb-4 uppercase tracking-wider z-10 relative">Clarity Score</h3>
+<div class="relative w-24 h-24 flex items-center justify-center z-10">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<!-- Background Circle -->
+<path class="text-surface-container stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3"></path>
+<!-- Progress Circle (27%) -->
+<path class="text-secondary-container stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="27, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-md text-headline-md text-primary font-bold">27</span>
+</div>
+</div>
+<p class="font-label-sm text-label-sm text-primary mt-3 z-10 relative flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +3 this week
+                 </p>
+</div>
+<!-- Knowledge Map Preview -->
+<div class="bg-white/60 rounded-lg p-4 relative overflow-hidden group cursor-pointer hover:bg-white/80 transition-colors">
+<div class="absolute inset-0 bg-gradient-to-tr from-surface-container to-surface-variant opacity-40"></div>
+<h3 class="font-label-sm text-label-sm text-on-surface-variant mb-3 uppercase tracking-wider relative z-10">Current Focus</h3>
+<div class="relative z-10 flex flex-wrap gap-2">
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-sm text-label-sm shadow-sm">Distributions</span>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-sm text-label-sm shadow-sm">P-Values</span>
+<span class="bg-surface-dim text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-label-sm shadow-sm">ANOVA</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Canvas Area -->
+<main class="flex-1 flex flex-col ml-0 md:ml-[320px] relative w-full h-screen">
+<!-- TopAppBar Component -->
+<header class="docked full-width top-0 z-50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border-b border-white/20 dark:border-white/10 shadow-xl shadow-violet-500/5 flex justify-between items-center w-full px-12 py-4">
+<!-- Mobile Brand Logo (Visible only on mobile) -->
+<div class="md:hidden text-2xl font-black text-violet-600 dark:text-violet-300 italic">
+                Episteme
+            </div>
+<!-- Empty div for flex layout on desktop to push items to right -->
+<div class="hidden md:block"></div>
+<!-- Top Navigation Links (Desktop) -->
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-['Plus_Jakarta_Sans'] text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-300 transition-colors scale-95 active:opacity-80 transition-all" href="#">Explore</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-300 transition-colors scale-95 active:opacity-80 transition-all" href="#">Insights</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-300 transition-colors scale-95 active:opacity-80 transition-all" href="#">Library</a>
+</nav>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="text-slate-500 hover:text-primary transition-colors relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-tertiary-container rounded-full border-2 border-white"></span>
+</button>
+<button class="text-slate-500 hover:text-primary transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 hover:border-primary transition-colors">
+<img alt="User avatar with soft lavender glow" class="w-full h-full object-cover" data-alt="close up portrait of a young woman with soft natural lighting and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPj6vYzoO7j3gGJ5GqcWQfu0pzVPr2b_JD9xVtxZXK7BckBxl98JDkfdx8XyS5VhnCuKahsaWbU_oWviDT3CHQRMeUAmQxrmWkQp0enKfspPI6ulUbkir1A93ph9UPrmUod5hGEaF68uhswvq2uiV1eRI4N6jk_rNRLS7jNTx2FaZ3UtMx_PeCE6wT4A80UJ1jbF7c7vi-owbv7oOYL8lIeMyVifX4r0jWEFCZbq8Z9WTtWJczEE99mCYVQ-PaLDNMAbeij1hXbYk"/>
+</button>
+</div>
+</header>
+<!-- Chat Area -->
+<div class="flex-1 overflow-y-auto p-8 flex flex-col gap-8 pb-32">
+<!-- AI Message -->
+<div class="flex gap-4 max-w-3xl">
+<div class="w-10 h-10 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-white shadow-md shadow-primary/20">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<div class="bg-white/80 backdrop-blur-md rounded-[24px] rounded-tl-sm p-6 shadow-sm border border-white/50 text-on-surface">
+<p class="font-body-md text-body-md mb-4">Let's look at the relationship between your clarity score and your practice time. In statistics, this is called <span class="bg-primary-container/30 text-on-primary-container px-2 py-0.5 rounded-md font-semibold cursor-pointer hover:bg-primary-container/50 transition-colors">correlation</span>.</p>
+<p class="font-body-md text-body-md">Are you ready to dive into how we measure it?</p>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex gap-4 max-w-3xl self-end">
+<div class="bg-surface-container rounded-[24px] rounded-tr-sm p-6 shadow-sm border border-white/50 text-on-surface">
+<p class="font-body-md text-body-md">Yes, but can we keep it simple? Formulas usually confuse me.</p>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="close up portrait of a young woman with soft natural lighting and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiMll-KwahKWuUsLFpJhWjftDFuOstCwjdJXXWs-rrk54GKjq8zcgAMFAHNTa_TIAamu_HMnQ5FE39qYlEeIk76SxnsvAjzN62tJTvKQxfEzA6nxUcT2-ospHZVNACCQcZIy1P4qF_a8yzbLdbhL8rclFHjjzIKR4XyGZrj4ueqOiNDQOfFPVhfjn-bVaaRm51E72LhoyQA9Pv2D_r3vhKlFeh9vUjf5vsumuVIlOpIdBzKSLj9HArQgEPhFunl_EXgdx7kiW8kz4"/>
+</div>
+</div>
+<!-- AI Message with Concept Card -->
+<div class="flex gap-4 max-w-3xl">
+<div class="w-10 h-10 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-white shadow-md shadow-primary/20">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<div class="bg-white/80 backdrop-blur-md rounded-[24px] rounded-tl-sm p-6 shadow-sm border border-white/50 text-on-surface w-full">
+<p class="font-body-md text-body-md mb-6">Absolutely! Let's start with a visual metaphor before looking at any math.</p>
+<!-- Concept Card (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-surface-dim/50 rounded-xl p-5 border border-white/40 hover:shadow-md transition-shadow cursor-pointer">
+<div class="w-12 h-12 bg-secondary-container text-on-secondary-container rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">scatter_plot</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-on-surface mb-2">The Scatter Plot</h4>
+<p class="font-body-md text-[14px] text-on-surface-variant leading-snug">Imagine throwing pebbles on a grid. Do they form a line pointing up, down, or just a messy cloud?</p>
+</div>
+<div class="bg-primary-fixed/50 rounded-xl p-5 border border-white/40 hover:shadow-md transition-shadow cursor-pointer">
+<div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mb-4 shadow-sm shadow-primary/30">
+<span class="material-symbols-outlined">straighten</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-on-surface mb-2">Pearson's r</h4>
+<p class="font-body-md text-[14px] text-on-surface-variant leading-snug">A simple score from -1 to 1 that tells us how tightly those pebbles hug a straight line.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex gap-4 max-w-3xl self-end">
+<div class="bg-surface-container rounded-[24px] rounded-tr-sm p-6 shadow-sm border border-white/50 text-on-surface">
+<p class="font-body-md text-body-md">Okay, the pebbles analogy helps. What if they form a messy cloud?</p>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="close up portrait of a young woman with soft natural lighting and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgrWQyFELiGS5WAyFeNqDW0qX9w8VVXEftLnjU3GKW0hicenC7ZLh_bgQ34UxuxU6OC_ZVwwCQiAVrUOhu5o9FuRBapdsnSFlDyMnfyoePGY3cGU5kSrSCI1odIh4SNqqYA4YPMLX1aO1GXExYuD5xx0ONG_13OAxOjgoT3B_gQDy2GGHpmrO7gKvU_qGNb1S6J3dsKMnwA_AIftbrcq8F_FEzodqIdLCTWwhXnOJF_XBQt8rxrwUB_DDUlDq-ipC1T7EFxVZsQrU"/>
+</div>
+</div>
+<!-- Typing Indicator -->
+<div class="flex gap-4 max-w-3xl">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex-shrink-0 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</div>
+</div>
+</div>
+<!-- Input Area (Fixed to bottom) -->
+<div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-background via-background to-transparent pt-12">
+<div class="max-w-4xl mx-auto relative group">
+<input class="w-full bg-white/80 backdrop-blur-xl border-2 border-surface-variant focus:border-primary/50 focus:ring-4 focus:ring-primary/10 rounded-full py-5 pl-8 pr-16 shadow-lg shadow-primary/5 font-body-md text-body-md placeholder:text-on-surface-variant/50 transition-all outline-none" placeholder="What do you want to understand today?" type="text"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-primary hover:bg-surface-tint text-white rounded-full flex items-center justify-center shadow-md shadow-primary/20 transition-transform active:scale-95 group-focus-within:bg-surface-tint">
+<span class="material-symbols-outlined">arrow_upward</span>
+</button>
+</div>
+<div class="max-w-4xl mx-auto mt-4 flex justify-center gap-2 flex-wrap">
+<button class="px-4 py-1.5 bg-surface-variant/50 hover:bg-surface-variant text-on-surface-variant rounded-full font-label-sm text-label-sm transition-colors border border-outline-variant/30">Explain ANOVA</button>
+<button class="px-4 py-1.5 bg-surface-variant/50 hover:bg-surface-variant text-on-surface-variant rounded-full font-label-sm text-label-sm transition-colors border border-outline-variant/30">Practice P-Values</button>
+<button class="px-4 py-1.5 bg-surface-variant/50 hover:bg-surface-variant text-on-surface-variant rounded-full font-label-sm text-label-sm transition-colors border border-outline-variant/30">Review Last Session</button>
+</div>
+</div>
+</main>
+</body></html>
