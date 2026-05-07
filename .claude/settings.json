@@ -16,7 +16,12 @@
       "Bash(python -c ' *)",
       "Bash(.venv\\\\Scripts\\\\pip install *)",
       "Bash(dir \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\")",
-      "Bash(Test-Path \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\\\\sentio-api\\\\Dockerfile\")"
+      "Bash(Test-Path \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\\\\sentio-api\\\\Dockerfile\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"g:\\\\synced-pc\\\\1_Work\\\\projects\\\\Sentio\\\\sentio-api\\\\scripts\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Output \"ok\")",
+      "Bash(python3 -c \"import json; data=json.load\\(open\\('g:/synced-pc/1_Work/projects/Sentio/sentio-api/scripts/therapists_themindclan.json'\\)\\); print\\(f'{len\\(data\\)} entries'\\); print\\(json.dumps\\(data[:2], indent=2, ensure_ascii=False\\)\\)\")",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

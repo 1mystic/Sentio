@@ -16,24 +16,45 @@ class BookingRequest(BaseModel):
 
 @router.get("/")
 async def list_therapists(
-    language: Optional[str] = Query(None, description="Filter by language code, e.g. 'en'"),
+    language: Optional[str] = Query(None, description="Filter by language, e.g. 'Hindi'"),
     specialization: Optional[str] = Query(None, description="Filter by specialization keyword"),
     format_type: Optional[str] = Query(
         None, alias="format", description="Filter by session format: online/in-person/both"
     ),
+    lat: Optional[float] = Query(None, description="User latitude for nearest-first ordering"),
+    lng: Optional[float] = Query(None, description="User longitude for nearest-first ordering"),
+    radius_km: float = Query(50, description="Radius in km when lat/lng provided"),
 ):
-    """Return all verified therapists, with optional preference-based filtering.
-
-    Note: filtering is done in Python after fetching because Supabase PostgREST
-    doesn't support native array-contains filtering without custom RPC in all versions.
+    """Return verified therapists. Supports language/specialization/format filters.
+    When lat+lng are provided, returns therapists nearest to that location first
+    (those without coordinates are appended at the end).
     """
     supabase = get_supabase()
-    result = supabase.table("therapists").select("*").eq("verified", True).execute()
-    therapists: list[dict] = result.data or []
+
+    if lat is not None and lng is not None:
+        # Use the haversine RPC for nearest therapists
+        try:
+            result = supabase.rpc(
+                "get_nearest_therapists",
+                {"user_lat": lat, "user_lng": lng, "radius_km": radius_km, "max_rows": 100},
+            ).execute()
+            therapists: list[dict] = result.data or []
+        except Exception:
+            # Fallback to full list if RPC not installed
+            result = supabase.table("therapists").select("*").eq("verified", True).execute()
+            therapists = result.data or []
+    else:
+        result = supabase.table("therapists").select("*").eq("verified", True).execute()
+        therapists = result.data or []
+
+    # Normalise session_format to a lowercase string for filtering
+    def get_format(t: dict) -> str:
+        return (t.get("session_format") or "").lower()
 
     if language:
         therapists = [
-            t for t in therapists if language in (t.get("languages") or [])
+            t for t in therapists
+            if language.lower() in [lang.lower() for lang in (t.get("languages") or [])]
         ]
     if specialization:
         therapists = [
@@ -41,8 +62,10 @@ async def list_therapists(
             if specialization.lower() in [s.lower() for s in (t.get("specializations") or [])]
         ]
     if format_type:
+        norm = format_type.lower()
         therapists = [
-            t for t in therapists if format_type in (t.get("session_formats") or [])
+            t for t in therapists
+            if norm in get_format(t) or get_format(t) in norm
         ]
 
     return therapists
@@ -74,13 +97,12 @@ async def request_connection(
 ):
     """Submit a connection request to a therapist.
 
-    Sentio does not intermediate the clinical relationship — this simply
-    records the user's intent and passes contact details accordingly.
+    Sentio does not intermediate the clinical relationship — this records
+    the user's intent; actual booking happens on the therapist's source platform.
     """
     user_id = get_user_id(authorization)
     supabase = get_supabase()
 
-    # Verify therapist exists and is verified
     check = (
         supabase.table("therapists")
         .select("id,verified")

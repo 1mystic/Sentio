@@ -134,7 +134,7 @@
                 :class="{ active: selectedAvail !== 'Any time' }"
                 @click.stop="toggleDropdown('avail')"
               >
-                {{ selectedAvail !== 'Any time' ? selectedAvail : 'Availability' }}
+                {{ selectedAvail !== 'Any time' ? 'Accepting' : 'Availability' }}
                 <ChevronDown :size="12" class="chip-arrow" :class="{ rotated: activeDropdown === 'avail' }" />
               </button>
               <div v-if="activeDropdown === 'avail'" class="chip-panel" @click.stop>
@@ -183,23 +183,23 @@
               <span v-for="spec in t.specializations" :key="spec" class="badge badge-lavender">{{ spec }}</span>
             </div>
             <div class="therapist-stats">
-              <span class="stat"><Star :size="12" /> {{ t.rating }}</span>
-              <span class="stat"><Users :size="12" /> {{ t.clients }}+ clients</span>
-              <span class="stat"><Calendar :size="12" /> {{ t.experience }} yrs exp</span>
+              <span v-if="t.city" class="stat"><MapPin :size="12" /> {{ t.city }}</span>
+              <span v-if="t.experience" class="stat"><Calendar :size="12" /> {{ t.experience }}</span>
             </div>
             <div class="avail-row">
               <span class="avail-dot" :class="{ available: t.available }"></span>
               <span class="avail-label" :class="{ available: t.available }">
-                {{ t.available ? 'Available this week' : 'Fully booked' }}
+                {{ t.available ? 'Accepting clients' : 'Not accepting' }}
               </span>
             </div>
             <div class="price-row">
-              <span class="price">₹{{ t.price }}/session</span>
+              <span class="price">{{ t.price ? '₹' + t.price + '/session' : 'Fee on request' }}</span>
               <span class="mode-badge">{{ t.mode }}</span>
             </div>
             <div class="card-actions">
               <router-link :to="`/therapists/${t.id}`" class="btn btn-ghost btn-sm">View Profile</router-link>
-              <router-link :to="`/therapists/${t.id}`" class="btn btn-primary btn-sm">Book Now</router-link>
+              <a v-if="t.source_url" :href="t.source_url" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Connect ↗</a>
+              <router-link v-else :to="`/therapists/${t.id}`" class="btn btn-primary btn-sm">Book Now</router-link>
             </div>
           </div>
         </div>
@@ -217,7 +217,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTherapistStore } from '@/stores/therapist.js'
-import { Star, Users, Calendar, CheckCircle, Search, ChevronDown } from 'lucide-vue-next'
+import { MapPin, Calendar, CheckCircle, Search, ChevronDown } from 'lucide-vue-next'
 
 const therapistStore = useTherapistStore()
 
@@ -246,10 +246,10 @@ function closeDropdowns() {
   activeDropdown.value = null
 }
 
-const specializations = ['CBT', 'ACT', 'DBT', 'Mindfulness', 'Trauma', 'ADHD']
+const specializations = ['CBT', 'ACT', 'DBT', 'Mindfulness', 'Trauma', 'ADHD', 'Anxiety', 'Depression', 'OCD', 'Relationships']
 const modes = ['All', 'Online', 'In-person', 'Both']
-const languages = ['English', 'Hindi', 'Telugu', 'Tamil', 'Bengali']
-const availabilityOptions = ['Any time', 'This week', 'This month']
+const languages = ['English', 'Hindi', 'Telugu', 'Tamil', 'Bengali', 'Kannada', 'Malayalam', 'Marathi', 'Punjabi']
+const availabilityOptions = ['Any time', 'Accepting clients']
 
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #9b94e8, #dad8f9)',
@@ -261,12 +261,12 @@ const AVATAR_GRADIENTS = [
 ]
 
 const FALLBACK_THERAPISTS = [
-  { id: 1, name: 'Dr. Priya Sharma', initials: 'PS', credentials: 'M.Sc. Clinical Psych, NIMHANS', specializations: ['CBT', 'Anxiety', 'Decision Patterns'], rating: 4.9, clients: 140, experience: 8, price: 900, mode: 'online', available: true },
-  { id: 2, name: 'Dr. Arjun Mehta', initials: 'AM', credentials: 'Ph.D. Psychology, IIT Bombay', specializations: ['ACT', 'Cognitive Biases', 'Performance'], rating: 4.8, clients: 95, experience: 6, price: 800, mode: 'both', available: true },
-  { id: 3, name: 'Sneha Krishnan', initials: 'SK', credentials: 'M.Phil. Psychotherapy, DU', specializations: ['Mindfulness', 'Stress', 'Relationships'], rating: 4.7, clients: 80, experience: 5, price: 650, mode: 'online', available: false },
-  { id: 4, name: 'Dr. Rohan Patel', initials: 'RP', credentials: 'M.D. Psychiatry, AIIMS', specializations: ['DBT', 'Trauma', 'ADHD'], rating: 4.9, clients: 200, experience: 12, price: 1200, mode: 'in-person', available: true },
-  { id: 5, name: 'Anika Bose', initials: 'AB', credentials: 'M.A. Counselling, Christ University', specializations: ['CBT', 'Depression', 'Self-worth'], rating: 4.6, clients: 65, experience: 4, price: 600, mode: 'online', available: true },
-  { id: 6, name: 'Dr. Vivek Nair', initials: 'VN', credentials: 'Ph.D. Behavioural Psych, Pune', specializations: ['Behavioural Therapy', 'OCD', 'Phobias'], rating: 4.8, clients: 110, experience: 9, price: 950, mode: 'both', available: false },
+  { id: 'f1', name: 'Dr. Priya Sharma', qualifications: ['M.Sc. Clinical Psych, NIMHANS'], specializations: ['CBT', 'Anxiety', 'Decision Patterns'], experience: '8 years', fee: 900, session_format: 'online', accepting_clients: true, city: 'Bangalore' },
+  { id: 'f2', name: 'Dr. Arjun Mehta', qualifications: ['Ph.D. Psychology, IIT Bombay'], specializations: ['ACT', 'Cognitive Biases', 'Performance'], experience: '6 years', fee: 800, session_format: 'both', accepting_clients: true, city: 'Mumbai' },
+  { id: 'f3', name: 'Sneha Krishnan', qualifications: ['M.Phil. Psychotherapy, DU'], specializations: ['Mindfulness', 'Stress', 'Relationships'], experience: '5 years', fee: 650, session_format: 'online', accepting_clients: false, city: 'Delhi' },
+  { id: 'f4', name: 'Dr. Rohan Patel', qualifications: ['M.D. Psychiatry, AIIMS'], specializations: ['DBT', 'Trauma', 'ADHD'], experience: '12 years', fee: 1200, session_format: 'in-person', accepting_clients: true, city: 'Delhi' },
+  { id: 'f5', name: 'Anika Bose', qualifications: ['M.A. Counselling, Christ University'], specializations: ['CBT', 'Depression', 'Self-worth'], experience: '4 years', fee: 600, session_format: 'online', accepting_clients: true, city: 'Hyderabad' },
+  { id: 'f6', name: 'Dr. Vivek Nair', qualifications: ['Ph.D. Behavioural Psych, Pune'], specializations: ['Behavioural Therapy', 'OCD', 'Phobias'], experience: '9 years', fee: 950, session_format: 'both', accepting_clients: false, city: 'Pune' },
 ]
 
 onMounted(() => {
@@ -281,17 +281,30 @@ onUnmounted(() => {
 function normalizeTherapist(t, idx) {
   const nameParts = (t.name || '').trim().split(' ')
   const initials = nameParts.map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
+
+  // qualifications (new) or credentials (old ARRAY) → display string
+  const quals = t.qualifications?.length ? t.qualifications : (t.credentials || [])
+  const credentials = Array.isArray(quals) ? quals.join(' · ') : (quals || '')
+
+  // session_format (new text) or session_formats (old ARRAY)
+  const rawMode = t.session_format || (t.session_formats?.[0]) || t.mode || 'online'
+  const mode = rawMode.toLowerCase()
+
+  // fee (new int) or price_range (old jsonb) or price (manual)
+  const price = t.fee ?? t.price ?? t.price_range?.min ?? t.price_range?.amount ?? null
+
+  // experience: new text field or old integer
+  const experience = t.experience || (t.experience_years ? `${t.experience_years} years` : null)
+
   return {
     ...t,
     initials: t.initials || initials,
-    credentials: t.credentials || t.qualification || '',
+    credentials,
     specializations: t.specializations || [],
-    rating: t.rating ?? 4.8,
-    clients: t.clients ?? t.client_count ?? 0,
-    experience: t.experience ?? t.years_experience ?? 0,
-    price: t.price ?? t.session_price ?? 0,
-    mode: (t.mode || t.session_format || 'online').toLowerCase(),
-    available: t.available ?? t.accepting_clients ?? false,
+    experience,
+    price,
+    mode,
+    available: t.available ?? t.accepting_clients ?? true,
     gradient: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
   }
 }
@@ -319,7 +332,7 @@ const filteredTherapists = computed(() => {
     if (search.value && !t.name.toLowerCase().includes(search.value.toLowerCase())) return false
     if (selectedSpecs.value.length > 0 && !selectedSpecs.value.some(s => t.specializations.includes(s))) return false
     if (selectedMode.value !== 'All' && t.mode !== selectedMode.value.toLowerCase()) return false
-    if (selectedAvail.value === 'This week' && !t.available) return false
+    if (selectedAvail.value === 'Accepting clients' && !t.available) return false
     return true
   })
 })

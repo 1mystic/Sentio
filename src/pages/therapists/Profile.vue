@@ -6,199 +6,279 @@
       <div class="breadcrumb">
         <router-link to="/therapists" class="bc-link">Therapists</router-link>
         <span class="bc-sep">/</span>
-        <span class="bc-current">{{ therapist.name }}</span>
+        <span class="bc-current">{{ therapist?.name || '…' }}</span>
       </div>
       <router-link to="/therapists" class="btn btn-ghost btn-sm">← Back</router-link>
     </div>
 
-    <!-- Hero Card -->
-    <div class="card hero-card">
-      <div class="hero-left">
-        <div class="hero-avatar" :style="{ background: therapist.gradient }">{{ therapist.initials }}</div>
-        <div class="hero-info">
-          <div class="hero-name-row">
-            <h1 class="hero-name">{{ therapist.name }}</h1>
-            <span class="badge badge-green">✓ Verified</span>
-            <span class="badge badge-green">
-              <span class="avail-dot-sm"></span> Available
-            </span>
-          </div>
-          <div class="hero-creds">{{ therapist.credentials }}</div>
-          <div class="hero-creds">{{ therapist.experience }} years of practice</div>
-        </div>
-      </div>
-      <div class="hero-stats-row">
-        <div class="hero-stat">
-          <span class="hero-stat-val">⭐ {{ therapist.rating }}</span>
-          <span class="hero-stat-label">Rating</span>
-        </div>
-        <div class="hero-stat">
-          <span class="hero-stat-val">{{ therapist.clients }}+</span>
-          <span class="hero-stat-label">Clients</span>
-        </div>
-        <div class="hero-stat">
-          <span class="hero-stat-val">{{ therapist.sessions }}+</span>
-          <span class="hero-stat-label">Sessions</span>
-        </div>
-        <div class="hero-stat">
-          <span class="hero-stat-val">~{{ therapist.responseTime }}h</span>
-          <span class="hero-stat-label">Response Time</span>
-        </div>
-      </div>
-      <div class="hero-actions">
-        <button class="btn btn-primary btn-lg">📅 Book a Session</button>
-        <button class="btn btn-ghost">💬 Message</button>
+    <!-- Loading skeleton -->
+    <div v-if="loading" class="card hero-card skeleton-card">
+      <div class="skel skel-avatar"></div>
+      <div class="skel-info">
+        <div class="skel skel-line skel-w60"></div>
+        <div class="skel skel-line skel-w40"></div>
+        <div class="skel skel-line skel-w80"></div>
       </div>
     </div>
 
-    <!-- 3-col Info Cards -->
-    <div class="info-grid">
-      <div class="card info-card">
-        <div class="info-title">🎓 Education</div>
-        <ul class="info-list">
-          <li v-for="edu in therapist.education" :key="edu">{{ edu }}</li>
-        </ul>
-      </div>
-      <div class="card info-card">
-        <div class="info-title">🧭 Approach</div>
-        <ul class="info-list">
-          <li v-for="a in therapist.approach" :key="a">{{ a }}</li>
-        </ul>
-      </div>
-      <div class="card info-card">
-        <div class="info-title">🌐 Languages</div>
-        <ul class="info-list">
-          <li v-for="l in therapist.languages" :key="l">{{ l }}</li>
-        </ul>
-      </div>
+    <!-- 404 -->
+    <div v-else-if="!therapist" class="card not-found-card">
+      <p>Therapist not found. <router-link to="/therapists" class="bc-link">Browse all therapists →</router-link></p>
     </div>
 
-    <div class="two-col-layout">
-      <div class="left-col">
+    <template v-else>
 
-        <!-- About -->
-        <div class="card about-card">
-          <div class="section-header">
-            <span class="section-title">About</span>
+      <!-- Hero Card -->
+      <div class="card hero-card">
+        <div class="hero-left">
+          <div v-if="therapist.photo_url" class="hero-avatar hero-avatar-img">
+            <img :src="therapist.photo_url" :alt="therapist.name" />
           </div>
-          <p class="about-text">{{ therapist.bio }}</p>
+          <div v-else class="hero-avatar" :style="{ background: gradient }">{{ initials }}</div>
+          <div class="hero-info">
+            <div class="hero-name-row">
+              <h1 class="hero-name">{{ therapist.name }}</h1>
+              <span v-if="therapist.pronouns" class="pronouns-badge">{{ therapist.pronouns }}</span>
+              <span class="badge badge-green">✓ Verified</span>
+              <span v-if="therapist.accepting_clients !== false" class="badge badge-green">
+                <span class="avail-dot-sm"></span> Accepting clients
+              </span>
+            </div>
+            <div v-if="norm.credentials" class="hero-creds">{{ norm.credentials }}</div>
+            <div v-if="norm.experience" class="hero-creds">{{ norm.experience }}</div>
+            <div v-if="therapist.city" class="hero-creds city-line">📍 {{ therapist.city }}</div>
+          </div>
         </div>
 
-        <!-- Specializations -->
-        <div class="card spec-card">
-          <div class="section-header">
-            <span class="section-title">Specializations</span>
+        <div class="hero-stats-row">
+          <div v-if="norm.fee" class="hero-stat">
+            <span class="hero-stat-val">₹{{ norm.fee }}</span>
+            <span class="hero-stat-label">Per session</span>
           </div>
-          <div class="spec-tags">
+          <div v-if="therapist.session_duration" class="hero-stat">
+            <span class="hero-stat-val">{{ therapist.session_duration }}</span>
+            <span class="hero-stat-label">Duration</span>
+          </div>
+          <div v-if="norm.sessionFormat" class="hero-stat">
+            <span class="hero-stat-val capitalize">{{ norm.sessionFormat }}</span>
+            <span class="hero-stat-label">Format</span>
+          </div>
+          <div v-if="therapist.languages?.length" class="hero-stat">
+            <span class="hero-stat-val">{{ therapist.languages.slice(0, 2).join(', ') }}</span>
+            <span class="hero-stat-label">Languages</span>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <a
+            v-if="therapist.source_url"
+            :href="therapist.source_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-primary btn-lg"
+          >
+            Connect via {{ sourceLabel }} ↗
+          </a>
+          <a
+            v-if="therapist.source_url"
+            :href="therapist.source_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-ghost"
+          >
+            View full profile ↗
+          </a>
+        </div>
+
+        <p v-if="therapist.source" class="source-attr">
+          Profile sourced from
+          <a :href="therapist.source_url" target="_blank" rel="noopener noreferrer">{{ sourceLabel }}</a>
+        </p>
+      </div>
+
+      <!-- Info cards: Qualifications, Specializations, Languages -->
+      <div class="info-grid">
+        <div v-if="therapist.qualifications?.length" class="card info-card">
+          <div class="info-title">🎓 Qualifications</div>
+          <ul class="info-list">
+            <li v-for="q in therapist.qualifications" :key="q">{{ q }}</li>
+          </ul>
+        </div>
+        <div v-if="therapist.specializations?.length" class="card info-card">
+          <div class="info-title">🧭 Specializations</div>
+          <div class="spec-tags-inline">
             <span v-for="s in therapist.specializations" :key="s" class="badge badge-lavender">{{ s }}</span>
           </div>
         </div>
+        <div v-if="therapist.languages?.length" class="card info-card">
+          <div class="info-title">🌐 Languages</div>
+          <ul class="info-list">
+            <li v-for="l in therapist.languages" :key="l">{{ l }}</li>
+          </ul>
+        </div>
+      </div>
 
-        <!-- Reviews -->
-        <div class="card reviews-card">
-          <div class="section-header">
-            <span class="section-title">Client Reviews</span>
+      <div class="two-col-layout">
+        <div class="left-col">
+
+          <!-- Bio -->
+          <div v-if="therapist.bio" class="card about-card">
+            <div class="section-header">
+              <span class="section-title">About</span>
+            </div>
+            <p class="about-text">{{ therapist.bio }}</p>
           </div>
-          <div class="reviews-list">
-            <div v-for="review in therapist.reviews" :key="review.id" class="review-item">
-              <div class="review-top">
-                <div class="review-stars">{{ '⭐'.repeat(review.stars) }}</div>
-                <span class="review-date">{{ review.date }}</span>
+
+        </div>
+
+        <div class="right-col">
+
+          <!-- Session Info -->
+          <div class="card session-card">
+            <div class="section-header">
+              <span class="section-title">Session Info</span>
+            </div>
+            <div class="session-rows">
+              <div v-if="norm.fee" class="session-row">
+                <span class="session-label">Fee</span>
+                <span class="session-val price-val">₹{{ norm.fee }}/session</span>
               </div>
-              <p class="review-text">{{ review.text }}</p>
-              <div class="review-author">— {{ review.author }}</div>
+              <div v-if="therapist.session_duration" class="session-row">
+                <span class="session-label">Duration</span>
+                <span class="session-val">{{ therapist.session_duration }}</span>
+              </div>
+              <div v-if="norm.sessionFormat" class="session-row">
+                <span class="session-label">Format</span>
+                <span class="session-val capitalize">{{ norm.sessionFormat }}</span>
+              </div>
+              <div v-if="therapist.city" class="session-row">
+                <span class="session-label">Location</span>
+                <span class="session-val">{{ therapist.city }}</span>
+              </div>
             </div>
           </div>
-        </div>
 
+          <!-- Connect CTA -->
+          <div class="card booking-card">
+            <template v-if="therapist.source_url">
+              <div class="booking-title">Ready to connect?</div>
+              <p class="booking-desc">
+                Booking is handled directly through {{ sourceLabel }}.
+                Click below to view availability and reach out to {{ firstName }}.
+              </p>
+              <a
+                :href="therapist.source_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-primary"
+                style="width: 100%; justify-content: center;"
+              >
+                Connect via {{ sourceLabel }} ↗
+              </a>
+              <p class="booking-note">Opens {{ sourceLabel }} in a new tab</p>
+            </template>
+            <template v-else>
+              <div class="booking-title">Find a therapist</div>
+              <p class="booking-desc">
+                Browse verified therapists on TheMindClan or Practo to book a session directly.
+              </p>
+              <a
+                href="https://themindclan.com/professionals/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-primary"
+                style="width: 100%; justify-content: center;"
+              >
+                Browse TheMindClan ↗
+              </a>
+              <a
+                href="https://www.practo.com/search/doctors?results_type=doctor&q=psychologist&city=Bangalore"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-ghost"
+                style="width: 100%; justify-content: center; margin-top: 8px;"
+              >
+                Browse Practo ↗
+              </a>
+            </template>
+          </div>
+
+        </div>
       </div>
 
-      <div class="right-col">
-
-        <!-- Session Info -->
-        <div class="card session-card">
-          <div class="section-header">
-            <span class="section-title">Session Info</span>
-          </div>
-          <div class="session-rows">
-            <div class="session-row">
-              <span class="session-label">Price</span>
-              <span class="session-val price-val">₹{{ therapist.price }}/session</span>
-            </div>
-            <div class="session-row">
-              <span class="session-label">Duration</span>
-              <span class="session-val">50 minutes</span>
-            </div>
-            <div class="session-row">
-              <span class="session-label">Format</span>
-              <span class="session-val capitalize">{{ therapist.mode }}</span>
-            </div>
-            <div class="session-row">
-              <span class="session-label">Platform</span>
-              <span class="session-val">Google Meet / Zoom</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Booking CTA -->
-        <div class="card booking-card">
-          <div class="booking-title">📅 Schedule a Session</div>
-          <div class="calendar-placeholder">
-            <div class="cal-month">May 2026</div>
-            <div class="cal-grid">
-              <span v-for="d in calDays" :key="d" class="cal-day" :class="{ available: d.avail, selected: d.selected }">{{ d.day }}</span>
-            </div>
-          </div>
-          <button class="btn btn-primary" style="width: 100%;">Confirm Booking</button>
-          <p class="booking-note">You'll receive a confirmation email within 30 minutes</p>
-        </div>
-
-      </div>
-    </div>
-
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useTherapistStore } from '@/stores/therapist.js'
 
-const router = useRouter()
+const route = useRoute()
+const therapistStore = useTherapistStore()
 
-const therapist = ref({
-  id: 1,
-  name: 'Dr. Priya Sharma',
-  initials: 'PS',
-  credentials: 'M.Sc. Clinical Psychology, NIMHANS · Registered Therapist',
-  experience: 8,
-  rating: 4.9,
-  clients: 140,
-  sessions: 1200,
-  responseTime: 2,
-  price: 900,
-  mode: 'online',
-  gradient: 'linear-gradient(135deg, #9b94e8, #dad8f9)',
-  bio: 'Dr. Priya Sharma is a licensed clinical psychologist with over 8 years of experience helping individuals identify and overcome cognitive biases that affect their personal and professional lives. She specializes in CBT and has worked extensively with clients dealing with anxiety, decision-making difficulties, and relationship patterns rooted in cognitive distortions.\n\nHer approach is warm, collaborative, and evidence-based. She believes that awareness is the first step toward lasting change.',
-  education: ['M.Sc. Clinical Psychology — NIMHANS, Bangalore', 'B.A. Psychology — St. Xavier\'s College, Mumbai', 'Certified CBT Practitioner (Beck Institute)'],
-  approach: ['Cognitive Behavioral Therapy (CBT)', 'Acceptance & Commitment Therapy (ACT)', 'Mindfulness-Based Cognitive Therapy', 'Solution-Focused Brief Therapy'],
-  languages: ['English', 'Hindi', 'Marathi'],
-  specializations: ['CBT', 'Anxiety', 'Decision Patterns', 'Cognitive Biases', 'Self-Esteem', 'Work Stress', 'Perfectionism'],
-  reviews: [
-    { id: 1, stars: 5, author: 'Anonymous', date: 'April 2026', text: 'Dr. Sharma has been incredibly insightful. She helped me understand how my confirmation bias was affecting my relationship. Highly recommend!' },
-    { id: 2, stars: 5, author: 'Anonymous', date: 'March 2026', text: 'I\'ve tried multiple therapists but none as skilled at identifying thinking patterns as Dr. Sharma. The CBT techniques she taught me are practical and effective.' },
-    { id: 3, stars: 4, author: 'Anonymous', date: 'February 2026', text: 'Very professional and empathetic. The sessions are well-structured and I always leave with something actionable to practice.' },
-  ]
+const loading = ref(true)
+const therapist = ref(null)
+
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #9b94e8, #dad8f9)',
+  'linear-gradient(135deg, #88c9a0, #d8f9e8)',
+  'linear-gradient(135deg, #e8c56a, #fef9c3)',
+  'linear-gradient(135deg, #e88fa0, #f9d8f0)',
+  'linear-gradient(135deg, #8ac4e8, #d8edf9)',
+]
+
+// Normalise raw DB row — handles both old-format and new TheMindClan fields
+const norm = computed(() => {
+  const t = therapist.value
+  if (!t) return null
+
+  const quals = t.qualifications?.length ? t.qualifications : (t.credentials || [])
+  const credentials = Array.isArray(quals) ? quals.join(' · ') : (quals || '')
+
+  const sessionFormat = t.session_format || t.session_formats?.[0] || ''
+
+  const fee = t.fee ?? t.price_range?.min ?? t.price_range?.amount ?? null
+
+  const experience = t.experience || (t.experience_years ? `${t.experience_years} years` : '')
+
+  return { credentials, sessionFormat, fee, experience }
 })
 
-const calDays = ref([
-  { day: 1, avail: false }, { day: 2, avail: false }, { day: 3, avail: false }, { day: 4, avail: true },
-  { day: 5, avail: true }, { day: 6, avail: false }, { day: 7, avail: false }, { day: 8, avail: false },
-  { day: 9, avail: true }, { day: 10, avail: true }, { day: 11, avail: true, selected: true }, { day: 12, avail: false },
-  { day: 13, avail: false }, { day: 14, avail: false }, { day: 15, avail: false }, { day: 16, avail: true },
-  { day: 17, avail: true }, { day: 18, avail: false }, { day: 19, avail: false }, { day: 20, avail: false },
-  { day: 21, avail: true }, { day: 22, avail: true }, { day: 23, avail: true }, { day: 24, avail: false },
-  { day: 25, avail: false }, { day: 26, avail: false }, { day: 27, avail: true }, { day: 28, avail: true },
-])
+const gradient = computed(() => {
+  if (!therapist.value) return AVATAR_GRADIENTS[0]
+  const code = therapist.value.name?.charCodeAt(0) ?? 0
+  return AVATAR_GRADIENTS[code % AVATAR_GRADIENTS.length]
+})
+
+const initials = computed(() => {
+  if (!therapist.value?.name) return '?'
+  return therapist.value.name
+    .trim()
+    .split(' ')
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+})
+
+const sourceLabel = computed(() => {
+  const src = therapist.value?.source || ''
+  if (src === 'themindclan') return 'TheMindClan'
+  if (src === 'practo') return 'Practo'
+  return 'profile'
+})
+
+const firstName = computed(() => {
+  return therapist.value?.name?.split(' ').at(-1) || 'this therapist'
+})
+
+onMounted(async () => {
+  const data = await therapistStore.fetchOne(route.params.id)
+  therapist.value = data
+  loading.value = false
+})
 </script>
 
 <style scoped>
@@ -231,19 +311,44 @@ const calDays = ref([
 .badge-green { background: #d1fae5; color: #059669; }
 .avail-dot-sm { width: 6px; height: 6px; border-radius: 50%; background: #059669; }
 
+/* Skeleton */
+.skeleton-card { display: flex; gap: 20px; align-items: flex-start; }
+.skel { background: var(--lavender); border-radius: 8px; animation: sk-pulse 1.4s ease-in-out infinite; }
+.skel-avatar { width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0; }
+.skel-info { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.skel-line { height: 16px; }
+.skel-w60 { width: 60%; }
+.skel-w40 { width: 40%; }
+.skel-w80 { width: 80%; }
+@keyframes sk-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.3; } }
+
+/* Not found */
+.not-found-card { text-align: center; padding: 48px; font-size: 15px; color: var(--slate); }
+
 /* Hero Card */
 .hero-card { display: flex; flex-direction: column; gap: 24px; }
 .hero-left { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-.hero-avatar { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: white; flex-shrink: 0; text-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.hero-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700; color: white; flex-shrink: 0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.hero-avatar-img { padding: 0; overflow: hidden; }
+.hero-avatar-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .hero-info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-.hero-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.hero-name { font-size: 28px; font-weight: 700; color: var(--plum); margin: 0; }
+.hero-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hero-name { font-size: 26px; font-weight: 700; color: var(--plum); margin: 0; }
+.pronouns-badge { font-size: 12px; color: var(--slate); font-weight: 500; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--lavender); }
 .hero-creds { font-size: 14px; color: var(--slate); }
+.city-line { color: var(--lavender-deep); font-weight: 500; }
 .hero-stats-row { display: flex; gap: 24px; padding: 16px 0; border-top: 1px solid var(--lavender-soft); border-bottom: 1px solid var(--lavender-soft); flex-wrap: wrap; }
 .hero-stat { display: flex; flex-direction: column; gap: 2px; }
-.hero-stat-val { font-size: 18px; font-weight: 700; color: var(--plum); }
+.hero-stat-val { font-size: 17px; font-weight: 700; color: var(--plum); }
 .hero-stat-label { font-size: 11px; color: var(--slate); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.source-attr { font-size: 11px; color: var(--slate); margin: 0; }
+.source-attr a { color: var(--lavender-deep); text-decoration: underline; }
 
 /* Info Grid */
 .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -252,6 +357,7 @@ const calDays = ref([
 .info-title { font-size: 14px; font-weight: 700; color: var(--plum); }
 .info-list { margin: 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 6px; }
 .info-list li { font-size: 13px; color: var(--slate); line-height: 1.4; }
+.spec-tags-inline { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* Two col layout */
 .two-col-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
@@ -265,20 +371,8 @@ const calDays = ref([
 /* About */
 .about-text { font-size: 14px; color: var(--slate); line-height: 1.7; margin: 0; white-space: pre-line; }
 
-/* Spec Tags */
-.spec-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* Reviews */
-.reviews-list { display: flex; flex-direction: column; gap: 20px; }
-.review-item { display: flex; flex-direction: column; gap: 6px; }
-.review-top { display: flex; align-items: center; justify-content: space-between; }
-.review-stars { font-size: 13px; }
-.review-date { font-size: 12px; color: var(--slate); }
-.review-text { font-size: 13px; color: var(--slate); line-height: 1.6; margin: 0; font-style: italic; }
-.review-author { font-size: 12px; color: var(--lavender-deep); font-weight: 600; }
-
 /* Session Info */
-.session-rows { display: flex; flex-direction: column; gap: 0; }
+.session-rows { display: flex; flex-direction: column; }
 .session-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--lavender-soft); }
 .session-row:last-child { border-bottom: none; }
 .session-label { font-size: 13px; color: var(--slate); font-weight: 500; }
@@ -286,15 +380,9 @@ const calDays = ref([
 .price-val { font-size: 16px; color: var(--lavender-deep); }
 .capitalize { text-transform: capitalize; }
 
-/* Booking */
-.booking-card { display: flex; flex-direction: column; gap: 16px; }
+/* Connect / Booking */
+.booking-card { display: flex; flex-direction: column; gap: 14px; }
 .booking-title { font-size: 15px; font-weight: 700; color: var(--plum); }
-.calendar-placeholder { background: var(--lavender-soft); border-radius: 12px; padding: 16px; }
-.cal-month { font-size: 13px; font-weight: 700; color: var(--plum); text-align: center; margin-bottom: 12px; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--slate); background: transparent; }
-.cal-day.available { background: white; color: var(--plum); cursor: pointer; }
-.cal-day.available:hover { background: var(--lavender); }
-.cal-day.selected { background: var(--lavender-deep) !important; color: white !important; }
+.booking-desc { font-size: 13px; color: var(--slate); line-height: 1.6; margin: 0; }
 .booking-note { font-size: 12px; color: var(--slate); text-align: center; margin: 0; font-style: italic; }
 </style>
