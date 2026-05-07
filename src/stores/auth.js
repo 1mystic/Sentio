@@ -64,6 +64,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function signInWithOAuth(provider, options = {}) {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({ provider, options })
+      if (error) throw error
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error }
+    }
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
     user.value = null
@@ -72,6 +82,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     user, session, isLoading, isAuthenticated, initialized,
-    ensureInitialized, signUp, signIn, signOut
+    ensureInitialized, signUp, signIn, signInWithOAuth, signOut
   }
 })

@@ -512,7 +512,9 @@ const labelAnchors = computed(() =>
 }
 
 /* ── Fingerprint card ── */
-.fingerprint-card {}
+.fingerprint-card {
+  
+}
 
 .radar-wrap {
   display: flex;
@@ -654,6 +656,25 @@ const labelAnchors = computed(() =>
 
 /* ── Card footer ── */
 .card-footer { display: flex; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .dashboard { gap: 20px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-value { font-size: 28px; }
+  .two-col { grid-template-columns: 1fr; }
+  .two-col-balanced { grid-template-columns: 1fr; }
+  .insights-grid { grid-template-columns: 1fr; }
+  .card { padding: 16px; }
+  .section-title { font-size: 17px; }
+  .radar-wrap svg { width: 200px; height: 200px; }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  .insights-grid { grid-template-columns: 1fr 1fr; }
+}
 
 /* ── Buttons ── */
 .btn {

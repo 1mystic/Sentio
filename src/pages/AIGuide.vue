@@ -497,4 +497,24 @@ function autoResize(e) {
 .safety-notice { font-size: 11px; color: var(--slate); text-align: center; }
 .safety-link { color: var(--lavender-deep); font-weight: 600; text-decoration: none; }
 .safety-link:hover { text-decoration: underline; }
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 640px) {
+  .chat-layout { height: calc(100vh - 56px); margin: -16px; }
+  .chat-header { padding: 10px 14px; }
+  .chat-subtitle { display: none; }
+  .chat-messages { padding: 14px; gap: 10px; }
+  .bubble { max-width: 85%; }
+  .chat-input-area { padding: 10px 14px 14px; }
+  .suggestions-bar { gap: 6px; }
+  .suggestion-chip { font-size: 12px; padding: 6px 12px; }
+
+  /* History panel becomes full-width overlay on mobile */
+  .history-panel {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 100% !important; z-index: 10;
+    border-left: none;
+    box-shadow: -4px 0 20px rgba(53,43,56,0.12);
+  }
+}
 </style>

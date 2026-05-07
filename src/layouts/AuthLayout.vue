@@ -35,4 +35,16 @@
   font-size: 20px; font-weight: 900; color: var(--plum);
 }
 .auth-logo-text { font-size: 22px; font-weight: 800; color: var(--plum); }
+
+@media (max-width: 480px) {
+  .auth-shell { align-items: flex-start; }
+  .auth-box {
+    border-radius: 0 0 24px 24px;
+    padding: 28px 20px;
+    max-width: 100%;
+    min-height: 100vh;
+    box-shadow: none;
+    border: none;
+  }
+}
 </style>

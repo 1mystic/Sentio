@@ -63,7 +63,11 @@ async function handleSignup() {
 }
 
 async function handleGoogle() {
-  error.value = 'Google sign-in coming soon.'
+  error.value = ''
+  const { error: err } = await auth.signInWithOAuth('google', {
+    redirectTo: `${window.location.origin}/dashboard`
+  })
+  if (err) error.value = err.message
 }
 </script>
 

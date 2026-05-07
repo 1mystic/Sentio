@@ -97,4 +97,11 @@ onMounted(async () => {
 .topic-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
 .thread-count { font-size: 11px; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; }
 .chevron { color: var(--slate); }
+
+@media (max-width: 640px) {
+  .community-page { gap: 16px; }
+  .page-title { font-size: 22px; }
+  .topics-grid { grid-template-columns: 1fr; gap: 10px; }
+  .topic-card { padding: 14px; }
+}
 </style>

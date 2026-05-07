@@ -284,4 +284,14 @@ const displayEntries = computed(() => {
 @keyframes sk-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.3; } }
 
 svg { display: block; }
+
+@media (max-width: 640px) {
+  .journal-page { gap: 16px; }
+  .page-title { font-size: 22px; }
+  .filter-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .search-wrap { min-width: 0; max-width: 100%; }
+  .tabs { justify-content: center; }
+  .sort-select { width: 100%; }
+  .card { padding: 14px; }
+}
 </style>

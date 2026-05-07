@@ -30,9 +30,11 @@ async function handleLogin() {
 }
 
 async function handleGoogle() {
-  // Google OAuth — requires client ID configured in Supabase dashboard
-  // Will be enabled after Vercel deployment with OAuth callback URL
-  error.value = 'Google sign-in will be available after deployment. Use email sign in for now.'
+  error.value = ''
+  const { error: err } = await auth.signInWithOAuth('google', {
+    redirectTo: `${window.location.origin}/dashboard`
+  })
+  if (err) error.value = err.message
 }
 </script>
 

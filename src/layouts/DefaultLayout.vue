@@ -1,5 +1,8 @@
 <template>
   <div class="app-shell">
+    <!-- Mobile backdrop -->
+    <div class="mobile-backdrop" v-if="!collapsed" @click="collapsed = true" />
+
     <!-- Sidebar -->
     <aside class="sidebar" :class="{ collapsed }">
       <div class="sidebar-logo">
@@ -59,6 +62,11 @@
     <div class="main-area">
       <!-- Topbar -->
       <header class="topbar">
+        <!-- Mobile menu toggle -->
+        <button class="mobile-menu-btn btn-icon" @click="collapsed = !collapsed" title="Toggle menu">
+          <Menu :size="20" />
+        </button>
+
         <!-- Search -->
         <div class="topbar-search" ref="searchWrap">
           <Search :size="16" class="search-icon" />
@@ -153,7 +161,7 @@ import {
   MessageSquare, UserCheck, TrendingUp, GraduationCap,
   Search, Bell, Sparkles, LogOut,
   CheckCircle, Lightbulb, Flame, Info, Users,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Menu
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -164,10 +172,10 @@ const assessStore = useAssessmentStore()
 const router = useRouter()
 
 // ── Sidebar collapse ──────────────────────────────────────
-const collapsed = ref(window.innerWidth < 768)
+const collapsed = ref(window.innerWidth < 640)
 
 function onResize() {
-  if (window.innerWidth < 768) collapsed.value = true
+  if (window.innerWidth < 640) collapsed.value = true
 }
 
 onMounted(async () => {
@@ -529,4 +537,55 @@ const toolsNav = [
 .notif-time { font-size: 11px; color: var(--slate); margin-top: 4px; opacity: 0.7; }
 
 svg { display: block; }
+
+/* ── Mobile backdrop ── */
+.mobile-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(53,43,56,0.4);
+  z-index: 299;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Mobile hamburger ── */
+.mobile-menu-btn { display: none; }
+
+/* ── Mobile layout ── */
+@media (max-width: 640px) {
+  .mobile-backdrop { display: block; }
+  .mobile-menu-btn { display: inline-flex; flex-shrink: 0; }
+
+  /* Sidebar becomes a fixed drawer overlay */
+  .sidebar {
+    position: fixed !important;
+    left: 0; top: 0; bottom: 0;
+    width: 220px !important;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease !important;
+    box-shadow: none;
+  }
+  .sidebar:not(.collapsed) {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(53,43,56,0.18);
+  }
+
+  /* Main area fills full width since sidebar is out of flow */
+  .main-area { width: 100%; }
+
+  .topbar { padding: 0 12px; gap: 8px; height: 56px; }
+  .topbar-search { max-width: none; padding: 7px 10px; }
+  .search-input::placeholder { font-size: 13px; }
+
+  .page-body { padding: 16px; gap: 20px; border-top-left-radius: 0.75rem !important; }
+
+  .notif-panel { width: 280px; right: -8px; }
+}
+
+/* ── Tablet (641–768px): icon sidebar + slightly smaller topbar ── */
+@media (min-width: 641px) and (max-width: 768px) {
+  .topbar { padding: 0 20px; }
+  .page-body { padding: 20px; }
+  .mobile-menu-btn { display: none; }
+}
 </style>
