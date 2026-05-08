@@ -69,7 +69,7 @@
       </div>
 
       <!-- Dashboard Preview -->
-      <div class="dashboard-preview">
+      <div class="dashboard-preview" data-animate="scale-up" :style="{ '--stagger': '400ms' }">
         <div class="preview-frame">
           <div class="preview-topbar">
             <div class="preview-dot" style="background:#fca5a5" />
@@ -161,19 +161,19 @@
 
     <!-- Features -->
     <section class="section" id="features">
-      <div class="section-label">✦ Features</div>
+      <div class="section-label" data-animate="fade-up">✦ Features</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px">
-        <h2 class="section-title">Everything you need to<br/>understand your mind</h2>
-        <p class="section-sub">Built on peer-reviewed research in cognitive psychology, behavioral economics, and decision science.</p>
+        <h2 class="section-title" data-animate="fade-up" :style="{ '--stagger': '80ms' }">Everything you need to<br/>understand your mind</h2>
+        <p class="section-sub" data-animate="fade-up" :style="{ '--stagger': '160ms' }">Built on peer-reviewed research in cognitive psychology, behavioral economics, and decision science.</p>
       </div>
       <div class="features-grid">
-        <div v-for="(f, i) in features" :key="i" class="feature-card">
+        <div v-for="(f, i) in features" :key="i" class="feature-card" data-animate="fade-up" :style="{ '--stagger': i * 80 + 'ms' }">
           <div class="feature-icon" :style="{ background: f.bg }">{{ f.icon }}</div>
           <div class="feature-name">{{ f.name }}</div>
           <div class="feature-desc">{{ f.desc }}</div>
         </div>
       </div>
-      <div class="stats-row">
+      <div class="stats-row" data-animate="fade-up" :style="{ '--stagger': '200ms' }">
         <div v-for="(s, i) in stats" :key="i" class="stat-block">
           <div class="stat-num">{{ s.num }}</div>
           <div class="stat-lbl">{{ s.lbl }}</div>
@@ -185,11 +185,11 @@
     <div class="how-bg" id="how-it-works">
       <div class="section" style="max-width:1200px">
         <div style="text-align:center">
-          <div class="section-label">◎ Process</div>
-          <h2 class="section-title">Simple. Consistent. Transformative.</h2>
+          <div class="section-label" data-animate="fade-up">◎ Process</div>
+          <h2 class="section-title" data-animate="fade-up" :style="{ '--stagger': '80ms' }">Simple. Consistent. Transformative.</h2>
         </div>
         <div class="how-steps">
-          <div v-for="(s, i) in howSteps" :key="i" class="how-step">
+          <div v-for="(s, i) in howSteps" :key="i" class="how-step" data-animate="fade-up" :style="{ '--stagger': i * 90 + 'ms' }">
             <div class="how-step-num">{{ s.num }}</div>
             <div class="how-step-title">{{ s.title }}</div>
             <div class="how-step-desc">{{ s.desc }}</div>
@@ -202,11 +202,11 @@
     <div class="mobile-section" id="mobile">
       <div class="mobile-section-inner">
         <div class="mobile-text">
-          <div class="section-label">◈ Mobile App</div>
-          <h2 class="section-title">Bias awareness in your pocket</h2>
-          <p class="section-sub">Full-featured iOS and Android apps that sync seamlessly with the web platform. Reflect on the go.</p>
+          <div class="section-label" data-animate="fade-right">◈ Mobile App</div>
+          <h2 class="section-title" data-animate="fade-right" :style="{ '--stagger': '80ms' }">Bias awareness in your pocket</h2>
+          <p class="section-sub" data-animate="fade-right" :style="{ '--stagger': '160ms' }">Full-featured iOS and Android apps that sync seamlessly with the web platform. Reflect on the go.</p>
           <div class="mobile-bullets">
-            <div v-for="(b, i) in mobileBullets" :key="i" class="mobile-bullet">
+            <div v-for="(b, i) in mobileBullets" :key="i" class="mobile-bullet" data-animate="fade-right" :style="{ '--stagger': 240 + i * 100 + 'ms' }">
               <div class="mobile-bullet-icon" :style="{ background: b.bg }">{{ b.icon }}</div>
               <div>
                 <div class="mobile-bullet-title">{{ b.title }}</div>
@@ -214,13 +214,13 @@
               </div>
             </div>
           </div>
-          <div style="display:flex;gap:12px;margin-top:36px">
+          <div style="display:flex;gap:12px;margin-top:36px" data-animate="fade-right" :style="{ '--stagger': '540ms' }">
             <button class="btn btn-primary" style="border-radius:12px;padding:12px 24px;font-size:15px">App Store</button>
             <button class="btn btn-ghost-nav" style="border-radius:12px;padding:12px 24px;font-size:15px">Google Play</button>
           </div>
         </div>
         <!-- Phone frames -->
-        <div class="mobile-phones">
+        <div class="mobile-phones" data-animate="fade-left" :style="{ '--stagger': '200ms' }">
           <div class="phone-frame float">
             <div class="phone-topbar">
               <span class="phone-time">9:41</span>
@@ -283,13 +283,13 @@
     <!-- Testimonials -->
     <div style="background:var(--bg)" id="stories">
       <div class="section">
-        <div class="section-label">♡ Stories</div>
+        <div class="section-label" data-animate="fade-up">♡ Stories</div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px">
-          <h2 class="section-title">Real minds, real results</h2>
-          <p class="section-sub">From students to executives — Sentio meets you where you are.</p>
+          <h2 class="section-title" data-animate="fade-up" :style="{ '--stagger': '80ms' }">Real minds, real results</h2>
+          <p class="section-sub" data-animate="fade-up" :style="{ '--stagger': '160ms' }">From students to executives — Sentio meets you where you are.</p>
         </div>
         <div class="testimonials-grid">
-          <div v-for="(t, i) in testimonials" :key="i" class="testimonial-card">
+          <div v-for="(t, i) in testimonials" :key="i" class="testimonial-card" data-animate="fade-up" :style="{ '--stagger': i * 80 + 'ms' }">
             <div class="testimonial-stars">
               <span v-for="s in 5" :key="s" class="testimonial-star">★</span>
             </div>
@@ -310,9 +310,9 @@
     <div style="background:white" id="pricing">
       <div class="section">
         <div style="text-align:center">
-          <div class="section-label">◈ Pricing</div>
-          <h2 class="section-title">Invest in your mind</h2>
-          <p class="section-sub" style="margin:0 auto 28px">Start free. Upgrade when you're ready. Cancel anytime.</p>
+          <div class="section-label" data-animate="fade-up">◈ Pricing</div>
+          <h2 class="section-title" data-animate="fade-up" :style="{ '--stagger': '80ms' }">Invest in your mind</h2>
+          <p class="section-sub" data-animate="fade-up" :style="{ '--stagger': '160ms', margin: '0 auto 28px' }">Start free. Upgrade when you're ready. Cancel anytime.</p>
           <div class="billing-toggle">
             <button
               class="toggle-btn"
@@ -332,7 +332,8 @@
             :key="i"
             class="pricing-card"
             :class="{ featured: plan.featured }"
-            :style="{ marginTop: plan.featured ? '-12px' : '0' }"
+            data-animate="fade-up"
+            :style="{ marginTop: plan.featured ? '-12px' : '0', '--stagger': i * 90 + 'ms' }"
           >
             <div v-if="plan.featured" class="pricing-badge">Most Popular</div>
             <div class="pricing-label" :class="{ 'featured-lbl': plan.featured }">{{ plan.name }}</div>
@@ -373,10 +374,10 @@
         <div class="cta-orb cta-orb-1" />
         <div class="cta-orb cta-orb-2" />
         <div style="position:relative;z-index:2">
-          <div class="cta-pill-label">✦ START YOUR FREE JOURNEY</div>
-          <div class="cta-title">Your clearer mind<br/>starts today</div>
-          <div class="cta-sub">No credit card required. 14-day free trial. Cancel anytime.</div>
-          <div class="cta-ctas">
+          <div class="cta-pill-label" data-animate="scale-up">✦ START YOUR FREE JOURNEY</div>
+          <div class="cta-title" data-animate="fade-up" :style="{ '--stagger': '100ms' }">Your clearer mind<br/>starts today</div>
+          <div class="cta-sub" data-animate="fade-up" :style="{ '--stagger': '200ms' }">No credit card required. 14-day free trial. Cancel anytime.</div>
+          <div class="cta-ctas" data-animate="fade-up" :style="{ '--stagger': '300ms' }">
             <router-link to="/signup" class="btn-cta-white">Begin for free <ChevronRight :size="16" /></router-link>
             <a href="mailto:hello@sentio.so" class="btn-cta-outline">Talk to us</a>
           </div>
@@ -420,8 +421,30 @@ function handleScroll() {
   scrolled.value = window.scrollY > 20
 }
 
-onMounted(() => window.addEventListener('scroll', handleScroll))
-onUnmounted(() => window.removeEventListener('scroll', handleScroll))
+let animObserver = null
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+
+  animObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('is-visible')
+          animObserver.unobserve(e.target)
+        }
+      })
+    },
+    { threshold: 0.1, rootMargin: '0px 0px -48px 0px' }
+  )
+
+  document.querySelectorAll('[data-animate]').forEach((el) => animObserver.observe(el))
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+  animObserver?.disconnect()
+})
 
 const navLinks = [
   { href: '#features', label: 'Features' },
@@ -583,7 +606,7 @@ const footerCols = [
 .hero-inner {
   position: relative; z-index: 2;
   display: flex; flex-direction: column; align-items: center;
-  text-align: center; padding: 0 24px; max-width: 860px;
+  text-align: center; padding: 52px 24px 0; max-width: 860px;
 }
 .hero-pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -859,5 +882,37 @@ const footerCols = [
 @media (max-width: 440px) {
   /* Just hide the whole preview on very small phones — it's decorative */
   .dashboard-preview { display: none; }
+}
+
+/* ── Hero entrance (auto-plays on load) ───────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up    { animation: fadeUp 0.65s ease both; }
+.fade-up-d1 { animation: fadeUp 0.65s 0.12s ease both; }
+.fade-up-d2 { animation: fadeUp 0.65s 0.24s ease both; }
+.fade-up-d3 { animation: fadeUp 0.65s 0.36s ease both; }
+.fade-up-d4 { animation: fadeUp 0.65s 0.48s ease both; }
+
+/* ── Scroll-triggered entrance animations ──────────────────────── */
+[data-animate] { opacity: 0; }
+[data-animate="fade-up"]    { transform: translateY(30px); }
+[data-animate="fade-left"]  { transform: translateX(-30px); }
+[data-animate="fade-right"] { transform: translateX(30px); }
+[data-animate="scale-up"]   { transform: scale(0.93); }
+
+[data-animate].is-visible {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity  0.65s ease var(--stagger, 0ms),
+    transform 0.65s ease var(--stagger, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .fade-up-d1, .fade-up-d2, .fade-up-d3, .fade-up-d4 { animation: none; }
+  [data-animate] { opacity: 1; transform: none; }
+  [data-animate].is-visible { transition: none; }
 }
 </style>
