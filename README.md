@@ -4,7 +4,7 @@
 
 <img src="https://img.shields.io/badge/-%20S%20E%20N%20T%20I%20O-352b38?style=for-the-badge&labelColor=352b38&color=9b94e8" height="40" alt="Sentio" />
 
-<h3>Cognitive bias self‑awareness, built for people who want to think better — not just feel better.</h3>
+<h3>Cognitive bias self‑awareness, built for people who want to think better : not just feel better.</h3>
 
 <br>
 
@@ -26,51 +26,51 @@
 
 ## Overview
 
-Sentio is a full-stack mental clarity platform that helps users identify and move past the cognitive biases shaping their decisions, conversations, and self-image. Rather than giving pre-packaged insights, Sentio puts users through the process — structured dialogue, reflective journaling, and validated assessments — so the understanding they reach is genuinely their own.
+Sentio is a full-stack mental clarity platform that helps users identify and move past the cognitive biases shaping their decisions, conversations, and self-image. Rather than giving pre-packaged insights, Sentio puts users through the process : structured dialogue, reflective journaling, and validated assessments : so the understanding they reach is genuinely their own.
 
-Two modes of AI interaction: a **context-aware guide** grounded in your personal bias history and journal themes, and a **Socratic engine** that never gives direct answers — only better questions.
+Two modes of AI interaction: a **context-aware guide** grounded in your personal bias history and journal themes, and a **Socratic engine** that never gives direct answers : only better questions.
 
 ---
 
 ## Features
 
-### AI Guide — RAG-enhanced chat
+### AI Guide : RAG-enhanced chat
 
 Streams responses from Claude via SSE. Every message is enriched with three layers of context injected into the system prompt:
 
-- **Bias fingerprint** — top detected biases from assessments + journal, blended 60/40
-- **Journal themes** — extracted from recent entries, cached 5 min per user
-- **RAG knowledge** — top-3 retrieved chunks from a psychology knowledge base (see pipeline below)
+- **Bias fingerprint** : top detected biases from assessments + journal, blended 60/40
+- **Journal themes** : extracted from recent entries, cached 5 min per user
+- **RAG knowledge** : top-3 retrieved chunks from a psychology knowledge base (see pipeline below)
 
 Conversation history persists to Supabase and is reloadable from a history panel. A safety gate intercepts crisis language before any token is spent.
 
 ---
 
-### Socratic Mode — seven-algorithm dialogue engine
+### Socratic Mode : seven-algorithm dialogue engine
 
-Ported from [Episteme](https://github.com/mozoj4/episteme). All seven algorithms run **client-side in TypeScript** — zero added round-trip latency. Computed signals are sent with each API call to enrich Claude's prompt server-side.
+Ported from [Episteme](https://github.com/mozoj4/episteme). All seven algorithms run **client-side in TypeScript** : zero added round-trip latency. Computed signals are sent with each API call to enrich Claude's prompt server-side.
 
 | Algorithm | Role |
 |:----------|:-----|
-| **RDSE** — Reasoning Depth Scoring Engine | Scores response quality from logical connectives, uncertainty markers, and Bloom taxonomy verb patterns |
-| **SDSM** — Socratic Dialogue State Machine | 7-state FSM: `PROBE → DEEPEN → SCAFFOLD → RECTIFY → REDIRECT → CONSOLIDATE → COMPLETE` |
-| **CBKT-CS** — Continuous Bayesian Knowledge Tracing | 4-parameter BKT; updates mastery probability `P(learned)` after every turn |
-| **BGDC** — Bloom's Growth Depth Classifier | Maps each response to a Bloom's taxonomy level via domain keyword classification |
-| **CPGAB** — Concept-Progress Gap Analysis & Bridging | Tracks concepts covered per domain; infers knowledge gaps |
-| **EGP** — Engagement & Gap Prioritisation | Retention decay + gap urgency scoring for adaptive next-step prompting |
-| **SM-2** — Spaced Repetition Scheduler | SM-2 interval scheduling for concept reinforcement over time |
+| **RDSE** : Reasoning Depth Scoring Engine | Scores response quality from logical connectives, uncertainty markers, and Bloom taxonomy verb patterns |
+| **SDSM** : Socratic Dialogue State Machine | 7-state FSM: `PROBE → DEEPEN → SCAFFOLD → RECTIFY → REDIRECT → CONSOLIDATE → COMPLETE` |
+| **CBKT-CS** : Continuous Bayesian Knowledge Tracing | 4-parameter BKT; updates mastery probability `P(learned)` after every turn |
+| **BGDC** : Bloom's Growth Depth Classifier | Maps each response to a Bloom's taxonomy level via domain keyword classification |
+| **CPGAB** : Concept-Progress Gap Analysis & Bridging | Tracks concepts covered per domain; infers knowledge gaps |
+| **EGP** : Engagement & Gap Prioritisation | Retention decay + gap urgency scoring for adaptive next-step prompting |
+| **SM-2** : Spaced Repetition Scheduler | SM-2 interval scheduling for concept reinforcement over time |
 
 Clarity score (BKT), dialogue state, Bloom depth, and session progress are displayed in real time. Completed sessions generate exportable **insight cards** (Markdown, PDF, clipboard).
 
 ---
 
-### Journal — markdown-native, live bias detection
+### Journal : markdown-native, live bias detection
 
-- Write / Preview toggle — raw markdown ↔ rendered GFM
-- Formatting toolbar — Bold, Italic, Heading, List, Code, Quote; `Ctrl+B`, `Ctrl+I`, `Tab`
-- Live bias detection — 15 bias patterns matched as you type, shown inline
-- Background AI analysis — sentiment, themes, bias classification via APScheduler (non-blocking)
-- AI reflection questions — 3 Claude-generated questions grounded in your specific entry and detected biases
+- Write / Preview toggle : raw markdown ↔ rendered GFM
+- Formatting toolbar : Bold, Italic, Heading, List, Code, Quote; `Ctrl+B`, `Ctrl+I`, `Tab`
+- Live bias detection : 15 bias patterns matched as you type, shown inline
+- Background AI analysis : sentiment, themes, bias classification via APScheduler (non-blocking)
+- AI reflection questions : 3 Claude-generated questions grounded in your specific entry and detected biases
 - Full GFM rendering in saved entries
 
 ---
@@ -89,8 +89,8 @@ Validated self-assessment instruments. Results update `user_bias_profiles.bias_s
 
 ### Therapist Directory
 
-**Desktop:** 240px sticky sidebar — search, specialisation checkboxes, mode radio, language, availability.
-**Mobile:** sidebar hidden entirely; replaced by a horizontal chip strip — each chip opens a dropdown panel for its filter. Active filter reflected in chip label and fill colour.
+**Desktop:** 240px sticky sidebar : search, specialisation checkboxes, mode radio, language, availability.
+**Mobile:** sidebar hidden entirely; replaced by a horizontal chip strip : each chip opens a dropdown panel for its filter. Active filter reflected in chip label and fill colour.
 
 ---
 
@@ -111,10 +111,10 @@ Longitudinal view of clarity score, bias frequency trends, assessment history, a
 ```
 Browser  (Vue 3 + Pinia)
 │
-├── Client-side algorithm layer  (TypeScript — runs in browser, zero extra latency)
+├── Client-side algorithm layer  (TypeScript : runs in browser, zero extra latency)
 │      RDSE · SDSM · CBKT-CS · BGDC · CPGAB · EGP · SM-2
 │
-└── FastAPI  (Python 3.11 — HuggingFace Spaces Docker, port 7860)
+└── FastAPI  (Python 3.11 : HuggingFace Spaces Docker, port 7860)
        │
        ├── /ai          SSE streaming guide chat
        ├── /socratic    SSE Socratic dialogue + session persistence
@@ -169,8 +169,8 @@ user_bias_profiles.bias_scores   (jsonb)
 
 | Stage | Mechanism |
 |:------|:----------|
-| **Input check** | Keyword match against 20 crisis signals — if matched, returns HTTP 422 with India crisis helplines (iCall 9152987821, Vandrevala 1860-2662-345); Claude never called |
-| **Output filter** | Regex scan of each streamed chunk for clinical overreach (`diagnos*`, disorder/illness/medication phrasing) — matching chunks dropped before forwarding |
+| **Input check** | Keyword match against 20 crisis signals : if matched, returns HTTP 422 with India crisis helplines (iCall 9152987821, Vandrevala 1860-2662-345); Claude never called |
+| **Output filter** | Regex scan of each streamed chunk for clinical overreach (`diagnos*`, disorder/illness/medication phrasing) : matching chunks dropped before forwarding |
 
 ---
 
@@ -186,7 +186,7 @@ user_bias_profiles.bias_scores   (jsonb)
 | RAG embeddings | `all-MiniLM-L6-v2` (sentence-transformers) | 384-dim dense vectors |
 | RAG reranking | Cohere `rerank-english-v2.0` | Optional; pipeline degrades gracefully |
 | Journal NLP | Keyword heuristics · optional HF Space endpoint | Sentiment (−1→+1), emotion labels, themes |
-| Socratic algorithms | Pure TypeScript — no ML runtime | 7 deterministic algorithms, client-side only |
+| Socratic algorithms | Pure TypeScript : no ML runtime | 7 deterministic algorithms, client-side only |
 
 ### Bias Taxonomy (15 classes)
 
@@ -204,7 +204,7 @@ user_bias_profiles.bias_scores   (jsonb)
 | AI | Anthropic Claude async streaming SDK |
 | Embeddings | sentence-transformers `all-MiniLM-L6-v2` |
 | Reranking | Cohere `rerank-english-v2.0` (optional) |
-| Vector search | Supabase pgvector — `match_knowledge` RPC |
+| Vector search | Supabase pgvector : `match_knowledge` RPC |
 | Database | Supabase PostgreSQL · Row-Level Security · Realtime |
 | Auth | Supabase email/password + Google OAuth |
 | Email | Resend (transactional) |
@@ -239,7 +239,7 @@ sentio/
 │   │   ├── therapists/   Index.vue · Profile.vue
 │   │   └── auth/   Login.vue · Signup.vue
 │   └── lib/episteme/
-│       ├── algorithms.ts                 ← All 7 Socratic algorithms — pure TS, no dependencies
+│       ├── algorithms.ts                 ← All 7 Socratic algorithms : pure TS, no dependencies
 │       ├── prompts.ts                    ← Prompt builders
 │       └── types.ts
 │
@@ -270,13 +270,13 @@ sentio/
 | Table | Purpose |
 |:------|:--------|
 | `profiles` | Display name, avatar, onboarding state |
-| `user_bias_profiles` | `bias_scores` jsonb — 60% assessment / 40% journal blend |
+| `user_bias_profiles` | `bias_scores` jsonb : 60% assessment / 40% journal blend |
 | `journal_entries` | Content, sentiment, detected biases jsonb, AI reflections |
 | `knowledge_articles` | Psychology KB with `embedding vector(384)` for pgvector |
 | `cognitive_assessments` | Assessment definitions and questions |
 | `assessment_submissions` | User answers and computed scores |
-| `cognitive_biases` | 30+ bias entries — definition, examples, detection signals |
-| `therapists` | Directory — specialisations, lat/lng, mode, availability |
+| `cognitive_biases` | 30+ bias entries : definition, examples, detection signals |
+| `therapists` | Directory : specialisations, lat/lng, mode, availability |
 | `community_topics` / `community_threads` / `community_replies` | Forum |
 | `notifications` | Notification feed |
 | `socratic_sessions` | Session state + full conversation history |
@@ -288,15 +288,15 @@ All tables have Row-Level Security tied to `auth.uid()`.
 
 ## Engineering Notes
 
-**Auth** — `get_user_id()` calls `{SUPABASE_URL}/auth/v1/user` directly via `httpx` instead of the gotrue Python client. The singleton caches stale state and produces spurious 401s; the direct call is stateless.
+**Auth** : `get_user_id()` calls `{SUPABASE_URL}/auth/v1/user` directly via `httpx` instead of the gotrue Python client. The singleton caches stale state and produces spurious 401s; the direct call is stateless.
 
-**Streaming** — Guide: `data: {"chunk": "..."}` / `data: [DONE]`. Socratic: `data: {"text": "..."}` / `data: {"done": true}`. Safety output filter runs on every chunk before forwarding.
+**Streaming** : Guide: `data: {"chunk": "..."}` / `data: [DONE]`. Socratic: `data: {"text": "..."}` / `data: {"done": true}`. Safety output filter runs on every chunk before forwarding.
 
-**Context cache** — `_USER_CTX_CACHE` dict in `ai.py` stores `(bias_fingerprint, journal_themes)` per user with 5-min TTL, eliminating 2 DB calls per AI message.
+**Context cache** : `_USER_CTX_CACHE` dict in `ai.py` stores `(bias_fingerprint, journal_themes)` per user with 5-min TTL, eliminating 2 DB calls per AI message.
 
-**Prompt caching** — Bias classifier's 15-class taxonomy marked `cache_control: ephemeral`. Anthropic caches this prefix across calls (~$0.0002/entry).
+**Prompt caching** : Bias classifier's 15-class taxonomy marked `cache_control: ephemeral`. Anthropic caches this prefix across calls (~$0.0002/entry).
 
-**Background tasks** — APScheduler runs bias classification and embedding generation post-save, keeping journal write latency under 200ms.
+**Background tasks** : APScheduler runs bias classification and embedding generation post-save, keeping journal write latency under 200ms.
 
 ---
 
@@ -315,7 +315,7 @@ pip install -r requirements.txt
 cp .env.example .env   # fill in all keys
 uvicorn main:app --reload --port 8000
 
-# Database — run once in Supabase SQL Editor
+# Database : run once in Supabase SQL Editor
 # sentio-api/db/migration_phase6.sql
 ```
 
@@ -328,7 +328,7 @@ API docs: `http://localhost:8000/docs`
 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` | Supabase project credentials |
 | `ANTHROPIC_API_KEY` | Anthropic API key |
 | `CLAUDE_MODEL` | Optional model override (default: `claude-haiku-4-5-20251001`) |
-| `COHERE_API_KEY` | Optional — enables RAG reranking |
+| `COHERE_API_KEY` | Optional : enables RAG reranking |
 | `ALLOWED_ORIGINS` | CORS origin(s) |
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Transactional email |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Admin dashboard |
@@ -349,7 +349,7 @@ git branch -D hf-deploy
 git push origin main
 ```
 
-**Google OAuth** — Enable Google provider in Supabase Auth → Providers. Add `https://[ref].supabase.co/auth/v1/callback` as an authorized redirect URI in Google Cloud Console, and your Vercel domain as an authorized JS origin.
+**Google OAuth** : Enable Google provider in Supabase Auth → Providers. Add `https://[ref].supabase.co/auth/v1/callback` as an authorized redirect URI in Google Cloud Console, and your Vercel domain as an authorized JS origin.
 
 ---
 
