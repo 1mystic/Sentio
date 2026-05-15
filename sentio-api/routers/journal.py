@@ -104,7 +104,8 @@ def _update_bias_profile(user_id: str, biases: list[dict]) -> None:
 
     archetype = _compute_archetype(scores)
     supabase.table("user_bias_profiles").upsert(
-        {"user_id": user_id, "bias_scores": scores, "archetype": archetype}
+        {"user_id": user_id, "bias_scores": scores, "archetype": archetype},
+        on_conflict="user_id",
     ).execute()
 
 

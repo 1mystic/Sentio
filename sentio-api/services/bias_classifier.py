@@ -64,25 +64,20 @@ async def classify_biases(text: str) -> list[dict]:
         return []
 
     try:
+        model = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
         client = anthropic.AsyncAnthropic(api_key=api_key)
         response = await client.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model=model,
             max_tokens=512,
-            system=[
-                {
-                    "type": "text",
-                    "text": _SYSTEM_PROMPT,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ],
+            system=_SYSTEM_PROMPT,
             messages=[
                 {
                     "role": "user",
                     "content": f"Analyze this journal entry for cognitive biases:\n\n<entry>\n{text[:3000]}\n</entry>\n\n{_RESPONSE_FORMAT}",
                 }
             ],
-            betas=["prompt-caching-2024-07-31"],
         )
+        logger.info(f"Bias classifier called model={model}, stop_reason={response.stop_reason}")
 
         raw = response.content[0].text.strip()
         # Strip markdown fences if present

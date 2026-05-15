@@ -113,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useJournalStore } from '@/stores/journal.js'
 import { Sparkles, ArrowLeft, ArrowRight, Trash2, Lightbulb, Loader } from 'lucide-vue-next'
@@ -129,11 +129,27 @@ const loading = ref(true)
 const deleting = ref(false)
 const notFound = ref(false)
 
+const MAX_POLLS = 8   // stop after 8 × 3s = 24s
+let pollCount = 0
+let pollTimer = null
+
 onMounted(async () => {
   const data = await journalStore.fetchEntry(route.params.id)
-  if (!data) notFound.value = true
+  if (!data) { notFound.value = true; loading.value = false; return }
   loading.value = false
+
+  // If analysis not yet done, poll every 3s until biases arrive
+  if (data.detected_biases == null || data.sentiment_score == null) {
+    pollTimer = setInterval(async () => {
+      pollCount++
+      const refreshed = await journalStore.fetchEntry(route.params.id)
+      const done = refreshed?.detected_biases != null && refreshed?.sentiment_score != null
+      if (done || pollCount >= MAX_POLLS) clearInterval(pollTimer)
+    }, 3000)
+  }
 })
+
+onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 
 const entry = computed(() => journalStore.currentEntry)
 
