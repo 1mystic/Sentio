@@ -74,7 +74,11 @@
             <Sparkles :size="14" />
           </div>
           <div class="bubble" :class="msg.role">
-            <div class="bubble-text">{{ msg.content }}<span v-if="msg.streaming && !msg.content" class="typing-dots"><span></span><span></span><span></span></span><span v-else-if="msg.streaming" class="typing-cursor">▌</span></div>
+            <div class="bubble-text">
+              <span v-if="msg.role === 'assistant'" class="md-content" v-html="renderMarkdown(msg.content)"></span>
+              <span v-else>{{ msg.content }}</span>
+              <span v-if="msg.streaming && !msg.content" class="typing-dots"><span></span><span></span><span></span></span><span v-else-if="msg.streaming" class="typing-cursor">▌</span>
+            </div>
             <div class="bubble-ts">{{ msg.ts }}</div>
           </div>
         </div>
@@ -211,7 +215,11 @@
                 <div v-if="msg.role === 'assistant' && msg.state" class="state-label-inline" :class="stateClassFor(msg.state)">
                   {{ stateLabelFor(msg.state) }}
                 </div>
-                <div class="bubble-text">{{ msg.content }}<span v-if="msg.isStreaming && !msg.content" class="typing-dots"><span></span><span></span><span></span></span><span v-else-if="msg.isStreaming" class="typing-cursor">▌</span></div>
+                <div class="bubble-text">
+                  <span v-if="msg.role === 'assistant'" class="md-content" v-html="renderMarkdown(msg.content)"></span>
+                  <span v-else>{{ msg.content }}</span>
+                  <span v-if="msg.isStreaming && !msg.content" class="typing-dots"><span></span><span></span><span></span></span><span v-else-if="msg.isStreaming" class="typing-cursor">▌</span>
+                </div>
               </div>
             </div>
           </div>
@@ -393,6 +401,16 @@ import {
   Brain, ArrowRight, Cpu, BarChart3, TrendingUp, Code2, Activity,
   MessageSquare, GraduationCap, Copy, FileText, Printer, Clock,
 } from 'lucide-vue-next'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+import markedKatex from 'marked-katex-extension'
+
+marked.use(markedKatex({ throwOnError: false, displayMode: true }))
+
+function renderMarkdown(text) {
+  if (!text) return ''
+  return DOMPurify.sanitize(marked.parse(text))
+}
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -761,6 +779,19 @@ function exportInsightPdf() {
 }
 </script>
 
+<style>
+@import 'katex/dist/katex.min.css';
+
+.md-content p { margin: 0 0 0.5em 0; }
+.md-content p:last-child { margin: 0; }
+.md-content strong { font-weight: 700; color: inherit; }
+.md-content code { background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+.md-content pre { background: rgba(0,0,0,0.06); padding: 8px; border-radius: 6px; overflow-x: auto; margin: 0.5em 0; }
+.md-content pre code { background: none; padding: 0; }
+.md-content ul, .md-content ol { margin: 0.5em 0; padding-left: 20px; }
+.md-content li { margin-bottom: 0.25em; }
+.md-content blockquote { border-left: 3px solid rgba(0,0,0,0.2); padding-left: 10px; margin: 0.5em 0; color: inherit; opacity: 0.9; }
+</style>
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap');
 * { font-family: 'Urbanist', sans-serif; box-sizing: border-box; }

@@ -3,11 +3,22 @@ import { ref } from 'vue'
 import { insightsApi } from '@/api/insights.js'
 
 export const useInsightsStore = defineStore('insights', () => {
-  const biasFingerprint = ref({ bias_scores: {}, archetype: null, dominant_category: null })
-  const weeklyInsights = ref([])
-  const recommendations = ref({ next_bias: null, next_assessment: null })
+  const stored = JSON.parse(sessionStorage.getItem('insights_cache') || 'null')
+
+  const biasFingerprint = ref(stored?.biasFingerprint || { bias_scores: {}, archetype: null, dominant_category: null })
+  const weeklyInsights = ref(stored?.weeklyInsights || [])
+  const recommendations = ref(stored?.recommendations || { next_bias: null, next_assessment: null })
   const loading = ref(false)
-  const lastFetched = ref(null)
+  const lastFetched = ref(stored?.lastFetched || null)
+
+  function saveCache() {
+    sessionStorage.setItem('insights_cache', JSON.stringify({
+      biasFingerprint: biasFingerprint.value,
+      weeklyInsights: weeklyInsights.value,
+      recommendations: recommendations.value,
+      lastFetched: lastFetched.value
+    }))
+  }
 
   const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
@@ -28,6 +39,7 @@ export const useInsightsStore = defineStore('insights', () => {
       if (weekly.status === 'fulfilled') weeklyInsights.value = weekly.value.data
       if (recs.status === 'fulfilled') recommendations.value = recs.value.data
       lastFetched.value = Date.now()
+      saveCache()
     } catch (err) {
       console.warn('Insights fetch error:', err.message)
     } finally {
@@ -39,6 +51,7 @@ export const useInsightsStore = defineStore('insights', () => {
     try {
       const { data } = await insightsApi.biasFingerprint()
       biasFingerprint.value = data
+      saveCache()
     } catch {}
   }
 

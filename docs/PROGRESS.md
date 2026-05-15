@@ -89,3 +89,33 @@ Project Complete
 ### BLOCKED ON (if any)
 None
 ---
+---
+## Session 4 — 2026-05-15
+### Goal
+Deployment Verification & Bug Hardening (Phase 7 - Launch Readiness)
+### Done
+- **Local Testing & Health Checks:** Created `.venv` via `uv`, verified all backend dependencies install cleanly, and confirmed the FastAPI app parses correctly. Verified frontend `npm run dev` and `npm run build` work without errors. (Phase 7)
+- **Resolved Bias Classifier Bug:** Removed deprecated `betas=["prompt-caching-2024-07-31"]` header from `bias_classifier.py` which was causing silent API failures with newer SDKs. Bias detections are now fully operational.
+- **Resolved DB 409 Conflict:** Fixed `user_bias_profiles` upsert logic in `journal.py` by adding `on_conflict="user_id"`. This allows incremental bias score accumulation across multiple entries without crashing.
+- **Improved UI/UX:** Beautified the "Sentio Analysis" sidebar in `Entry.vue` with card-based layouts and integrated "Explore" links. Added a real-time polling loop to `Entry.vue` so analysis results appear automatically as the background task finishes.
+- **Fixed Dashboard Stats:** Fixed a bug where low initial bias scores were causing the radar chart to be invisible and stats to show "—". Applied proportional scaling to the radar chart and updated the counter logic.
+- **Local Dev Workflow:** Created `run_local.bat` for one-click local testing and cleaned up `.gitignore` to prevent tracking of `__pycache__` and local virtual environments.
+- **Final Deployment:** Successfully pushed the full repository to GitHub (`origin`) and the backend subtree to Hugging Face Spaces (`hf-space`).
+### Files changed
+- `sentio-api/services/bias_classifier.py`: Fixed API headers
+- `sentio-api/routers/journal.py`: Fixed upsert logic
+- `src/pages/journal/Entry.vue`: Beautified sidebar & added polling
+- `src/pages/Dashboard.vue`: Fixed radar scaling & stats count
+- `run_local.bat`: Created for local dev
+- `.gitignore`: Added pycache and venv ignores
+- `docs/PROGRESS.md`: Updated
+### Commands run & output
+- `git subtree push --prefix sentio-api hf-space main`: Successful
+- `git push origin main`: Successful
+- Local python re-computation script: Synchronized user archetype to "The Thinker"
+### Status of goal
+COMPLETE - PROJECT DEPLOYED
+### Next session: start with
+Post-launch monitoring and feature expansion
+### BLOCKED ON (if any)
+None
