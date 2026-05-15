@@ -72,12 +72,15 @@
             <div v-else-if="detectedBiases.length" class="bias-list">
               <div v-for="bias in detectedBiases" :key="bias.id" class="bias-row">
                 <div class="bias-row-top">
-                  <span class="badge badge-lavender">{{ bias.name }}</span>
+                  <div class="bias-title">
+                    <span class="bias-dot"></span>
+                    {{ bias.name }}
+                  </div>
                   <span class="bias-score">{{ bias.score }}/10</span>
                 </div>
                 <p v-if="bias.note" class="bias-note">{{ bias.note }}</p>
-                <router-link :to="`/explore/${bias.slug}`" class="btn btn-secondary btn-sm explore-btn">
-                  Explore <ArrowRight :size="12" />
+                <router-link :to="`/explore/${bias.slug}`" class="bias-explore">
+                  Explore bias <ArrowRight :size="12" />
                 </router-link>
               </div>
             </div>
@@ -274,12 +277,16 @@ async function handleDelete() {
 .ai-header { display: flex; align-items: center; gap: 8px; }
 .ai-title { font-size: 15px; font-weight: 700; color: var(--plum); }
 
-.bias-list { display: flex; flex-direction: column; gap: 16px; }
-.bias-row { display: flex; flex-direction: column; gap: 6px; }
-.bias-row-top { display: flex; align-items: center; justify-content: space-between; }
-.bias-score { font-size: 12px; font-weight: 700; color: var(--lavender-deep); }
-.bias-note { font-size: 12px; color: var(--slate); margin: 0; line-height: 1.4; }
-.explore-btn { align-self: flex-start; }
+.bias-list { display: flex; flex-direction: column; gap: 12px; }
+.bias-row { background: var(--lavender-soft); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; border: 1.5px solid transparent; transition: border-color 0.15s, transform 0.15s; }
+.bias-row:hover { border-color: var(--lavender); transform: translateY(-1px); }
+.bias-row-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.bias-title { font-size: 14px; font-weight: 700; color: var(--plum); display: flex; align-items: center; gap: 6px; }
+.bias-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lavender-deep); flex-shrink: 0; }
+.bias-score { font-size: 11px; font-weight: 800; color: var(--lavender-deep); background: white; padding: 3px 8px; border-radius: 6px; }
+.bias-note { font-size: 13px; color: var(--slate); margin: 0 0 4px 0; line-height: 1.5; }
+.bias-explore { font-size: 12px; font-weight: 700; color: var(--lavender-deep); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: color 0.15s; align-self: flex-start; }
+.bias-explore:hover { color: var(--plum); }
 
 .divider { height: 1px; background: var(--lavender-soft); }
 

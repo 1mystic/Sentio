@@ -271,13 +271,13 @@ function computeStreak(entries) {
 
 const stats = computed(() => {
   const biasScores = insightsStore.biasFingerprint?.bias_scores || {}
-  const biasCount = Object.values(biasScores).filter(v => v > 0.2).length
+  const biasCount = Object.keys(biasScores).filter(k => biasScores[k] > 0).length
   const entryCount = journalStore.entries.length
   const streak = computeStreak(journalStore.entries)
   const insightCount = insightsStore.weeklyInsights.length
 
   return [
-    { label: 'BIASES IDENTIFIED', value: biasCount || '—', changeText: 'from your journals', changeIcon: TrendingUp, dir: 'up', variant: 'blue' },
+    { label: 'BIASES IDENTIFIED', value: biasCount.toString(), changeText: 'from your journals', changeIcon: TrendingUp, dir: 'up', variant: 'blue' },
     { label: 'JOURNAL ENTRIES', value: entryCount || '—', changeText: 'total entries', changeIcon: TrendingUp, dir: 'up', variant: 'lavender' },
     { label: 'CURRENT STREAK', value: streak || '—', changeText: 'days in a row', changeIcon: Flame, dir: 'up', variant: 'pink' },
     { label: 'WEEKLY INSIGHTS', value: insightCount || '—', changeText: 'this week', changeIcon: TrendingUp, dir: 'up', variant: 'green' },
@@ -386,11 +386,14 @@ const radarData = computed(() => {
   // Pad to exactly numAxes if needed
   while (entries.length < numAxes) entries.push([`bias_${entries.length}`, 0])
 
+  // Scale the scores relative to the max score so the radar is always visible
+  const maxScore = Math.max(...entries.map(e => e[1]), 0.15)
+
   return {
     labels: entries.map(([k]) =>
       k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/ Bias$/, '').replace(/ Error$/, '').trim()
     ),
-    scores: entries.map(([, v]) => Math.min(1, v)),
+    scores: entries.map(([, v]) => Math.min(1.0, (v / maxScore) * 0.85)), // Cap at 85% of radar radius
   }
 })
 
