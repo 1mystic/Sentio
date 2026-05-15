@@ -69,8 +69,20 @@ _ARCHETYPE_MAP = {
 def _compute_archetype(bias_scores: dict) -> str | None:
     if not bias_scores:
         return None
-    top = max(bias_scores, key=lambda k: bias_scores[k])
-    return _ARCHETYPE_MAP.get(top, 'The Thinker')
+    sorted_biases = sorted(bias_scores.items(), key=lambda x: x[1], reverse=True)
+    if len(sorted_biases) == 1:
+        return _ARCHETYPE_MAP.get(sorted_biases[0][0], 'The Thinker')
+        
+    top1_bias, top1_score = sorted_biases[0]
+    top2_bias, top2_score = sorted_biases[1]
+    
+    arch1 = _ARCHETYPE_MAP.get(top1_bias, 'The Thinker')
+    arch2 = _ARCHETYPE_MAP.get(top2_bias, 'The Thinker')
+    
+    if (top1_score - top2_score) < 0.05 and arch1 != arch2:
+        return f"{arch1} with {arch2} tendencies"
+        
+    return arch1
 
 
 def _update_bias_profile(user_id: str, biases: list[dict]) -> None:

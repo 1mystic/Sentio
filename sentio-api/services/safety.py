@@ -15,12 +15,13 @@ CRISIS_KEYWORDS = [
 
 # Patterns that indicate clinical overreach in AI output
 CLINICAL_OVERREACH_PATTERNS = [
-    r"\bdiagnos\w+\b",  # diagnose, diagnosed, diagnosis
-    r"\b(?:bipolar|schizophrenia|borderline personality|clinical depression|OCD|PTSD)\b",
-    r"\bprescri\w+\b",   # prescribe, prescription
-    r"\bmedication\b",
-    r"\btherapy\s+session\b",
-    r"\btreat(?:ment|ing|ed)\s+(?:your|the)\s+(?:condition|disorder|illness)\b",
+    r'\bdiagnos\w*\b',
+    r'\bdisorder\b',
+    r'\billness\b',
+    r'\bmedication\b',
+    r'\bprescri\w*\b',
+    r'\btherapist says\b',
+    r'\byou have\s+\w+\s+(disorder|condition|syndrome)\b',
 ]
 
 CRISIS_RESPONSE = (

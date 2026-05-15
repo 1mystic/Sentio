@@ -7,21 +7,16 @@ import httpx
 import os
 import logging
 
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
 logger = logging.getLogger(__name__)
 
-# Simple sentiment keywords for fallback
-_POSITIVE_WORDS = {"happy", "great", "good", "excited", "grateful", "proud", "confident", "motivated", "calm", "peaceful"}
-_NEGATIVE_WORDS = {"sad", "angry", "frustrated", "anxious", "worried", "stressed", "overwhelmed", "confused", "hurt", "disappointed"}
-
+_vader = SentimentIntensityAnalyzer()
 
 def _keyword_sentiment(text: str) -> float:
-    words = set(text.lower().split())
-    pos = len(words & _POSITIVE_WORDS)
-    neg = len(words & _NEGATIVE_WORDS)
-    total = pos + neg
-    if total == 0:
-        return 0.0
-    return (pos - neg) / total
+    """Returns compound score -1 (negative) to +1 (positive) using VADER."""
+    scores = _vader.polarity_scores(text)
+    return round(scores['compound'], 3)
 
 
 def _extract_themes_locally(text: str) -> list[str]:

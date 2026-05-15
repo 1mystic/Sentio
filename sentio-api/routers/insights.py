@@ -4,6 +4,12 @@ from services.supabase_client import get_supabase
 from services.recommender import recommend_bias_to_explore, recommend_assessment
 from routers._auth_helpers import get_user_id
 import logging
+import json
+import os
+from datetime import datetime
+import anthropic
+
+_WEEKLY_INSIGHT_CACHE: dict[str, list] = {}
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -39,8 +45,15 @@ async def recommendations(authorization: str | None = Header(None)):
 
 @router.get("/weekly")
 async def weekly_insights(authorization: str | None = Header(None)):
-    """Return a short list of narrative insights based on the last 7 entries."""
+    """Return Claude-synthesized narrative insights based on the last 7 entries."""
     user_id = get_user_id(authorization)
+    
+    current_year, current_week, _ = datetime.now().isocalendar()
+    cache_key = f"{user_id}_{current_year}_{current_week}"
+    
+    if cache_key in _WEEKLY_INSIGHT_CACHE:
+        return _WEEKLY_INSIGHT_CACHE[cache_key]
+
     supabase = get_supabase()
     entries = (
         supabase.table("journal_entries")
@@ -64,35 +77,69 @@ async def weekly_insights(authorization: str | None = Header(None)):
             if bid:
                 all_biases.append(bid)
 
-    top_themes = [t for t, _ in Counter(all_themes).most_common(3)]
     entry_count = len(entries.data or [])
-    avg_sentiment = sum(all_sentiment) / len(all_sentiment) if all_sentiment else None
-
-    insights = []
-    if entry_count > 0:
-        insights.append({
-            "type": "journal",
-            "text": f"You've written {entry_count} journal {'entry' if entry_count == 1 else 'entries'} this week.",
-            "icon": "edit",
-        })
-    if top_themes:
-        insights.append({
-            "type": "themes",
-            "text": f"Your recurring themes: {', '.join(top_themes)}.",
-            "icon": "tag",
-        })
-    if avg_sentiment is not None:
-        tone = "positive" if avg_sentiment > 0.2 else ("negative" if avg_sentiment < -0.2 else "neutral")
-        insights.append({
-            "type": "sentiment",
-            "text": f"Your entries this week have a generally {tone} emotional tone.",
-            "icon": "bar-chart",
-        })
-    if not insights:
-        insights.append({
+    if entry_count == 0:
+        return [{
             "type": "empty",
             "text": "Journal for 7 days to unlock your weekly insights.",
             "icon": "info",
-        })
+        }]
 
-    return insights
+    top_themes = [t for t, _ in Counter(all_themes).most_common(5)]
+    top_biases = [b for b, _ in Counter(all_biases).most_common(3)]
+    avg_sentiment = sum(all_sentiment) / len(all_sentiment) if all_sentiment else 0.0
+
+    sessions_res = (
+        supabase.table("socratic_sessions")
+        .select("id")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(10)
+        .execute()
+    )
+    session_count = len(sessions_res.data or [])
+
+    synthesis_prompt = f"""
+You are analyzing one week of cognitive clarity work for a user.
+Based on the following data, write 3 specific, personalized insights.
+
+This week's data:
+- Journal entries: {entry_count} entries
+- Average sentiment: {avg_sentiment:.2f} (range: -1 negative to +1 positive)
+- Recurring themes: {', '.join(top_themes)}
+- Most detected biases: {', '.join(top_biases)}
+- Socratic sessions completed: {session_count}
+
+Write exactly 3 insights. Each insight must:
+1. Reference a specific data point (not generic)
+2. Name a pattern the user may not have noticed
+3. End with one actionable question for the user to reflect on
+
+Format: JSON array of {{"type": "str", "text": "str", "icon": "str"}}
+The "type" must be a short category (e.g., "bias", "sentiment", "pattern").
+The "icon" must be a valid lucide-vue-next icon name in lowercase (e.g. "brain", "bar-chart", "lightbulb").
+Do not include clinical terms, diagnoses, or treatment recommendations.
+"""
+
+    client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    try:
+        response = await client.messages.create(
+            model=os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
+            max_tokens=400,
+            system="You are a reflective cognitive coach. Output only valid JSON arrays.",
+            messages=[{"role": "user", "content": synthesis_prompt}],
+        )
+        text = response.content[0].text if response.content else "[]"
+        clean = text.replace("```json", "").replace("```", "").strip()
+        insights = json.loads(clean)
+        
+        _WEEKLY_INSIGHT_CACHE[cache_key] = insights
+        return insights
+    except Exception as e:
+        logger.error(f"Weekly insight synthesis error: {e}")
+        return [{
+            "type": "error",
+            "text": "Could not generate insights at this time.",
+            "icon": "alert-circle"
+        }]
+

@@ -135,8 +135,9 @@ async def socratic_chat(
                 bias_scores=bias_scores,
                 journal_themes=journal_themes,
             ):
-                full_response += chunk
-                yield f"data: {json.dumps({'text': chunk})}\n\n"
+                if safety.check_output(chunk):
+                    full_response += chunk
+                    yield f"data: {json.dumps({'text': chunk})}\n\n"
 
             yield f"data: {json.dumps({'done': True, 'clarity_score': req.clarity_score, 'next_state': req.next_state, 'can_generate_insight': req.turn_number >= 3})}\n\n"
 

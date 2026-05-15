@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Header, HTTPException, Query, status
+from fastapi import APIRouter, Header, HTTPException, Query, status, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional
 from services.supabase_client import get_supabase
-from routers._auth_helpers import get_user_id
+from routers._auth_helpers import get_user, get_user_id
 import logging
 
 logger = logging.getLogger(__name__)
@@ -93,6 +93,7 @@ async def get_therapist(therapist_id: str):
 async def request_connection(
     therapist_id: str,
     data: BookingRequest,
+    background_tasks: BackgroundTasks,
     authorization: str | None = Header(None),
 ):
     """Submit a connection request to a therapist.
@@ -100,12 +101,14 @@ async def request_connection(
     Sentio does not intermediate the clinical relationship — this records
     the user's intent; actual booking happens on the therapist's source platform.
     """
-    user_id = get_user_id(authorization)
+    user = get_user(authorization)
+    user_id = user["id"]
+    user_email = user.get("email")
     supabase = get_supabase()
 
     check = (
         supabase.table("therapists")
-        .select("id,verified")
+        .select("id,verified,name")
         .eq("id", therapist_id)
         .single()
         .execute()
@@ -131,6 +134,15 @@ async def request_connection(
     ).execute()
 
     booking_id = result.data[0]["id"] if result.data else None
+    
+    if user_email:
+        user_profile = supabase.table("profiles").select("display_name").eq("id", user_id).single().execute()
+        user_name = user_profile.data.get("display_name") if user_profile.data else "User"
+        therapist_name = check.data.get("name", "your therapist")
+        
+        from services.email_service import send_booking_notification
+        background_tasks.add_task(send_booking_notification, user_email, user_name, therapist_name)
+
     return {"status": "request_submitted", "booking_id": booking_id}
 
 

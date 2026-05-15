@@ -120,3 +120,17 @@ async def send_assessment_complete(to: str, user_name: str, assessment_title: st
         </a>
     """)
     return await send_email(to, f"Results: {assessment_title} — Sentio", html)
+
+async def send_booking_notification(to: str, user_name: str, therapist_name: str) -> bool:
+    html = _base_template(f"""
+        <h2 style="font-size:22px;font-weight:700;color:#352b38;margin:0 0 8px;">Connection request sent! 🤝</h2>
+        <p style="color:#7e808c;font-size:14px;margin:0 0 20px;">Hi {user_name}, we've received your request to connect with {therapist_name}.</p>
+        <p style="color:#7e808c;font-size:14px;margin:0 0 20px;">They will review your request and get back to you soon.</p>
+        <a href="{APP_URL}/therapists"
+           style="display:inline-block;background:#352b38;color:white;font-weight:600;font-size:14px;
+                  padding:12px 28px;border-radius:10px;text-decoration:none;">
+          View directory →
+        </a>
+    """)
+    return await send_email(to, f"Connection request sent to {therapist_name} — Sentio", html)
+
