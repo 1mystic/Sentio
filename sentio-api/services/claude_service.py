@@ -36,9 +36,12 @@ def _build_system(
     rag_context: str = "",
     bias_fingerprint: dict | None = None,
     journal_themes: list | None = None,
+    memory_context: str = "",
 ) -> str:
     """Build the system prompt string, injecting dynamic user context."""
     context_parts: list[str] = []
+    if memory_context:
+        context_parts.append(f"What Sentio remembers about this user:\n{memory_context}")
     if bias_fingerprint:
         context_parts.append(f"User's bias profile: {bias_fingerprint}")
     if journal_themes:
@@ -56,13 +59,14 @@ async def stream_response(
     rag_context: str = "",
     bias_fingerprint: dict | None = None,
     journal_themes: list | None = None,
+    memory_context: str = "",
 ) -> AsyncGenerator[str, None]:
     """Stream a Claude response token-by-token with prompt caching on the system prompt.
 
     Yields plain text chunks. The caller is responsible for safety-checking.
     """
     client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-    system = _build_system(rag_context, bias_fingerprint, journal_themes)
+    system = _build_system(rag_context, bias_fingerprint, journal_themes, memory_context)
 
     async with client.messages.stream(
         model=_CLAUDE_MODEL,

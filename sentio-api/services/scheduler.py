@@ -11,6 +11,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 
 logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler(timezone="UTC")
@@ -152,6 +153,78 @@ def _compute_streak(entries: list[dict]) -> int:
     return streak
 
 
+async def _consolidate_memories() -> None:
+    """Nightly at 02:00 UTC — promote old episodic memories to semantic facts.
+
+    Iterates every user who has unconsolidated episodes older than 7 days.
+    Episodes → Claude Haiku → 2–4 durable user_facts → mark consolidated.
+    """
+    from services.supabase_client import get_supabase
+    from services.memory_service import consolidate_user_episodes
+
+    supabase = get_supabase()
+    logger.info("[Scheduler] Running memory consolidation")
+
+    try:
+        # Find distinct users with unconsolidated old episodes
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        rows = (
+            supabase.table("memory_episodes")
+            .select("user_id")
+            .eq("consolidated", False)
+            .lt("created_at", cutoff)
+            .execute()
+        )
+        user_ids = list({r["user_id"] for r in (rows.data or [])})
+        total_facts = 0
+        for uid in user_ids:
+            try:
+                n = await consolidate_user_episodes(uid)
+                total_facts += n
+            except Exception as exc:
+                logger.error(f"[Scheduler] consolidation error for user={uid}: {exc}")
+        logger.info(
+            f"[Scheduler] Memory consolidation done — "
+            f"{len(user_ids)} users processed, {total_facts} facts created"
+        )
+    except Exception as exc:
+        logger.error(f"[Scheduler] _consolidate_memories error: {exc}")
+
+
+async def _sweep_orphan_analyses() -> None:
+    """Every 10 min — re-queue journal entries stuck in 'pending' for > 5 minutes.
+
+    These orphans arise when the server crashes between journal_entries INSERT and the
+    background task completing.  The fix: persist analysis_status='pending' at insert
+    time (via SQL DEFAULT), then sweep here and call _process_entry directly.
+    """
+    from services.supabase_client import get_supabase
+    from routers.journal import _process_entry
+
+    supabase = get_supabase()
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+    try:
+        rows = (
+            supabase.table("journal_entries")
+            .select("id, content, user_id")
+            .eq("analysis_status", "pending")
+            .lt("created_at", cutoff)
+            .limit(50)
+            .execute()
+        )
+        orphans = rows.data or []
+        if not orphans:
+            return
+        logger.info(f"[Scheduler] Sweeping {len(orphans)} orphan journal entr{'y' if len(orphans)==1 else 'ies'}")
+        for entry in orphans:
+            try:
+                await _process_entry(entry["id"], entry["content"], entry["user_id"])
+            except Exception as exc:
+                logger.error(f"[Scheduler] orphan sweep error entry={entry['id']}: {exc}")
+    except Exception as exc:
+        logger.error(f"[Scheduler] _sweep_orphan_analyses error: {exc}")
+
+
 def start_scheduler() -> None:
     """Register all jobs and start the scheduler. Call once at app startup."""
     scheduler.add_job(
@@ -168,5 +241,24 @@ def start_scheduler() -> None:
         replace_existing=True,
         misfire_grace_time=3600,
     )
+    scheduler.add_job(
+        _consolidate_memories,
+        CronTrigger(hour=2, minute=0),
+        id="memory_consolidation",
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
+    scheduler.add_job(
+        _sweep_orphan_analyses,
+        IntervalTrigger(minutes=10),
+        id="orphan_analysis_sweep",
+        replace_existing=True,
+        misfire_grace_time=300,
+    )
     scheduler.start()
-    logger.info("[Scheduler] Started — daily nudge @ 19:00 UTC, weekly digest @ Mon 08:00 UTC")
+    logger.info(
+        "[Scheduler] Started — daily nudge @ 19:00 UTC, "
+        "weekly digest @ Mon 08:00 UTC, "
+        "memory consolidation @ 02:00 UTC, "
+        "orphan analysis sweep every 10 min"
+    )

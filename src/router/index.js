@@ -23,6 +23,7 @@ const routes = [
   { path: '/therapists/:id', component: () => import('@/pages/therapists/Profile.vue'), meta: { requiresAuth: true } },
   { path: '/ai-guide', component: () => import('@/pages/AIGuide.vue'), meta: { requiresAuth: true } },
   { path: '/profile', component: () => import('@/pages/Profile.vue'), meta: { requiresAuth: true } },
+  { path: '/memory', component: () => import('@/pages/Memory.vue'), meta: { requiresAuth: true } },
   { path: '/progress', component: () => import('@/pages/Progress.vue'), meta: { requiresAuth: true } },
   { path: '/learn', component: () => import('@/pages/Learn.vue'), meta: { requiresAuth: true } },
   { path: '/community', component: () => import('@/pages/community/Index.vue'), meta: { requiresAuth: true } },

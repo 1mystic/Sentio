@@ -44,6 +44,8 @@ Streams responses from Claude via SSE. Every message is enriched with three laye
 
 Conversation history persists to Supabase and is reloadable from a history panel. A safety gate intercepts crisis language before any token is spent.
 
+Three-tier memory makes the guide remember you across sessions: per-session episodic summaries and nightly-consolidated semantic facts are retrieved with decay-weighted scoring and injected into every prompt. A dedicated **AI Memory page** (`/memory`) shows everything Sentio remembers, with per-item delete and a full GDPR wipe.
+
 ---
 
 ### Socratic Mode : seven-algorithm dialogue engine
@@ -116,7 +118,8 @@ Browser  (Vue 3 + Pinia)
 │
 └── FastAPI  (Python 3.11 : HuggingFace Spaces Docker, port 7860)
        │
-       ├── /ai          SSE streaming guide chat
+       ├── /ai          SSE streaming guide chat (three-tier memory: episodic → semantic → working)
+       │    └── GET/DELETE /ai/memory  episodic + semantic memory panel
        ├── /socratic    SSE Socratic dialogue + session persistence
        ├── /journal     CRUD · APScheduler background analysis
        ├── /assessments quiz submit → bias profile update
@@ -182,7 +185,8 @@ user_bias_profiles.bias_scores   (jsonb)
 | Socratic dialogue | Same configurable model | ≤120 words per response, ends with one question |
 | Journal reflections | Same configurable model | 3 grounded questions per entry |
 | Socratic insight cards | Same configurable model | Structured JSON output |
-| Bias classifier | `claude-haiku-4-5-20251001` (hardcoded) | Prompt-cached taxonomy ≈ $0.0002/entry |
+| Bias classifier | `claude-haiku-4-5-20251001` (API, prompt-cached); QLoRA Qwen2.5-3B student (WIP) | Prompt-cached taxonomy ≈ $0.0002/entry |
+| Memory embeddings | `all-MiniLM-L6-v2` (reused from RAG) | Episodic + semantic memory retrieval with decay scoring |
 | RAG embeddings | `all-MiniLM-L6-v2` (sentence-transformers) | 384-dim dense vectors |
 | RAG reranking | Cohere `rerank-english-v2.0` | Optional; pipeline degrades gracefully |
 | Journal NLP | Keyword heuristics · optional HF Space endpoint | Sentiment (−1→+1), emotion labels, themes |
@@ -271,7 +275,7 @@ sentio/
 |:------|:--------|
 | `profiles` | Display name, avatar, onboarding state |
 | `user_bias_profiles` | `bias_scores` jsonb : 60% assessment / 40% journal blend |
-| `journal_entries` | Content, sentiment, detected biases jsonb, AI reflections |
+| `journal_entries` | Content, sentiment, detected_biases, analysis_status (`'pending'`\|`'processing'`\|`'done'`\|`'failed'`) |
 | `knowledge_articles` | Psychology KB with `embedding vector(384)` for pgvector |
 | `cognitive_assessments` | Assessment definitions and questions |
 | `assessment_submissions` | User answers and computed scores |
@@ -280,6 +284,8 @@ sentio/
 | `community_topics` / `community_threads` / `community_replies` | Forum |
 | `notifications` | Notification feed |
 | `socratic_sessions` | Session state + full conversation history |
+| `memory_episodes` | Per-session episodic memory with pgvector embeddings + decay scoring |
+| `user_facts` | Semantic long-term user facts (consolidated nightly from episodes) |
 | `badges` / `user_badges` | Achievement system |
 
 All tables have Row-Level Security tied to `auth.uid()`.
@@ -298,6 +304,10 @@ All tables have Row-Level Security tied to `auth.uid()`.
 
 **Background tasks** : APScheduler runs bias classification and embedding generation post-save, keeping journal write latency under 200ms.
 
+**Three-tier memory** : Working memory = 5-min `_USER_CTX_CACHE`; Episodic = one `memory_episodes` row per session (Claude Haiku summary + MiniLM embedding + decay score = cosine × exp(−λ×age) × importance); Semantic = nightly consolidation into `user_facts` via APScheduler 02:00 UTC. Retrieval uses `match_memory` pgvector RPC with dual λ (0.05 episodes, 0.005 facts). Cites MemGPT (Packer 2023) and Park et al. generative agents (2023).
+
+**Analysis status** : `journal_entries.analysis_status` tracks pipeline state (`pending` → `processing` → `done`/`failed`). APScheduler `_sweep_orphan_analyses` job runs every 10 min and re-queues entries stuck `pending` > 5 min, recovering from server crashes.
+
 ---
 
 ## Local Setup
@@ -310,13 +320,15 @@ npm run dev
 
 # Backend
 cd sentio-api
-python -m venv .venv && .venv\Scripts\activate
-pip install -r requirements.txt
+uv venv && .venv\Scripts\activate
+uv pip install -r requirements.txt
 cp .env.example .env   # fill in all keys
 uvicorn main:app --reload --port 8000
 
-# Database : run once in Supabase SQL Editor
-# sentio-api/db/migration_phase6.sql
+# Database : run once in Supabase SQL Editor (in order)
+# sentio-api/db/migration_phase6.sql            (base schema)
+# sentio-api/db/migration_memory.sql            (three-tier memory tables + RPCs)
+# sentio-api/db/migration_analysis_status.sql   (analysis_status column + partial index)
 ```
 
 API docs: `http://localhost:8000/docs`

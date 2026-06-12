@@ -32,14 +32,19 @@ class JournalUpdate(BaseModel):
 
 async def _process_entry(entry_id: str, content: str, user_id: str) -> None:
     """Background task: run bias classification + NLP, persist results, check badges."""
+    supabase = get_supabase()
     try:
+        supabase.table("journal_entries").update(
+            {"analysis_status": "processing"}
+        ).eq("id", entry_id).execute()
+
         biases, nlp = await classify_biases(content), await analyze_journal(content)
-        supabase = get_supabase()
         supabase.table("journal_entries").update(
             {
                 "detected_biases": biases,
                 "themes": nlp.get("themes", []),
                 "sentiment_score": nlp.get("sentiment_score", 0.0),
+                "analysis_status": "done",
             }
         ).eq("id", entry_id).execute()
 
@@ -49,6 +54,12 @@ async def _process_entry(entry_id: str, content: str, user_id: str) -> None:
         await check_and_award_badges(user_id, supabase)
     except Exception as e:
         logger.error(f"Background entry processing error (entry={entry_id}): {e}")
+        try:
+            supabase.table("journal_entries").update(
+                {"analysis_status": "failed"}
+            ).eq("id", entry_id).execute()
+        except Exception:
+            pass
 
 
 _ARCHETYPE_MAP = {
@@ -259,6 +270,8 @@ async def update_entry(
         safety_result = safety.check_input(update_payload["content"])
         if safety_result.action == "REDIRECT":
             return {"crisis_resources": safety_result.message, "entry_saved": False}
+        # Reset status so the scheduler knows to re-process if the background task dies
+        update_payload["analysis_status"] = "pending"
 
     result = (
         supabase.table("journal_entries")

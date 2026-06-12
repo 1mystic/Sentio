@@ -161,7 +161,7 @@ import {
   MessageSquare, UserCheck, TrendingUp, GraduationCap,
   Search, Bell, Sparkles, LogOut,
   CheckCircle, Lightbulb, Flame, Info, Users,
-  ChevronLeft, ChevronRight, Menu
+  ChevronLeft, ChevronRight, Menu, Database
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -340,6 +340,7 @@ const mainNav = [
 
 const toolsNav = [
   { path: '/ai-guide', icon: MessageSquare, label: 'AI Guide' },
+  { path: '/memory', icon: Database, label: 'AI Memory' },
   { path: '/community', icon: Users, label: 'Community' },
   { path: '/learn', icon: GraduationCap, label: 'Learn' },
   { path: '/therapists', icon: UserCheck, label: 'Find Therapist' },

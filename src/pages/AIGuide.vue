@@ -454,6 +454,9 @@ const showHistory = ref(false)
 const history = ref([])
 const historyLoading = ref(false)
 const activeConvId = ref(null)
+// Stable UUID for the current chat session (Option B conversation grouping).
+// Null until the first message is sent; reset on newChat().
+const sessionConvId = ref(null)
 
 const suggestions = [
   'What biases affect decisions most?',
@@ -481,6 +484,7 @@ async function fetchHistory() {
 
 function loadConversation(conv) {
   activeConvId.value = conv.id
+  sessionConvId.value = conv.id   // subsequent messages continue this session
   const dateStr = new Date(conv.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' })
   guideMessages.value = conv.messages.map((m, i) => ({
     id: i, role: m.role, streaming: false, content: m.content, ts: dateStr,
@@ -492,6 +496,7 @@ function loadConversation(conv) {
 function newChat() {
   if (mode.value === 'guide') {
     activeConvId.value = null
+    sessionConvId.value = null
     guideMessages.value = [{ ...WELCOME, ts: new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }) }]
     showHistory.value = false
   } else {
@@ -521,7 +526,8 @@ function scrollToBottom() {
 }
 
 async function sendGuideMessage(text) {
-  activeConvId.value = null
+  // Generate a stable session UUID on first message; carry it through the session.
+  if (!sessionConvId.value) sessionConvId.value = crypto.randomUUID()
   guideMessages.value.push({
     id: Date.now(), role: 'user', streaming: false, content: text,
     ts: new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
@@ -541,7 +547,7 @@ async function sendGuideMessage(text) {
     const res = await fetch(`${API_BASE}/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({ message: text, conversation_id: sessionConvId.value }),
     })
 
     if (!res.ok) {
