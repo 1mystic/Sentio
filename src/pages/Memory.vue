@@ -17,17 +17,19 @@
       <!-- Semantic facts -->
       <div class="card mem-card">
         <div class="section-header">
-          <span class="section-title">🧠 Long-term facts</span>
+          <Brain :size="16" class="section-icon" />
+          <span class="section-title">Long-term facts</span>
           <span class="mem-count">{{ facts.length }}</span>
         </div>
         <p class="mem-desc">Stable patterns consolidated nightly from your conversations. These persist for months and shape how the AI Guide responds to you.</p>
         <div v-if="!facts.length" class="empty-hint">Nothing here yet — facts appear after you've chatted across multiple sessions.</div>
         <div v-for="f in facts" :key="f.id" class="mem-item">
-          <div class="mem-text">{{ f.fact }}</div>
+          <div class="mem-text md-content" v-html="renderMarkdown(f.fact)"></div>
           <div class="mem-meta">
             <span class="badge badge-lavender">used {{ f.access_count }}×</span>
-            <button class="btn btn-ghost btn-sm del-btn" :disabled="deleting === f.id" @click="deleteItem(f.id, 'fact')">
-              {{ deleting === f.id ? '…' : '🗑' }}
+            <button class="btn btn-ghost btn-sm del-btn" :disabled="deleting === f.id" @click="deleteItem(f.id, 'fact')" title="Delete">
+              <span v-if="deleting === f.id">…</span>
+              <Trash2 v-else :size="13" />
             </button>
           </div>
         </div>
@@ -36,17 +38,19 @@
       <!-- Episodic memories -->
       <div class="card mem-card">
         <div class="section-header">
-          <span class="section-title">💬 Recent session memories</span>
+          <MessageSquare :size="16" class="section-icon" />
+          <span class="section-title">Recent session memories</span>
           <span class="mem-count">{{ episodes.length }}</span>
         </div>
         <p class="mem-desc">One summary per chat session. These fade over ~2 weeks; important ones get promoted into long-term facts.</p>
         <div v-if="!episodes.length" class="empty-hint">No session memories yet — have a conversation with the AI Guide first.</div>
         <div v-for="e in episodes" :key="e.id" class="mem-item">
-          <div class="mem-text">{{ e.summary }}</div>
+          <div class="mem-text md-content" v-html="renderMarkdown(e.summary)"></div>
           <div class="mem-meta">
             <span class="badge badge-lavender">{{ formatAge(e.age_days) }}</span>
-            <button class="btn btn-ghost btn-sm del-btn" :disabled="deleting === e.id" @click="deleteItem(e.id, 'episode')">
-              {{ deleting === e.id ? '…' : '🗑' }}
+            <button class="btn btn-ghost btn-sm del-btn" :disabled="deleting === e.id" @click="deleteItem(e.id, 'episode')" title="Delete">
+              <span v-if="deleting === e.id">…</span>
+              <Trash2 v-else :size="13" />
             </button>
           </div>
         </div>
@@ -54,10 +58,11 @@
 
       <!-- Wipe all -->
       <div class="card danger-card">
-        <div class="danger-title">Forget everything</div>
+        <div class="danger-title"><AlertTriangle :size="14" class="danger-icon" /> Forget everything</div>
         <p class="danger-desc">Permanently delete all episodic memories and long-term facts. The AI Guide will start fresh. This cannot be undone.</p>
         <button class="btn btn-danger btn-sm" :disabled="wiping || (!facts.length && !episodes.length)" @click="wipeAll">
-          {{ wiping ? 'Deleting…' : '🗑 Delete All Memory' }}
+          <Trash2 v-if="!wiping" :size="13" style="margin-right:5px;vertical-align:-2px" />
+          {{ wiping ? 'Deleting…' : 'Delete All Memory' }}
         </button>
       </div>
 
@@ -68,6 +73,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import client from '@/api/client.js'
+import { Brain, MessageSquare, Trash2, AlertTriangle } from 'lucide-vue-next'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+
+marked.setOptions({ breaks: true, gfm: true })
+function renderMarkdown(text) {
+  if (!text) return ''
+  return DOMPurify.sanitize(marked.parse(text))
+}
 
 const loading = ref(true)
 const error = ref('')
@@ -132,7 +146,8 @@ onMounted(load)
 .page-title { font-size: 24px; font-weight: 700; margin: 0 0 6px; }
 .page-sub { font-size: 13.5px; color: var(--slate, #64748b); margin: 0; line-height: 1.5; }
 .mem-card { margin-bottom: 16px; padding: 20px; }
-.section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.section-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.section-icon { color: var(--primary, #7c3aed); flex-shrink: 0; }
 .section-title { font-weight: 600; font-size: 15px; }
 .mem-count { font-size: 12px; color: var(--slate, #64748b); background: var(--bg, #f4f2f7); border-radius: 10px; padding: 2px 8px; }
 .mem-desc { font-size: 12.5px; color: var(--slate, #64748b); margin: 0 0 12px; line-height: 1.45; }
@@ -144,6 +159,7 @@ onMounted(load)
 .empty-card { padding: 32px; text-align: center; color: var(--slate, #64748b); }
 .error-text { color: #dc2626; }
 .danger-card { padding: 20px; border: 1px solid #fecaca; }
-.danger-title { font-weight: 600; font-size: 14px; color: #dc2626; margin-bottom: 4px; }
+.danger-title { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; color: #dc2626; margin-bottom: 4px; }
+.danger-icon { flex-shrink: 0; }
 .danger-desc { font-size: 12.5px; color: var(--slate, #64748b); margin: 0 0 12px; line-height: 1.45; }
 </style>
