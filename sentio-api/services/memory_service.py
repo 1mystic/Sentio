@@ -23,8 +23,7 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 
-import anthropic
-
+from services.llm_client import has_llm, complete_text
 from services.rag_service import _get_embedder
 from services.supabase_client import get_supabase
 
@@ -52,40 +51,24 @@ def _importance(messages: list[dict]) -> float:
 
 
 async def _summarise_conversation(messages: list[dict]) -> str | None:
-    """Generate a 2–3 sentence episodic memory summary via Claude Haiku."""
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
+    """Generate a 2–3 sentence episodic memory summary."""
+    if not has_llm():
         return None
 
-    # Keep last 10 messages to stay within token budget
     recent = messages[-10:]
-    transcript = "\n".join(
-        f"{m['role'].upper()}: {m['content'][:300]}" for m in recent
-    )
+    transcript = "\n".join(f"{m['role'].upper()}: {m['content'][:300]}" for m in recent)
 
     try:
-        client = anthropic.AsyncAnthropic(api_key=api_key)
-        model = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
-        response = await client.messages.create(
-            model=model,
-            max_tokens=150,
+        return await complete_text(
             system=(
                 "You extract concise episodic memory summaries. "
                 "Write 2–3 sentences describing what the user discussed and any "
                 "cognitive patterns they expressed. Focus on facts useful for "
                 "future conversations. Do not include timestamps or filler."
             ),
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        f"Summarise this AI Guide conversation for memory storage:\n\n"
-                        f"{transcript}"
-                    ),
-                }
-            ],
+            messages=[{"role": "user", "content": f"Summarise this AI Guide conversation for memory storage:\n\n{transcript}"}],
+            max_tokens=150,
         )
-        return response.content[0].text.strip()
     except Exception as exc:
         logger.warning(f"[Memory] Episode summarisation failed: {exc}")
         return None
@@ -93,17 +76,12 @@ async def _summarise_conversation(messages: list[dict]) -> str | None:
 
 async def _extract_facts(episode_summaries: list[str]) -> list[str]:
     """Distil a batch of episode summaries into 2–4 durable user facts."""
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
+    if not has_llm():
         return []
 
     joined = "\n\n".join(f"- {s}" for s in episode_summaries)
     try:
-        client = anthropic.AsyncAnthropic(api_key=api_key)
-        model = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
-        response = await client.messages.create(
-            model=model,
-            max_tokens=256,
+        raw = await complete_text(
             system=(
                 "You extract durable semantic memory facts about a user from "
                 "episodic conversation summaries. "
@@ -111,18 +89,10 @@ async def _extract_facts(episode_summaries: list[str]) -> list[str]:
                 "Each fact must be a third-person statement about the user's cognitive "
                 "patterns or recurring topics. No filler. No markdown."
             ),
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        f"Extract semantic facts from these conversation summaries:\n\n"
-                        f"{joined}"
-                    ),
-                }
-            ],
+            messages=[{"role": "user", "content": f"Extract semantic facts from these conversation summaries:\n\n{joined}"}],
+            max_tokens=256,
         )
-        raw = response.content[0].text.strip()
-        facts = json.loads(raw)
+        facts = json.loads(raw.strip())
         if isinstance(facts, list):
             return [str(f) for f in facts if f][:4]
     except Exception as exc:

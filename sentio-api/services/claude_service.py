@@ -1,15 +1,12 @@
-"""Claude API wrapper with streaming."""
+"""LLM wrapper for Sentio AI features — streaming chat, journal reflections, Socratic mode."""
 import os
 import json
-import anthropic
 from typing import AsyncGenerator
+from services.llm_client import stream_text, complete_text
 
-# Override with CLAUDE_MODEL env var
-# Defaults to claude-haiku-4-5 (fast, cheap); set to claude-sonnet-4-6 for higher quality
-_CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
+# Override with CLAUDE_MODEL env var (Anthropic) or FALLBACK_MODEL (OpenRouter).
+# See services/llm_client.py for full provider-switching instructions.
 
-# The system prompt is large and static — mark it for caching.
-# Anthropic caches up to 4 content blocks per request.
 SYSTEM_PROMPT_TEXT = """You are Sentio's AI Guide — an expert in cognitive psychology, behavioral science, and metacognition.
 
 Your role:
@@ -38,7 +35,6 @@ def _build_system(
     journal_themes: list | None = None,
     memory_context: str = "",
 ) -> str:
-    """Build the system prompt string, injecting dynamic user context."""
     context_parts: list[str] = []
     if memory_context:
         context_parts.append(f"What Sentio remembers about this user:\n{memory_context}")
@@ -61,34 +57,15 @@ async def stream_response(
     journal_themes: list | None = None,
     memory_context: str = "",
 ) -> AsyncGenerator[str, None]:
-    """Stream a Claude response token-by-token with prompt caching on the system prompt.
-
-    Yields plain text chunks. The caller is responsible for safety-checking.
-    """
-    client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     system = _build_system(rag_context, bias_fingerprint, journal_themes, memory_context)
-
-    async with client.messages.stream(
-        model=_CLAUDE_MODEL,
-        max_tokens=1024,
-        system=system,
-        messages=[{"role": "user", "content": user_message}],
-    ) as stream:
-        async for text in stream.text_stream:
-            yield text
+    async for chunk in stream_text(system, [{"role": "user", "content": user_message}], max_tokens=1024):
+        yield chunk
 
 
 async def generate_journal_reflections(
     entry_text: str,
     detected_biases: list[dict],
 ) -> list[str]:
-    """Generate 3 grounded reflection questions for a journal entry.
-
-    Returns a list of 3 question strings.
-    Falls back to generic questions if Claude is unavailable.
-    """
-    client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
     bias_names = [b.get("bias") or b.get("bias_id", "") for b in detected_biases if b]
     bias_context = f"Detected cognitive biases: {', '.join(bias_names)}" if bias_names else ""
 
@@ -109,13 +86,12 @@ Generate exactly 3 follow-up reflection questions that will help them examine th
 Return ONLY the 3 questions, one per line, no numbering, no preamble."""
 
     try:
-        response = await client.messages.create(
-            model=_CLAUDE_MODEL,
-            max_tokens=300,
+        text = await complete_text(
             system="You are a reflective journaling coach. Generate precise, grounded reflection questions.",
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
         )
-        lines = [l.strip() for l in response.content[0].text.strip().split('\n') if l.strip()]
+        lines = [l.strip() for l in text.strip().split('\n') if l.strip()]
         return lines[:3] if lines else _fallback_questions(bias_names)
     except Exception:
         return _fallback_questions(bias_names)
@@ -132,10 +108,6 @@ async def stream_socratic_response(
     bias_scores: dict,
     journal_themes: list,
 ) -> AsyncGenerator[str, None]:
-    """Stream a Socratic response enriched with SDSM state and user bias context.
-
-    Yields plain text chunks. The router wraps each in SSE format.
-    """
     STATE_INSTRUCTIONS: dict[str, str] = {
         "PROBE": "Ask what the user already thinks. Do NOT explain. ONE focused question about their prior understanding. Begin: 'Before I respond...' or 'What's your intuition about...'",
         "DEEPEN": "Acknowledge ONE thing they got right, then probe deeper. Ask about edge cases or mechanisms.",
@@ -168,16 +140,9 @@ ABSOLUTE RULES:
 5. End every response with exactly one question (except COMPLETE state)
 6. If a cognitive bias connection arises naturally, note it once — gently, as a lens not a label"""
 
-    client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
-    async with client.messages.stream(
-        model=_CLAUDE_MODEL,
-        max_tokens=300,
-        system=system,
-        messages=conversation_history + [{"role": "user", "content": message}],
-    ) as stream:
-        async for text in stream.text_stream:
-            yield text
+    messages = conversation_history + [{"role": "user", "content": message}]
+    async for chunk in stream_text(system, messages, max_tokens=300):
+        yield chunk
 
 
 async def generate_socratic_insight_card(
@@ -185,10 +150,6 @@ async def generate_socratic_insight_card(
     concept: str,
     domain: str,
 ) -> dict:
-    """Generate a structured insight card from a completed Socratic session."""
-    client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
-    # Summarise conversation (last 10 messages)
     recent = conversation_history[-10:]
     summary_lines = [f"{m['role'].upper()}: {m['content'][:200]}" for m in recent]
     conversation_summary = "\n".join(summary_lines)
@@ -222,16 +183,14 @@ Rules:
 - clarity_score: 0-100 integer (0-40 surface, 41-70 conceptual, 71-90 analytical, 91-100 synthesis)"""
 
     try:
-        response = await client.messages.create(
-            model=_CLAUDE_MODEL,
-            max_tokens=400,
+        text = await complete_text(
             system="You generate precise, non-generic insight cards from Socratic tutoring sessions.",
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=400,
         )
-        text = response.content[0].text if response.content else "{}"
         clean = text.replace("```json", "").replace("```", "").strip()
         return json.loads(clean)
-    except Exception as e:
+    except Exception:
         return {
             "concept": concept,
             "insight": "You explored this concept through dialogue and built initial understanding.",

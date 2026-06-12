@@ -7,7 +7,7 @@ The static bias taxonomy is cached with cache_control: ephemeral.
 import json
 import os
 import logging
-import anthropic
+from services.llm_client import has_llm, complete_text
 
 logger = logging.getLogger(__name__)
 
@@ -58,28 +58,21 @@ async def classify_biases(text: str) -> list[dict]:
     Returns a list of dicts:
         [{"bias_id": "...", "bias": "...", "confidence": 0.87, "span": "..."}]
     """
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        logger.warning("ANTHROPIC_API_KEY not set — skipping bias classification")
+    if not has_llm():
+        logger.warning("No LLM API key configured — skipping bias classification")
         return []
 
     try:
-        model = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
-        client = anthropic.AsyncAnthropic(api_key=api_key)
-        response = await client.messages.create(
-            model=model,
-            max_tokens=512,
+        raw = await complete_text(
             system=_SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"Analyze this journal entry for cognitive biases:\n\n<entry>\n{text[:3000]}\n</entry>\n\n{_RESPONSE_FORMAT}",
-                }
-            ],
+            messages=[{
+                "role": "user",
+                "content": f"Analyze this journal entry for cognitive biases:\n\n<entry>\n{text[:3000]}\n</entry>\n\n{_RESPONSE_FORMAT}",
+            }],
+            max_tokens=512,
         )
-        logger.info(f"Bias classifier called model={model}, stop_reason={response.stop_reason}")
-
-        raw = response.content[0].text.strip()
+        logger.info("Bias classifier completed")
+        raw = raw.strip()
         # Strip markdown fences if present
         if raw.startswith("```"):
             raw = raw.split("```")[1]
