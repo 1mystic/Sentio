@@ -2,12 +2,12 @@ from collections import Counter
 from fastapi import APIRouter, Header
 from services.supabase_client import get_supabase
 from services.recommender import recommend_bias_to_explore, recommend_assessment
+from services.llm_client import complete_text
 from routers._auth_helpers import get_user_id
 import logging
 import json
 import os
 from datetime import datetime
-import anthropic
 
 _WEEKLY_INSIGHT_CACHE: dict[str, list] = {}
 
@@ -121,18 +121,15 @@ The "icon" must be a valid lucide-vue-next icon name in lowercase (e.g. "brain",
 Do not include clinical terms, diagnoses, or treatment recommendations.
 """
 
-    client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     try:
-        response = await client.messages.create(
-            model=os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
-            max_tokens=400,
+        text = await complete_text(
             system="You are a reflective cognitive coach. Output only valid JSON arrays.",
             messages=[{"role": "user", "content": synthesis_prompt}],
+            max_tokens=400,
         )
-        text = response.content[0].text if response.content else "[]"
         clean = text.replace("```json", "").replace("```", "").strip()
         insights = json.loads(clean)
-        
+
         _WEEKLY_INSIGHT_CACHE[cache_key] = insights
         return insights
     except Exception as e:
