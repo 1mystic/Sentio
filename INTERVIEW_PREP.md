@@ -23,7 +23,7 @@ their own thinking. Every AI claim is backed by an eval number I can reproduce."
                      │ HTTPS / SSE
 ┌────────────────────▼────────────────────────────────────────┐
 │  FastAPI (HuggingFace Spaces, Docker, port 7860)            │
-│  APScheduler (in-process, 3 jobs)                           │
+│  APScheduler (in-process, 4 jobs)                           │
 │  Sentence-Transformers (all-MiniLM-L6-v2, preloaded)        │
 ├─────────────────────────────────────────────────────────────┤
 │  /ai         SSE chat stream + memory retrieve/save         │
@@ -415,14 +415,49 @@ Crash path:
 **Partial index** `WHERE analysis_status='pending'` keeps sweep query O(orphans) not O(table).
 **Back-fill**: migration sets `'done'` for existing rows with `detected_biases IS NOT NULL`.
 
-### APScheduler jobs (all 3)
+### Journal NLP pipeline (services/journal_nlp.py)
 
-| Job | Trigger | What it does |
-|---|---|---|
-| `_send_daily_nudge` | daily 19:00 UTC | Sends email nudge via Resend if user hasn't journaled today |
-| `_weekly_digest` | Mon 08:00 UTC | Emails weekly bias pattern summary; queries DB fresh each run |
-| `_sweep_orphan_analyses` | every 10 min | Recovers stuck journal entries (crash-gap fix) |
-| `_consolidate_memories` | daily 02:00 UTC | Distils episodes → user_facts for users with 7+ day-old episodes |
+Three signals extracted from every journal entry after bias classification:
+
+```
+analyze_journal(text)
+  ├─ If JOURNAL_NLP_URL env var set:
+  │    → POST to external HF Space NLP endpoint (themes + sentiment + emotions)
+  │    → Falls back to local if endpoint times out (25s) or errors
+  └─ Local fallback (always available, zero API cost):
+       ├─ Sentiment: VADER SentimentIntensityAnalyzer
+       │    → compound score ∈ [-1.0, +1.0] (lexicon + rule-based, no model)
+       │    → e.g. "I failed completely" → -0.7, "I feel grateful" → +0.8
+       ├─ Themes: keyword mapping dict (20 categories)
+       │    → "deadline/project/work" → "work-stress", "study/learn" → "learning", etc.
+       │    → returns up to 5 matched themes
+       └─ Emotions: simple keyword heuristic
+            → frustrated/angry → anger, sad/hurt → sadness, happy/grateful → joy,
+              worried/anxious → fear, else → neutral
+```
+
+**Why VADER and not a transformer?** VADER is a validated, rule-based lexicon specifically
+designed for social media / conversational text (Hutto & Gilbert 2014). It runs in microseconds
+with zero API cost, no model loading, and no cold-start. For short journal entries (200–500 words)
+it is comparable to small sentiment transformers on valence classification. The HF NLP endpoint
+(if configured) replaces it with a proper transformer pipeline — VADER is the cost-free fallback.
+
+**VADER compound score**: sum of normalized lexicon valence scores, adjusted for punctuation
+emphasis (!!!), capitalization (GREAT vs great), and negation (not great). Clamped to [-1, 1].
+
+### APScheduler jobs (all 4)
+
+| Job | Trigger | LLM? | What it does |
+|---|---|---|---|
+| `_send_daily_nudge` | daily 19:00 UTC | No | DB query + Resend email if user hasn't journaled today |
+| `_weekly_digest` | Mon 08:00 UTC | No | DB query + Resend email with weekly bias summary |
+| `_sweep_orphan_analyses` | every 10 min | Only if orphans exist | One DB query; re-queues stuck entries only if `pending` + `created_at < now()-5min` |
+| `_consolidate_memories` | daily 02:00 UTC | Yes (once/user/week) | Distils episodes → user_facts for users with 7+ day-old episodes |
+
+**Credit safety**: `_sweep_orphan_analyses` runs 144×/day but is just one Supabase HTTP GET
+— zero LLM cost in normal operation. `_consolidate_memories` costs ~$0.0001 per active user
+per night (one `complete_text` call), only when they have qualifying old episodes.
+`_weekly_digest` and `_send_daily_nudge` are pure DB + email — no LLM calls, no model inference.
 
 Note: `_weekly_digest` is NOT a cache — it queries the DB fresh each run. The in-process
 `_USER_CTX_CACHE` (5-min TTL dict) is the only in-memory data cache.
@@ -490,6 +525,7 @@ slightly higher cost without it.
 | Vector search | pgvector (cosine) | Co-located with app data; no extra infra; sufficient at KB scale |
 | Embeddings | all-MiniLM-L6-v2 | 384-d, ~80 MB, CPU-fast, free, sentence-transformers baseline |
 | Reranker | Cohere rerank-english-v2.0 | Cross-encoder; degrades gracefully if key absent |
+| Sentiment | VADER (vaderSentiment) | Lexicon + rule-based, microsecond latency, zero API cost; falls back from external NLP endpoint |
 | LLM | Claude Haiku → OpenRouter fallback | Haiku is cheap/fast; fallback means zero downtime when credits expire |
 | Scheduler | APScheduler (in-process) | Free tier = one container; Celery would double infra |
 | Frontend hosting | Vercel | Auto-deploy on push to main; CDN; zero config for Vite |
@@ -712,12 +748,452 @@ locust -f scripts/locustfile.py \
 | "What happens when..." | Answer |
 |---|---|
 | User sends a chat message | Safety gate → working cache check → RAG query → memory retrieve → build system prompt → stream_text → SSE → post-stream: save episode (non-blocking) → badge check |
-| User creates a journal entry | INSERT row (status=pending) → 201 → background: processing → Haiku classify biases → VADER sentiment → KeyBERT themes → embed entry → UPDATE row (status=done) |
+| User creates a journal entry | INSERT row (status=pending) → 201 → background: _process_entry: (1) Haiku classify_biases → detected_biases JSONB, (2) journal_nlp.analyze_journal() → VADER sentiment [-1,1] + keyword themes + emotion heuristic, (3) embed entry with MiniLM → UPDATE row status=done |
 | Container restarts mid-analysis | Row stays status=pending → sweep runs in 10 min → re-queues _process_entry → done |
 | Anthropic credits expire | Set OPENROUTER_API_KEY, remove ANTHROPIC_API_KEY, restart Space → all features keep working via OpenRouter |
 | User deletes a memory | DELETE /ai/memory/{id}?source=episode|fact → hard deletes from Supabase → next chat has no injection from that memory |
 | Nightly consolidation runs | 02:00 UTC → find users with unconsolidated episodes > 7 days → Haiku distils 2–4 facts → insert user_facts → mark episodes consolidated |
 | match_memory RPC fails | Returns "" → chat proceeds without memory context (graceful degradation, logged as WARNING) |
+
+| User requests reflection questions | POST /journal/{id}/reflections → fetch content + detected_biases → Haiku generates exactly 3 open-ended questions grounded in bias context → returned to client on demand (NOT at save time) |
+| User submits an assessment | POST /assessments/{id}/submit → insert assessment_results → update user_bias_profiles (Likert → normalized 0–1, blended 60%/40% with journal scores) → background: send email + award badges |
+| User upvotes a thread | Check community_upvotes for existing row → if exists: delete + decrement_thread_upvote RPC → if not: insert + increment_thread_upvote RPC (idempotent toggle) |
+| User requests weekly insights | GET /insights/weekly → check in-process weekly cache (key=user_id+year+week) → if miss: aggregate last 7 journal entries → Anthropic generates 3 JSON insights → cache and return |
+| Daily nudge job runs | 19:00 UTC → for each profile with notifications.daily=true: check if journaled today → if not: get email from auth.admin → compute streak → send_daily_reminder via Resend |
+| User connects to therapist | POST /therapists/{id}/book → verify therapist.verified → insert bookings row (status=pending) → background: send booking confirmation email |
+
+---
+
+## Part 18 — Badge engine
+
+### 12 badges, when awarded
+
+`services/badge_engine.py` — `check_and_award_badges(user_id, supabase)` is called after:
+- Journal entry save (in `_process_entry`)
+- Assessment submit (in `assessments.py` background task)
+- Community thread or reply create (in `community.py`)
+
+| Badge ID | Name | Trigger |
+|---|---|---|
+| `first_journal` | First Reflection | ≥1 journal entry |
+| `streak_7` | Week of Clarity | 7-day consecutive journaling streak |
+| `streak_30` | Month of Mindfulness | 30-day consecutive streak |
+| `bias_3` | Pattern Spotter | 3 unique bias IDs across all entries |
+| `bias_10` | Bias Hunter | 10 unique bias IDs |
+| `no_bias` | Clean Slate | 5 entries where `detected_biases` is empty |
+| `assessment_1` | Self-Examiner | ≥1 assessment completed |
+| `assessment_all` | Full Spectrum | All available assessments completed (count from DB) |
+| `ai_convo` | Deep Thinker | ≥1 AI Guide conversation saved |
+| `community_first` | Contributor | ≥1 thread or reply created |
+| `community_10` | Voice of Reason | ≥10 combined threads + replies |
+| `archetype_set` | Self-Aware | `user_bias_profiles.archetype` is non-null |
+
+### Streak algorithm
+
+```python
+def _compute_streak(entries):
+    days = sorted({date(e['created_at'][:10]) for e in entries}, reverse=True)
+    streak = 1
+    for i in range(1, len(days)):
+        if days[i-1] - days[i] == timedelta(days=1):
+            streak += 1
+        else:
+            break
+    return streak
+```
+
+Note: streak counts distinct calendar days (two entries on the same day = 1 day). Streaks reset on any gap > 1 day.
+
+### Idempotency
+
+`user_badges` has `(user_id, badge_id)` unique constraint. `award()` checks the already-awarded set loaded at function start — no re-insert if badge already exists. Community badge check is wrapped in try/except (tables may not exist in older deployments).
+
+---
+
+## Part 19 — Cognitive archetypes + bias profile aggregation
+
+### Archetype map (12 types)
+
+`_ARCHETYPE_MAP` in `routers/journal.py`:
+
+| Dominant bias | Archetype name |
+|---|---|
+| confirmation_bias | The Conviction Keeper |
+| anchoring_bias | The Anchor |
+| availability_bias | The Storyteller |
+| overconfidence | The Visionary |
+| social_conformity | The Harmonizer |
+| attribution_error | The Judge |
+| sunk_cost_fallacy | The Investor |
+| dunning_kruger | The Explorer |
+| status_quo_bias | The Traditionalist |
+| halo_effect | The Idealist |
+| bandwagon_effect | The Follower |
+| recency_bias | The Moment-Chaser |
+
+Any unmapped bias → `'The Thinker'`
+
+### Blend archetype (top-2 within 0.05)
+
+```python
+def _compute_archetype(bias_scores):
+    sorted_biases = sorted(bias_scores.items(), key=lambda x: x[1], reverse=True)
+    top1_bias, top1_score = sorted_biases[0]
+    top2_bias, top2_score = sorted_biases[1]
+    if (top1_score - top2_score) < 0.05 and arch1 != arch2:
+        return f"{arch1} with {arch2} tendencies"   # blend archetype
+    return arch1
+```
+
+E.g. "The Conviction Keeper with The Explorer tendencies" — surfaced in weekly digest email + bias fingerprint page.
+
+### Bias profile aggregation — two update paths
+
+**Path 1: Journal detection** (`_update_bias_profile` in `routers/journal.py`):
+```python
+delta = confidence × 0.1          # e.g. 0.87 confidence → +0.087
+new_score = min(1.0, old + delta)  # capped at 1.0
+```
+Called per-entry, incremental. A single journal entry cannot swing the profile dramatically.
+
+**Path 2: Assessment submission** (`routers/assessments.py`):
+```python
+# Likert 1–5 → 0–1
+new_score = (average_raw_score - 1) / 4
+
+# Blend with existing journal score
+merged[bias_id] = old_score * 0.6 + new_score * 0.4   # 60% journal, 40% assessment
+```
+Assessment provides structured aggregate view; journal provides real-time signal. The 60/40 blend weights longitudinal journal data more heavily.
+
+### bias_scores JSON structure
+
+```json
+{
+  "confirmation_bias": 0.342,
+  "catastrophizing": 0.180,
+  "attribution_error": 0.091
+}
+```
+
+Keys are `snake_case` bias IDs matching `_BIAS_TAXONOMY`. Scores accumulate over time; archived in `user_bias_profiles`. The bias fingerprint page renders a radar chart over all scores.
+
+---
+
+## Part 20 — Assessment system
+
+### 4 assessment types
+
+| Assessment | Validated tool? | What it measures |
+|---|---|---|
+| GAD-7 | Yes (clinical) | Generalized anxiety (7 items, 0–3 Likert) |
+| PHQ-9 | Yes (clinical) | Depression severity (9 items, 0–3 Likert) |
+| Big Five | Yes (OCEAN) | Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism |
+| Cognitive Style | Sentio custom | Bias-linked thinking patterns |
+
+Field `assessments.validated_tool` (boolean) displayed in UI to signal clinical grounding.
+
+### Assessment data model
+
+```json
+assessments.questions = [
+  {
+    "id": "q1",
+    "text": "Feeling nervous, anxious or on edge",
+    "type": "likert",
+    "scale": [0, 1, 2, 3],
+    "labels": ["Not at all", "Several days", "More than half", "Nearly every day"],
+    "bias_signal": "catastrophizing"   ← maps to bias_scores key
+  },
+  ...
+]
+```
+
+### Scoring pipeline (frontend → backend)
+
+1. Frontend presents questions, collects `raw_scores: {"q1": 2, "q2": 1, ...}`
+2. Frontend computes `computed_scores` (domain totals) and `bias_implications`
+3. `POST /assessments/{id}/submit` body: `{raw_scores, computed_scores, bias_implications}`
+4. Backend normalizes: `(avg_raw - min_scale) / (max_scale - min_scale)`
+5. Backend blends into `user_bias_profiles.bias_scores`
+6. Background: assessment complete email + badge check
+
+### Most-recent-result deduplication
+
+`GET /assessments/user/results` returns the **most recent result per assessment** (not all-time history). History view: `GET /assessments/{id}/history` shows all past submissions for trend tracking.
+
+---
+
+## Part 21 — Email system
+
+### Provider: Resend
+
+```python
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "noreply@sentio.app")
+```
+
+**Free tier**: 3,000 emails/month, 100/day. If `RESEND_API_KEY` is absent → `send_email` logs stub and returns `True` (no crash, no email). All email calls are non-blocking (FastAPI `BackgroundTasks`).
+
+### 4 email templates
+
+| Function | Trigger | Content |
+|---|---|---|
+| `send_daily_reminder` | APScheduler 19:00 UTC | "Time to reflect" + streak count + journal CTA |
+| `send_weekly_digest` | APScheduler Mon 08:00 UTC | Entry count + top themes + emotional tone + archetype block |
+| `send_assessment_complete` | After assessment submit | Assessment title + overall score + archetype |
+| `send_booking_notification` | After therapist booking | Therapist name + "request submitted" |
+
+All use `_base_template(content)` — Sentio purple gradient header, consistent brand footer with "manage preferences" link.
+
+### Notification preferences (user-controlled)
+
+`profiles.preferences` is a JSONB column:
+```json
+{
+  "notifications": {
+    "daily": true,
+    "weekly": true
+  }
+}
+```
+
+Scheduler checks `prefs.get("notifications", {}).get("daily", True)` — defaults to `True` if pref not set (opt-out model). User can toggle in `/profile` page.
+
+---
+
+## Part 22 — Community features
+
+### Data model
+
+```
+community_topics       (id, slug, title, thread_count)
+  └── community_threads  (id, topic_id, author_id, title, body, upvotes, reply_count, is_pinned, is_locked)
+       └── community_replies  (id, thread_id, author_id, body, parent_reply_id, upvotes)
+community_upvotes      (user_id, target_type ["thread"|"reply"], target_id)
+```
+
+### Threading (nested replies)
+
+Replies have `parent_reply_id` for one level of nesting (direct reply to a specific reply). Frontend renders the tree; backend stores flat with parent pointer.
+
+### Upvote toggle (idempotent)
+
+```python
+# POST /community/threads/{id}/upvote
+existing = check community_upvotes WHERE user_id + target_type + target_id
+if existing:
+    delete upvote + decrement_thread_upvote RPC
+    return {"action": "removed"}
+else:
+    insert upvote + increment_thread_upvote RPC
+    return {"action": "added"}
+```
+
+Counter is stored on the thread/reply row (denormalized for fast listing). `community_upvotes` table prevents duplicates.
+
+### Thread management
+
+- `is_pinned`: admin/mod feature — pinned threads sort first in topic listing
+- `is_locked`: prevents new replies (enforced in `add_reply` endpoint with 403)
+- Thread deletion: author-only (403 if `thread.author_id != user_id`)
+- Reply deletion: author-only (same check)
+
+### Safety in community
+
+Every thread/reply body passes `safety.check_input()` before insert. Crisis keywords → `422 Unprocessable Entity` with crisis resources (same response as AI chat gate).
+
+### Author display names
+
+Community endpoints deliberately **don't** use PostgREST embedded joins for author profiles (avoids schema-cache issues after FK migrations). Instead: batch-resolve author IDs → separate `profiles` query → merge into response dict.
+
+---
+
+## Part 23 — Therapist directory + recommender
+
+### Therapist filtering
+
+`GET /therapists` supports 5 optional query params:
+- `language` — filter by language string in `therapists.languages[]`
+- `specialization` — filter by keyword in `therapists.specializations[]`
+- `format` — online / in-person / both (substring match)
+- `lat` + `lng` + `radius_km` — geolocation: invokes `get_nearest_therapists` Supabase RPC (haversine formula), falls back to full list if RPC not installed
+
+Only `verified=true` therapists are returned. Sentio does **not** intermediate the clinical relationship — the booking button records intent; actual scheduling happens on the therapist's external platform.
+
+### Booking flow
+
+1. `POST /therapists/{id}/book` body: `{message, requested_at}`
+2. Verify therapist exists + is verified
+3. Insert `bookings` row (status=`pending`)
+4. Background: `send_booking_notification` email to user
+5. Returns `{status: "request_submitted", booking_id}`
+
+### Recommender (`services/recommender.py`)
+
+**`recommend_bias_to_explore`**:
+```
+CATEGORY_ADJACENCY = {
+  "memory": ["belief", "decision"],
+  "social": ["self", "belief"],
+  "decision": ["memory", "reasoning"],
+  "self": ["social", "belief"],
+  "belief": ["reasoning", "social"],
+  "reasoning": ["decision", "belief"],
+}
+
+New user → first bias alphabetically
+Returning user → find top-scoring bias → its category → adjacent category → first bias in that category
+```
+
+**`recommend_assessment`**: query assessments NOT IN (completed_assessment_ids) → return first uncompleted. Used on Dashboard to show personalized "next step" cards.
+
+---
+
+## Part 24 — Weekly insights (`/insights/weekly`)
+
+### What it does
+
+`GET /insights/weekly` → Claude generates 3 personalized data-driven insights from the last 7 journal entries:
+- Entry count
+- Top 5 themes (Counter)
+- Top 3 detected biases (Counter)
+- Average sentiment score
+- Socratic session count
+
+Claude returns JSON: `[{"type": "bias", "text": "...", "icon": "brain"}, ...]`. Icon must be a valid lucide-vue-next icon name.
+
+### In-process weekly cache
+
+```python
+_WEEKLY_INSIGHT_CACHE: dict[str, list] = {}
+cache_key = f"{user_id}_{current_year}_{current_week}"
+```
+
+Prevents regenerating insights multiple times in the same calendar week for the same user. Cache is in-process (lost on container restart) — that's acceptable; insights regenerate on next request.
+
+### ⚠️ Known gap: still uses direct Anthropic client
+
+`routers/insights.py` imports `anthropic` directly (`import anthropic`) instead of going through `llm_client.py`. This means:
+- Weekly insights **will break** when Anthropic credits expire and you switch to OpenRouter
+- **Fix needed**: replace direct `client.messages.create()` with `await complete_text(...)` from `llm_client`
+- All other LLM features (AI Guide, bias classifier, memory, Socratic, reflections) correctly use `llm_client.py`
+
+---
+
+## Part 25 — Auth flow + env vars
+
+### Supabase Auth flow
+
+1. Frontend: Supabase JS client → `supabase.auth.signInWithPassword()` or OAuth
+2. Returns: JWT access token (stored in Pinia `auth.js` store)
+3. Axios interceptor: `Authorization: Bearer <token>` on every request
+4. Backend `_auth_helpers.py`: `get_user_id(authorization)` → calls `supabase.auth.get_user(jwt)` → returns `user.id`; raises 401 if invalid
+5. RLS: Supabase enforces `auth.uid() = user_id` on every user-data table — even if app code has a bug, DB won't return other users' rows
+
+```python
+# _auth_helpers.py
+def get_user_id(authorization: str | None) -> str:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "Missing auth token")
+    token = authorization.split(" ")[1]
+    user = get_supabase().auth.get_user(token)
+    if not user or not user.user:
+        raise HTTPException(401, "Invalid token")
+    return user.user.id
+
+def get_user(authorization) -> dict:
+    # same but returns full user object (for email access)
+```
+
+### Required env vars (backend — HF Space secrets)
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Yes | Service-role key (bypasses RLS for admin ops) |
+| `ANTHROPIC_API_KEY` | One of these | Primary LLM provider |
+| `OPENROUTER_API_KEY` | One of these | Fallback LLM provider |
+| `COHERE_API_KEY` | Optional | Reranker (degrades gracefully if absent) |
+| `RESEND_API_KEY` | Optional | Email delivery (stub/log-only if absent) |
+| `RESEND_FROM_EMAIL` | Optional | Sender address (default: noreply@sentio.app) |
+| `APP_URL` | Optional | Base URL for email links (default: https://sentio.app) |
+| `JOURNAL_NLP_URL` | Optional | External HF NLP endpoint (local VADER fallback if absent) |
+| `CLAUDE_MODEL` | Optional | Override Anthropic model (default: claude-haiku-4-5-20251001) |
+| `FALLBACK_MODEL` | Optional | Override OpenRouter model (default: google/gemini-flash-1.5-exp) |
+
+### Required env vars (frontend — Vercel)
+
+| Variable | Purpose |
+|---|---|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Anon key (client-safe, RLS enforced) |
+| `VITE_API_BASE_URL` | FastAPI backend URL (e.g. https://your-space.hf.space) |
+
+**Security note**: frontend uses `ANON_KEY` (public, RLS-restricted). Backend uses `SERVICE_KEY` (never exposed to client — bypasses RLS for admin operations like `auth.admin.get_user_by_id`).
+
+---
+
+## Part 26 — Reflection questions (on-demand, not at save time)
+
+`POST /journal/{entry_id}/reflections` — user explicitly clicks "Get Reflection Questions":
+
+1. Fetch entry `content` + `detected_biases` from DB
+2. Call `generate_journal_reflections(content, biases)` in `claude_service.py`
+3. Prompt: "Generate exactly 3 follow-up reflection questions... grounded in the specific content... do not label the person"
+4. Parse response: split by newline, take first 3 non-empty lines
+5. Fallback questions if LLM fails — bias-aware (different Q if `confirmation_bias` detected)
+
+**Why on-demand?** Reflection requires user attention — generating them at save time would be wasted compute for entries never revisited. Also avoids adding a 4th API call to the already-busy `_process_entry` background task.
+
+---
+
+## Part 27 — Supabase RPCs inventory
+
+All database-side functions invoked via `supabase.rpc(...)`:
+
+| RPC | Called from | What it does |
+|---|---|---|
+| `match_knowledge` | `rag_service.py` | pgvector cosine search on `knowledge_articles`, threshold 0.65, top-10 |
+| `match_memory` | `memory_service.py` | Decay-weighted UNION of `memory_episodes` + `user_facts`, top-k |
+| `increment_fact_access` | `memory_service.py` | Bumps `user_facts.access_count` for retrieved facts |
+| `get_nearest_therapists` | `routers/therapists.py` | Haversine distance sort within radius_km |
+| `increment_thread_reply_count` | `routers/community.py` | +1 on `community_threads.reply_count` |
+| `increment_topic_thread_count` | `routers/community.py` | +1 on `community_topics.thread_count` |
+| `increment_thread_upvote` | `routers/community.py` | +1 on `community_threads.upvotes` |
+| `decrement_thread_upvote` | `routers/community.py` | −1 on `community_threads.upvotes` |
+| `increment_reply_upvote` | `routers/community.py` | +1 on `community_replies.upvotes` |
+| `decrement_reply_upvote` | `routers/community.py` | −1 on `community_replies.upvotes` |
+
+**Why RPCs for counters?** Atomic increment/decrement at DB level — no race condition from concurrent reads + updates in application code. PostgREST `.update({upvotes: upvotes+1})` requires a read-modify-write cycle.
+
+---
+
+## Part 28 — Git subtree deploy (monorepo → HF Space)
+
+### Why monorepo + subtree
+
+Single source of truth: `sentio-repo/` contains both `src/` (Vue frontend) and `sentio-api/` (FastAPI backend). HF Spaces expects a repo root with the `Dockerfile` — so only `sentio-api/` subfolder is pushed as the Space root.
+
+### Deploy commands
+
+```bash
+# From sentio-repo/ — push only sentio-api/ subfolder to HF Space main branch
+git subtree split --prefix=sentio-api --branch hf-deploy
+git push hf-space hf-deploy:main --force
+git branch -D hf-deploy
+
+# Frontend (Vercel auto-deploys on git push to main — no manual step)
+git push origin main
+```
+
+### Dockerfile (in sentio-api/)
+
+Builds a Docker image: installs `uv`, copies app, runs `uv sync`, starts `uvicorn main:app --host 0.0.0.0 --port 7860`. Port 7860 is HF Spaces standard.
+
+### Cold-start behavior
+
+`sentence_transformers` model (all-MiniLM-L6-v2, ~80 MB) is preloaded at startup via `_get_embedder()` called from `main.py` lifespan. APScheduler also starts in the lifespan hook. First request after cold start is slow (~15s for model load); subsequent requests are fast.
 
 ---
 
