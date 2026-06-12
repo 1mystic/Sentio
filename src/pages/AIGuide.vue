@@ -593,11 +593,12 @@ function useSuggestion(s) { input.value = s; sendGuideMessage(s); input.value = 
 
 // ── Socratic mode ─────────────────────────────────────────────────────────────
 const domains = [
-  { value: 'general',    label: 'General thinking',  icon: Brain },
-  { value: 'ml',         label: 'ML concepts',       icon: Cpu },
-  { value: 'statistics', label: 'Statistics',        icon: BarChart3 },
-  { value: 'economics',  label: 'Economics',         icon: TrendingUp },
-  { value: 'cs',         label: 'Computer Science',  icon: Code2 },
+  { value: 'biases',       label: 'Cognitive Biases',   icon: Brain },
+  { value: 'emotions',     label: 'Emotional Patterns', icon: Activity },
+  { value: 'decisions',    label: 'Decision Making',    icon: TrendingUp },
+  { value: 'self',         label: 'Self-Reflection',    icon: BookOpen },
+  { value: 'relationships',label: 'Relationships',      icon: MessageSquare },
+  { value: 'tech',         label: 'Tech & Logic',       icon: Cpu },
 ]
 
 // Live cognitive signals — recomputed as user types in socratic mode
@@ -693,7 +694,13 @@ async function loadSocraticSession(sessionId) {
 }
 
 function domainLabel(d) {
-  return { general: 'General thinking', ml: 'ML concepts', statistics: 'Statistics', economics: 'Economics', cs: 'Computer Science' }[d] ?? d
+  return {
+    biases: 'Cognitive Biases', emotions: 'Emotional Patterns',
+    decisions: 'Decision Making', self: 'Self-Reflection',
+    relationships: 'Relationships', tech: 'Tech & Logic',
+    general: 'General thinking', ml: 'ML concepts',
+    statistics: 'Statistics', economics: 'Economics', cs: 'Computer Science',
+  }[d] ?? d
 }
 
 // ── State styling helpers ─────────────────────────────────────────────────────
@@ -1228,17 +1235,17 @@ function exportInsightPdf() {
 .input-area {
   padding: 12px 24px 16px;
   border-top: 1px solid var(--lavender-soft);
-  background: white; flex-shrink: 0;
+  flex-shrink: 0;
   display: flex; flex-direction: column; gap: 6px;
 }
 .input-wrap {
   display: flex; align-items: center; gap: 8px;
   background: var(--lavender-soft, #f0eef9);
-  border: 1.5px solid var(--lavender);
+  border: 2px solid var(--lavender-deep);
   border-radius: 12px; padding: 8px 8px 8px 14px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.input-wrap.focused { border-color: var(--lavender-deep); box-shadow: 0 0 0 3px rgba(155,148,232,0.12); }
+.input-wrap.focused { border-color: var(--plum); box-shadow: 0 0 0 3px rgba(155,148,232,0.18); }
 .chat-input {
   flex: 1; font-family: 'Urbanist'; font-size: 14px;
   color: var(--plum); background: transparent;
