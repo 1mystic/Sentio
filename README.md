@@ -1,10 +1,15 @@
 <div align="center">
 
+<br><br>
+
+# 🧠 SENTIO
+## *Think Better, Not Just Feel Better*
+
+### Cognitive Bias Self‐Awareness Through Structured Dialogue, Journaling & AI
+
 <br>
 
-<img src="https://img.shields.io/badge/-%20S%20E%20N%20T%20I%20O-352b38?style=for-the-badge&labelColor=352b38&color=9b94e8" height="40" alt="Sentio" />
-
-<h3>Cognitive bias self‑awareness, built for people who want to think better : not just feel better.</h3>
+**Your personal clarity engine:** Identify the cognitive biases shaping your decisions, conversations, and self-image. Built with **Claude AI**, **three-tier memory**, and **Socratic dialogue**—not generic platitudes, but genuine insight.
 
 <br>
 
@@ -12,13 +17,15 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-352b38?style=flat-square&logo=fastapi&logoColor=dad8f9)](https://fastapi.tiangolo.com)
 [![Supabase](https://img.shields.io/badge/Supabase-352b38?style=flat-square&logo=supabase&logoColor=dad8f9)](https://supabase.com)
 [![Claude](https://img.shields.io/badge/Claude%20Haiku%20%2F%20Sonnet-352b38?style=flat-square&logo=anthropic&logoColor=dad8f9)](https://anthropic.com)
+[![Python](https://img.shields.io/badge/Python%203.11-352b38?style=flat-square&logo=python&logoColor=dad8f9)](https://python.org)
 [![License MIT](https://img.shields.io/badge/License-MIT-352b38?style=flat-square&logoColor=dad8f9)](LICENSE)
 
 <br>
 
-**Live →** [sentio-go.vercel.app](https://sentio-go.vercel.app) &nbsp;·&nbsp; **API →** [mozoj4-sentio-backend.hf.space/docs](https://mozoj4-sentio-backend.hf.space/docs)
+### 🚀 **Live Demos**
+[**sentio-go.vercel.app**](https://sentio-go.vercel.app) &nbsp; · &nbsp; [**API Docs**](https://mozoj4-sentio-backend.hf.space/docs) &nbsp; · &nbsp; [**Interview Prep Guide**](INTERVIEW_PREP.md)
 
-<br>
+<br><br>
 
 </div>
 
@@ -29,6 +36,69 @@
 Sentio is a full-stack mental clarity platform that helps users identify and move past the cognitive biases shaping their decisions, conversations, and self-image. Rather than giving pre-packaged insights, Sentio puts users through the process : structured dialogue, reflective journaling, and validated assessments : so the understanding they reach is genuinely their own.
 
 Two modes of AI interaction: a **context-aware guide** grounded in your personal bias history and journal themes, and a **Socratic engine** that never gives direct answers : only better questions.
+
+---
+
+## 📸 UI Tour
+
+<div align="center">
+
+### Dashboard
+<img src="snaps/dash.png" width="800" alt="Sentio Dashboard — Bias radar, streaks, quick actions" />
+
+### AI Guide with Three-Tier Memory
+<img src="snaps/Ai-guide.png" width="800" alt="AI Guide — RAG-enhanced chat with personal bias context" />
+
+### AI Memory Panel (GDPR Delete)
+<img src="snaps/ai-memory.png" width="800" alt="AI Memory — View/delete what Sentio remembers about you" />
+
+### Markdown Journal with Live Bias Detection
+<img src="snaps/journals.png" width="800" alt="Journal — Write freely; biases detected as you type" />
+
+### Journal Analysis Report
+<img src="snaps/jounral-analysis.png" width="800" alt="Journal Analysis — Sentiment, themes, detected biases, AI reflection questions" />
+
+### Socratic Dialogue (7 Algorithms)
+<img src="snaps/socratic-session.png" width="800" alt="Socratic Mode — Real-time dialogue state, clarity score, Bloom depth" />
+
+### Socratic Insight Card (Exportable)
+<img src="snaps/socratic-mode.png" width="800" alt="Socratic Insight — Exportable synthesis of dialogue session" />
+
+### Cognitive Assessments
+<img src="snaps/Assesment.png" width="800" alt="Assessments — GAD-7, PHQ-9, Big Five questionnaires" />
+
+### Learn — Psychology Knowledge Base (RAG)
+<img src="snaps/Learn-mode.png" width="800" alt="Learn — CBT articles with bias cross-links" />
+
+### Bias Explorer — 15-Class Taxonomy
+<img src="snaps/biases.png" width="800" alt="Biases — Browse all 15 cognitive distortions with examples" />
+
+### Progress Tracking
+<img src="snaps/progress.png" width="800" alt="Progress — Bias trends, clarity over time, weekly insights" />
+
+### Community Forums
+<img src="snaps/Community-chats.png" width="800" alt="Community — Threaded discussion, upvotes" />
+
+### Therapist Directory (Geo-filtering)
+<img src="snaps/Therapists.png" width="800" alt="Therapists — Find verified therapists by specialty, language, location" />
+
+### Authentication
+<img src="snaps/auth.png" width="800" alt="Auth — Email/password + Google OAuth" />
+
+</div>
+
+---
+
+## Why Sentio?
+
+| Problem | Solution |
+|---------|----------|
+| **Generic insights** | Every response is personalized with *your* bias history, journal themes, and psychology knowledge |
+| **Passive learning** | Active Socratic dialogue—no direct answers, only better questions |
+| **Scattered data** | Single platform: journal, assessments, AI guide, memory, community, therapist directory |
+| **Privacy concerns** | Full transparency: `/memory` page shows everything; one-click GDPR wipe |
+| **Cognitive biases are real** | 15-class taxonomy rooted in CBT, validated assessments (GAD-7, PHQ-9) |
+| **Black-box AI** | Measurable evals: RAG precision, bias classifier F1, model comparisons in repo |
 
 ---
 
@@ -365,10 +435,47 @@ git push origin main
 
 ---
 
+## 🚀 Get Started
+
+### Try it now (no signup required)
+→ [**sentio-go.vercel.app**](https://sentio-go.vercel.app)
+
+### Deploy your own
+```bash
+# Frontend → Vercel (click and deploy)
+# Backend → HuggingFace Spaces (free GPU, Docker-based)
+# Database → Supabase (free tier, 500MB)
+
+# Or local dev:
+npm install && npm run dev        # frontend
+cd sentio-api && uv sync && uvicorn main:app --reload
+```
+
+### For AI/ML engineers
+- **Interview Prep Guide**: [INTERVIEW_PREP.md](INTERVIEW_PREP.md) (28 parts, full math + evals)
+- **Eval Scripts**: `scripts/eval_rag.py`, `scripts/eval_bias.py`, `scripts/run_all_evals.py`
+- **QLoRA Fine-tuning**: `sentio-ml/notebooks/sentio_bias_qlora.ipynb` (Kaggle T4 ready)
+- **API Reference**: [mozoj4-sentio-backend.hf.space/docs](https://mozoj4-sentio-backend.hf.space/docs)
+
+### Contributing
+Sentio is **open to ideas**: bias taxonomy extensions, new assessments, Socratic algorithm refinements, UI improvements. Open an issue to discuss.
+
+---
+
 <div align="center">
 
-*Not a replacement for professional mental health support.*
+*Built to make thinking clearer. Not a replacement for professional mental health support.*
+
+<br>
+
+[![GitHub Stars](https://img.shields.io/github/stars/mozoj4/sentio?style=flat-square&color=9b94e8)](https://github.com/mozoj4/sentio)
 &nbsp;·&nbsp;
-[![MIT](https://img.shields.io/badge/License-MIT-9b94e8?style=flat-square)](LICENSE)
+[![License MIT](https://img.shields.io/badge/License-MIT-9b94e8?style=flat-square)](LICENSE)
+&nbsp;·&nbsp;
+[Privacy Policy](#) &nbsp;·&nbsp; [Code of Conduct](#)
+
+<br><br>
+
+**Made with ❤️ for people who want to understand themselves better**
 
 </div>
