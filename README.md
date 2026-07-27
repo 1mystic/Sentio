@@ -476,6 +476,9 @@ Sentio is **open to ideas**: bias taxonomy extensions, new assessments, Socratic
 
 <br><br>
 
+~ Made with Intent
+
+
 **Made with ❤️ for people who want to understand themselves better**
 
 </div>
